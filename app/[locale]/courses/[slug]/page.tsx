@@ -1,9 +1,25 @@
-export async function generateMetadata({ params }: { params: { locale: string, slug: string } }) {
-  // In a real app, you would fetch course data from your DB here
-  // const course = await getCourse(slug);
+import { Metadata } from 'next';
 
+interface Props {
+  params: Promise<{ locale: string; slug: string }>;
+}
+
+// This is a named export (Correct)
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
   return {
-    title: `Course: ${params.slug} | MyApp`,
-    description: `Join our ${params.slug} language course today.`
+    title: `Course: ${slug}`,
   };
+}
+
+// THIS IS WHAT WAS MISSING: You must use "export default" for the component
+export default async function CoursePage({ params }: Props) {
+  const { slug, locale } = await params;
+
+  return (
+    <div className="py-20">
+      <h1 className="text-3xl font-bold">Course: {slug}</h1>
+      <p>Language: {locale}</p>
+    </div>
+  );
 }
