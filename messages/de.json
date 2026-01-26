@@ -1,0 +1,30 @@
+{
+  "Navbar": {
+    "home": "Startseite",
+    "courses": "Kurse",
+    "prices": "Preise",
+    "contact": "Kontakt",
+    "login": "Anmelden",
+    "signup": "Registrieren"
+  },
+  "Hero": {
+    "title": "Meistern Sie Sprachen heute",
+    "subtitle": "Lernen Sie Englisch, Deutsch und Arabisch mit Experten.",
+    "cta": "Loslegen"
+  },
+  "Articles": {
+    "courses": {
+      "title": "Weltklasse-Kurse",
+      "desc": "Meistern Sie über 30 Sprachen mit unserem immersiven, KI-gestützten Lehrplan, der für alle Niveaus entwickelt wurde."
+    },
+    "prices": {
+      "title": "Flexible Preisgestaltung",
+      "desc": "Wählen Sie einen Plan, der zu Ihrem Budget passt – von kostenlosen Grundlagen bis hin zum Premium-Einzelcoaching."
+    },
+    "contact": {
+      "title": "Kontaktieren Sie uns",
+      "desc": "Unser Support-Team ist rund um die Uhr für Sie da, um Sie auf Ihrer Sprachreise zu begleiten."
+    },
+    "cta": "Jetzt starten"
+  }
+}
