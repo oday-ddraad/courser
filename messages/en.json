@@ -30,5 +30,12 @@
   "Metadata": {
     "title": "Master Languages | MyApp Learning",
     "description": "Learn English, German, and Arabic with the best online platform."
+  },
+  "Errors": {
+    "somethingWentWrong": "Something went wrong!",
+    "tryAgain": "Try Again",
+    "notFoundTitle": "Oops! Page Not Found",
+    "notFoundDesc": "The page you are looking for might have been removed.",
+    "goHome": "Return Home"
   }
 }
