@@ -3,12 +3,14 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "cross-env NEXT_PRIVATE_SKIP_TURBO=1 next dev",
+    "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
   },
   "dependencies": {
+    "mongoose": "^9.1.5",
     "next": "16.1.5",
     "next-intl": "^4.7.0",
     "next-themes": "^0.4.6",
@@ -21,6 +23,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.23",
+    "cross-env": "^7.0.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.5",
     "postcss": "^8.5.6",
