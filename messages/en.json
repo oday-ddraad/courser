@@ -37,5 +37,22 @@
     "notFoundTitle": "Oops! Page Not Found",
     "notFoundDesc": "The page you are looking for might have been removed.",
     "goHome": "Return Home"
-  }
+  },
+  
+    "Auth": {
+      "loginTitle": "Welcome Back",
+      "emailLabel": "Email Address",
+      "passwordLabel": "Password",
+      "loginButton": "Sign In",
+      "loggingIn": "Checking credentials...",
+      "errorInvalid": "Invalid email or password",
+      "signupTitle": "Create Account",
+      "namePlaceholder": "Full Name",
+      "passwordRequirements": "Password must be 8+ chars with a letter, number, and symbol.",
+      "alreadyHaveAccount": "Already have an account?",
+      "loginLink": "Login here",
+      "signupButton": "Join Now"
+    }
+
+  
 }

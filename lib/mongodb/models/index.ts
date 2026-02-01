@@ -1,5 +1,5 @@
 // Export all models from a single file for easier imports
-export { default as User, IUser } from './User';
+export { default as User, type IUser } from './User';
 
 // Add other models here as we create them:
 // export { default as Course, ICourse } from './Course';

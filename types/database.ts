@@ -1,6 +1,6 @@
 // Type definitions for database models
 // These types are exported for use throughout the application
-
+import { DefaultSession } from "next-auth";
 import { ObjectId } from 'mongoose';
 
 // User Types
@@ -43,4 +43,29 @@ export interface BaseDocument {
   _id: ObjectId;
   createdAt: Date;
   updatedAt: Date;
+}
+
+
+// ... your existing CourseLevel, UserRole, etc.
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: UserRole;
+    } & DefaultSession["user"];
+  }
+
+  interface User {
+    id: string;
+    role: UserRole;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string;
+    role: UserRole;
+    version?: number; // For global revocation
+  }
 }
