@@ -1,0 +1,403 @@
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
+
+// Review subdocument interface
+export interface IReview {
+  _id?: Types.ObjectId;
+  userId: Types.ObjectId;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+}
+
+
+// Lesson subdocument interface
+export interface ILesson {
+  _id: Types.ObjectId;
+  order: number;
+  title: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  description: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  content: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  videoUrl?: string;
+  duration: number; // in minutes
+  isLiveStream: boolean;
+  scheduledDateTime?: Date;
+  jitsiRoomName?: string;
+  resources: {
+    type: 'pdf' | 'video' | 'link';
+    url: string;
+    name: string;
+  }[];
+  isPreview: boolean;
+  createdAt: Date;
+}
+
+// Material subdocument interface
+export interface IMaterial {
+  _id: Types.ObjectId;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  type: 'pdf' | 'video' | 'document';
+  fileUrl: string;
+  fileSize: number;
+  isAccessibleAfterCourse: boolean;
+  uploadedBy: Types.ObjectId;
+  createdAt: Date;
+}
+
+// Group subdocument interface
+export interface IGroup {
+  _id: Types.ObjectId;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  description: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  lessonIds: Types.ObjectId[];
+  order: number;
+  createdAt: Date;
+}
+
+export interface ICourse extends Document {
+  slug: string;
+  instructorId: Types.ObjectId;
+  title: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  description: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  content: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  thumbnail: string;
+  price: number;
+  currency: string;
+  level: 'beginner' | 'intermediate' | 'advanced';
+  duration: number; // total hours
+  category: string;
+  tags: string[];
+  lessons: ILesson[];
+  materials: IMaterial[];
+  groups: IGroup[];
+  isPublished: boolean;
+  isLiveStream: boolean;
+  publishedAt?: Date;
+  enrollmentCount: number;
+  rating: number;
+  reviews: IReview[];
+  createdAt: Date;
+  updatedAt: Date;
+  calculateRating(): number;
+}
+
+
+// Review Schema
+const ReviewSchema = new Schema<IReview>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  rating: {
+    type: Number,
+    required: true,
+    min: 1,
+    max: 5,
+  },
+  comment: {
+    type: String,
+    required: true,
+    maxlength: 1000,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Lesson Schema
+const LessonSchema = new Schema<ILesson>({
+  order: {
+    type: Number,
+    required: true,
+  },
+  title: {
+    en: { type: String, required: true },
+    de: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  description: {
+    en: { type: String, default: '' },
+    de: { type: String, default: '' },
+    ar: { type: String, default: '' },
+  },
+  content: {
+    en: { type: String, default: '' },
+    de: { type: String, default: '' },
+    ar: { type: String, default: '' },
+  },
+  videoUrl: {
+    type: String,
+    default: null,
+  },
+  duration: {
+    type: Number,
+    default: 0,
+  },
+  isLiveStream: {
+    type: Boolean,
+    default: false,
+  },
+  scheduledDateTime: {
+    type: Date,
+    default: null,
+  },
+  jitsiRoomName: {
+    type: String,
+    default: null,
+  },
+  resources: [{
+    type: {
+      type: String,
+      enum: ['pdf', 'video', 'link'],
+      required: true,
+    },
+    url: {
+      type: String,
+      required: true,
+    },
+    name: {
+      type: String,
+      required: true,
+    },
+  }],
+  isPreview: {
+    type: Boolean,
+    default: false,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Material Schema
+const MaterialSchema = new Schema<IMaterial>({
+  name: {
+    en: { type: String, required: true },
+    de: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  type: {
+    type: String,
+    enum: ['pdf', 'video', 'document'],
+    required: true,
+  },
+  fileUrl: {
+    type: String,
+    required: true,
+  },
+  fileSize: {
+    type: Number,
+    default: 0,
+  },
+  isAccessibleAfterCourse: {
+    type: Boolean,
+    default: true,
+  },
+  uploadedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Group Schema
+const GroupSchema = new Schema<IGroup>({
+  name: {
+    en: { type: String, required: true },
+    de: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  description: {
+    en: { type: String, default: '' },
+    de: { type: String, default: '' },
+    ar: { type: String, default: '' },
+  },
+  lessonIds: [{
+    type: Schema.Types.ObjectId,
+  }],
+  order: {
+    type: Number,
+    default: 0,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Main Course Schema
+const CourseSchema = new Schema<ICourse>(
+  {
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      lowercase: true,
+      trim: true,
+    },
+    instructorId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    title: {
+      en: { type: String, required: true },
+      de: { type: String, required: true },
+      ar: { type: String, required: true },
+    },
+    description: {
+      en: { type: String, required: true },
+      de: { type: String, required: true },
+      ar: { type: String, required: true },
+    },
+    content: {
+      en: { type: String, default: '' },
+      de: { type: String, default: '' },
+      ar: { type: String, default: '' },
+    },
+    thumbnail: {
+      type: String,
+      default: '',
+    },
+    price: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    currency: {
+      type: String,
+      enum: ['USD', 'EUR', 'SYP'],
+      default: 'USD',
+    },
+
+    level: {
+      type: String,
+      enum: ['beginner', 'intermediate', 'advanced'],
+      required: true,
+    },
+    duration: {
+      type: Number,
+      default: 0,
+    },
+    category: {
+      type: String,
+      required: true,
+    },
+    tags: [{
+      type: String,
+      trim: true,
+    }],
+    lessons: [LessonSchema],
+    materials: [MaterialSchema],
+    groups: [GroupSchema],
+    isPublished: {
+      type: Boolean,
+      default: false,
+    },
+    isLiveStream: {
+      type: Boolean,
+      default: false,
+    },
+    publishedAt: {
+      type: Date,
+      default: null,
+    },
+    enrollmentCount: {
+      type: Number,
+      default: 0,
+    },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    reviews: [ReviewSchema],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+// Indexes for performance and search
+CourseSchema.index({ slug: 1 }, { unique: true });
+CourseSchema.index({ instructorId: 1 });
+CourseSchema.index({ isPublished: 1 });
+CourseSchema.index({ category: 1 });
+CourseSchema.index({ level: 1 });
+CourseSchema.index({ price: 1 });
+CourseSchema.index({ rating: -1 });
+CourseSchema.index({ enrollmentCount: -1 });
+CourseSchema.index({ createdAt: -1 });
+
+// Text indexes for multi-language search
+CourseSchema.index({ 'title.en': 'text', 'title.de': 'text', 'title.ar': 'text' });
+CourseSchema.index({ 'description.en': 'text', 'description.de': 'text', 'description.ar': 'text' });
+CourseSchema.index({ 'content.en': 'text', 'content.de': 'text', 'content.ar': 'text' });
+CourseSchema.index({ tags: 'text' });
+
+// Compound indexes for common queries
+CourseSchema.index({ isPublished: 1, category: 1, level: 1 });
+CourseSchema.index({ isPublished: 1, rating: -1, enrollmentCount: -1 });
+
+// Method to calculate average rating
+CourseSchema.methods.calculateRating = function() {
+  const course = this as ICourse;
+  if (course.reviews.length === 0) {
+    course.rating = 0;
+  } else {
+    const sum = course.reviews.reduce((acc: number, review: IReview) => acc + review.rating, 0);
+    course.rating = Math.round((sum / course.reviews.length) * 10) / 10;
+  }
+  return course.rating;
+};
+
+
+
+
+const Course: Model<ICourse> =
+  mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);
+
+export default Course;

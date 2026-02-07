@@ -1,6 +1,7 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
 // Create i18n middleware
 const i18nMiddleware = createMiddleware(routing);
@@ -51,11 +52,8 @@ const middleware = (req: any, event: any) => {
     pathname.includes('.') ||
     pathname.startsWith('/favicon.ico')
   ) {
-    return withAuth((req: any) => req, {
-      callbacks: {
-        authorized: () => true, // Allow all API and static routes
-      },
-    })(req, event);
+    // Allow all API and static routes without auth
+    return NextResponse.next();
   }
 
   // For page routes, apply i18n and auth

@@ -6,6 +6,8 @@ import { useSelectedLayoutSegment } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useSession, signOut } from 'next-auth/react'; // Add NextAuth hooks
+import NotificationBell from './notifications/NotificationBell';
+
 
 const Navbar = ({ locale }: { locale: string }) => {
   const t = useTranslations('Navbar');
@@ -63,7 +65,11 @@ const Navbar = ({ locale }: { locale: string }) => {
             </button>
           )}
 
+          {/* Notification Bell */}
+          {status === "authenticated" && <NotificationBell />}
+
           {/* Dynamic Auth Buttons */}
+
           <div className="hidden md:flex items-center space-x-2 rtl:space-x-reverse">
             {status === "authenticated" ? (
               <>
@@ -100,9 +106,10 @@ const Navbar = ({ locale }: { locale: string }) => {
         {/* NAVIGATION LINKS */}
         <div className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1`}>
           <ul className="flex flex-col p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 dark:bg-slate-900 md:dark:bg-transparent">
-            <NavLink href="/#courses" label={t('courses')} active={segment === 'courses'} />
+            <NavLink href="/courses" label={t('courses')} active={segment === 'courses'} />
             <NavLink href="/#prices" label={t('prices')} active={segment === 'prices'} />
             <NavLink href="/#contact" label={t('contact')} active={segment === 'contact'} />
+
             
             {/* Mobile-only Auth Buttons */}
             <li className="md:hidden pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col space-y-2">

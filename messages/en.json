@@ -9,14 +9,13 @@
     "dashboard": "Dashboard",
     "logout": "Logout"
   },
-
-    "Articles": {
-        "Hero": {
-    "title": "Master Languages Today",
-    "subtitle": "Learn English, German, and Arabic with expert tutors.",
-    "cta": "Get Started",
-    "journeyTitle": "Your Journey to Mastery Begins Here"
-  },
+  "Articles": {
+    "Hero": {
+      "title": "Master Languages Today",
+      "subtitle": "Learn English, German, and Arabic with expert tutors.",
+      "cta": "Get Started",
+      "journeyTitle": "Your Journey to Mastery Begins Here"
+    },
     "courses": {
       "title": "World-Class Courses",
       "desc": "Master over 30 languages with our immersive, AI-driven curriculum designed for all levels."
@@ -43,7 +42,6 @@
     "goHome": "Return Home",
     "forbidden": "Access Forbidden"
   },
-  
   "Auth": {
     "loginTitle": "Welcome Back",
     "emailLabel": "Email Address",
@@ -92,7 +90,179 @@
       "myCourses": "My Courses",
       "paymentHistory": "Payment History"
     }
-  }
+  },
+  "courses": {
+    "title": "Courses",
+    "description": "Explore our wide range of courses and start learning today",
+    "allCourses": "All Courses",
+    "free": "Free",
+    "live": "Live",
+    "enrolled": "Enrolled",
+    "preview": "Preview",
+    "viewDetails": "View Details",
+    "enrollNow": "Enroll Now",
+    "continueLearning": "Continue Learning",
+    "minutes": "min",
+    "hours": "hours",
+    "lessons": "lessons",
+    "students": "students",
+    "reviews": "reviews",
+    "instructor": "Instructor",
+    "multiLanguage": "Multi-language",
+    "progress": "Progress",
+    "lessonsCompleted": "lessons completed",
+    "courseIncludes": "This course includes",
+    "hoursOnDemandVideo": "hours on-demand video",
+    "fullLifetimeAccess": "Full lifetime access",
+    "accessOnMobileAndTV": "Access on mobile and TV",
+    "showingResults": "Showing {count} of {total} results",
+    "noCoursesFound": "No courses found matching your criteria",
+    "previous": "Previous",
+    "next": "Next",
+    "levels": {
+      "beginner": "Beginner",
+      "intermediate": "Intermediate",
+      "advanced": "Advanced"
+    },
+    "filters": {
+      "searchPlaceholder": "Search courses...",
+      "showFilters": "Show Filters",
+      "hideFilters": "Hide Filters",
+      "resetFilters": "Reset Filters",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "level": "Level",
+      "allLevels": "All Levels",
+      "priceRange": "Price Range",
+      "min": "Min",
+      "max": "Max",
+      "minimumRating": "Minimum Rating",
+      "anyRating": "Any Rating",
+      "stars": "stars",
+      "star": "star",
+      "sortBy": "Sort by",
+      "newest": "Newest",
+      "highestRated": "Highest Rated",
+      "mostPopular": "Most Popular",
+      "price": "Price"
+    },
+    "currency": {
+      "USD": "USD",
+      "EUR": "EUR",
+      "SYP": "SYP"
+    },
+    "price": "{amount} {currency}",
 
-  
+    "lesson": "Lesson",
+    "of": "of",
+    "watch": "Watch",
+    "rewatch": "Rewatch",
+    "previousLesson": "Previous Lesson",
+    "nextLesson": "Next Lesson",
+    "courseContent": "Course Content",
+    "yourProgress": "Your Progress",
+    "resources": "Resources",
+    "liveStream": "Live Stream",
+    "liveStreamStartingSoon": "Live Stream Starting Soon",
+    "jitsiLiveStreamIntegration": "Jitsi Live Stream Integration",
+    "joinLiveStream": "Join Live Stream",
+    "noVideoAvailable": "No video available",
+    "liveChat": "Live Chat",
+    "chatIntegrationPlaceholder": "Chat integration will be implemented here",
+    "studentReviews": "Student Reviews"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "notifications": "Notifications",
+    "noNotifications": "No notifications yet",
+    "loading": "Loading...",
+    "markAsRead": "Mark as read",
+    "markAllAsRead": "Mark all as read",
+    "view": "View",
+    "viewAll": "View all notifications",
+    "types": {
+      "payment_approved": "Payment Approved",
+      "payment_rejected": "Payment Rejected",
+      "course_enrolled": "Course Enrolled",
+      "live_stream_starting": "Live Stream Starting",
+      "lesson_available": "Lesson Available",
+      "course_completed": "Course Completed",
+      "admin_message": "Admin Message",
+      "instructor_message": "Instructor Message"
+    }
+  },
+  "admin": {
+    "users": {
+      "title": "User Management",
+      "subtitle": "Manage {count} users",
+      "addUser": "Add User",
+      "searchPlaceholder": "Search by name or email...",
+      "allRoles": "All Roles",
+      "allStatuses": "All Statuses",
+      "search": "Search",
+      "user": "User",
+      "role": "Role",
+      "status": "Status",
+      "joined": "Joined",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "roles": {
+        "admin": "Admin",
+        "instructor": "Instructor",
+        "user": "User"
+      },
+      "viewDetails": "View Details",
+      "edit": "Edit",
+      "resetPassword": "Reset Password",
+      "sendMessage": "Send Message",
+      "delete": "Delete",
+      "deleteSelected": "Delete Selected ({count})",
+      "confirmDelete": "Are you sure you want to delete this user?",
+      "confirmBulkDelete": "Are you sure you want to delete {count} users?",
+      "showing": "Showing {from} to {to} of {total} users",
+      "page": "Page {current} of {total}",
+      "editUser": "Edit User",
+      "name": "Name",
+      "email": "Email",
+      "locale": "Language",
+      "country": "Country",
+      "activeAccount": "Active Account",
+      "cancel": "Cancel",
+      "save": "Save",
+      "userDetails": "User Details",
+      "lastUpdated": "Last Updated",
+      "instructorProfile": "Instructor Profile",
+      "rating": "Rating",
+      "students": "Students",
+      "courses": "Courses",
+      "specializations": "Specializations",
+      "enrolledCourses": "Enrolled Courses",
+      "noEnrollments": "No enrollments yet",
+      "deletedCourse": "Deleted Course",
+      "enrollmentStatus": {
+        "pending": "Pending",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "newPassword": "New Password",
+      "confirmPassword": "Confirm Password",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "passwordResetSuccess": "Password reset successfully",
+      "resetPasswordFor": "Reset password for {name} ({email})",
+      "reset": "Reset Password",
+      "sendMessageTo": "Send message to {name} ({email})",
+      "notification": "Notification",
+      "email": "Email",
+      "messageTitle": "Message Title",
+      "titlePlaceholder": "Enter message title...",
+      "messageContent": "Message Content",
+      "messagePlaceholder": "Enter your message...",
+      "send": "Send",
+      "titleAndMessageRequired": "Title and message are required",
+      "messageSentSuccess": "Message sent successfully"
+    }
+  }
 }
