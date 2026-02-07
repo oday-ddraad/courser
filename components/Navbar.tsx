@@ -32,10 +32,10 @@ const Navbar = ({ locale }: { locale: string }) => {
         {/* LOGO */}
         <Link href="/" className="flex items-center space-x-3 rtl:space-x-reverse group">
           <div className="w-10 h-10 bg-blue-600 dark:bg-blue-500 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-6 transition-transform">
-             <span className="text-white font-bold text-xl">M</span>
+             <span className="text-white font-bold text-xl">N</span>
           </div>
           <span className="self-center text-2xl font-bold text-slate-900 dark:text-white tracking-tight">
-            MYAPP
+            NEXAPATH
           </span>
         </Link>
 
