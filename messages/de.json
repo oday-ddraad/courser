@@ -9,13 +9,14 @@
     "dashboard": "Dashboard",
     "logout": "Abmelden"
   },
-  "Hero": {
+
+  "Articles": {
+      "Hero": {
     "title": "Meistern Sie Sprachen heute",
     "subtitle": "Lernen Sie Englisch, Deutsch und Arabisch mit Experten.",
     "cta": "Loslegen",
     "journeyTitle": "Ihre Reise zur Meisterschaft beginnt hier"
   },
-  "Articles": {
     "courses": {
       "title": "Weltklasse-Kurse",
       "desc": "Meistern Sie über 30 Sprachen mit unserem immersiven, KI-gestützten Lehrplan, der für alle Niveaus entwickelt wurde."
