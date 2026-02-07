@@ -5,12 +5,15 @@
     "prices": "الأسعار",
     "contact": "اتصل بنا",
     "login": "دخول",
-    "signup": "تسجيل"
+    "signup": "تسجيل",
+    "dashboard": "لوحة التحكم",
+    "logout": "تسجيل الخروج"
   },
   "Hero": {
     "title": "أتقن اللغات اليوم",
     "subtitle": "تعلم الإنجليزية والألمانية والعربية مع خبراء.",
-    "cta": "ابدأ الآن"
+    "cta": "ابدأ الآن",
+    "journeyTitle": "رحلتك نحو الإتقان تبدأ هنا"
   },
   "Articles": {
     "courses": {
@@ -30,5 +33,62 @@
   "Metadata": {
     "title": "أتقن اللغات | منصة تعليم ماي آب",
     "description": "تعلم الإنجليزية والألمانية والعربية مع أفضل منصة تعليمية عبر الإنترنت."
+  },
+  "Errors": {
+    "somethingWentWrong": "حدث خطأ ما!",
+    "tryAgain": "حاول مرة أخرى",
+    "notFoundTitle": "عذراً! الصفحة غير موجودة",
+    "notFoundDesc": "الصفحة التي تبحث عنها قد تكون قد تم إزالتها.",
+    "goHome": "العودة إلى الرئيسية",
+    "forbidden": "الوصول محظور"
+  },
+  "Auth": {
+    "loginTitle": "مرحباً بك مرة أخرى",
+    "emailLabel": "عنوان البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "loginButton": "تسجيل الدخول",
+    "loggingIn": "جاري التحقق من البيانات...",
+    "errorInvalid": "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+    "signupTitle": "إنشاء حساب",
+    "namePlaceholder": "الاسم الكامل",
+    "passwordRequirements": "يجب أن تكون كلمة المرور 8 أحرف على الأقل مع حرف ورقم ورمز.",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "loginLink": "سجل دخولك هنا",
+    "signupButton": "انضم الآن"
+  },
+  "Dashboard": {
+    "admin": {
+      "title": "لوحة تحكم المدير",
+      "totalUsers": "إجمالي المستخدمين",
+      "activeCourses": "الدورات النشطة",
+      "pendingPayments": "المدفوعات المعلقة",
+      "revenue": "الإيرادات",
+      "quickActions": "الإجراءات السريعة",
+      "manageUsers": "إدارة المستخدمين",
+      "manageCourses": "إدارة الدورات",
+      "reviewPayments": "مراجعة المدفوعات"
+    },
+    "instructor": {
+      "title": "لوحة تحكم المدرب",
+      "myCourses": "دوراتي",
+      "totalStudents": "إجمالي الطلاب",
+      "pendingReviews": "التقييمات المعلقة",
+      "revenue": "الإيرادات",
+      "quickActions": "الإجراءات السريعة",
+      "createCourse": "إنشاء دورة جديدة",
+      "manageCourses": "إدارة الدورات",
+      "viewStudents": "عرض الطلاب"
+    },
+    "user": {
+      "title": "لوحة التحكم الخاصة بي",
+      "enrolledCourses": "الدورات المسجلة",
+      "completedCourses": "الدورات المكتملة",
+      "pendingPayments": "المدفوعات المعلقة",
+      "totalSpent": "إجمالي المصروفات",
+      "quickActions": "الإجراءات السريعة",
+      "browseCourses": "تصفح الدورات",
+      "myCourses": "دوراتي",
+      "paymentHistory": "تاريخ المدفوعات"
+    }
   }
 }

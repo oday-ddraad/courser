@@ -1700,11 +1700,11 @@ export async function GET(request: Request) {
 ## 🚀 Implementation Phases
 
 ### Phase 1: Foundation (Week 1-2)
-- [ ] MongoDB setup and connection
-- [ ] User models and authentication (NextAuth + JWT)
-- [ ] Role-based access control
-- [ ] Login/Signup pages
-- [ ] Basic dashboard structure
+- [X] MongoDB setup and connection
+- [X] User models and authentication (NextAuth + JWT)
+- [X] Role-based access control
+- [X] Login/Signup pages
+- [X] Basic dashboard structure
 
 ### Phase 2: Course System (Week 3-4)
 - [ ] Course models and schemas
@@ -1713,8 +1713,8 @@ export async function GET(request: Request) {
 - [ ] Course detail pages
 - [ ] Multi-language course content
 - [ ] Video player component (pre-recorded lessons)
-- [ ] Live stream integration (Microsoft Teams)
-- [ ] Live chat component (Teams + custom chat)
+- [ ] Live stream integration (jitsi)
+- [ ] Live chat component (jitsi + custom chat)
 - [ ] Progress tracking
 
 ### Phase 3: Payment System (Week 5)

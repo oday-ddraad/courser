@@ -5,12 +5,15 @@
     "prices": "Prices",
     "contact": "Contact",
     "login": "Login",
-    "signup": "Sign Up"
+    "signup": "Sign Up",
+    "dashboard": "Dashboard",
+    "logout": "Logout"
   },
   "Hero": {
     "title": "Master Languages Today",
     "subtitle": "Learn English, German, and Arabic with expert tutors.",
-    "cta": "Get Started"
+    "cta": "Get Started",
+    "journeyTitle": "Your Journey to Mastery Begins Here"
   },
     "Articles": {
     "courses": {
@@ -36,23 +39,59 @@
     "tryAgain": "Try Again",
     "notFoundTitle": "Oops! Page Not Found",
     "notFoundDesc": "The page you are looking for might have been removed.",
-    "goHome": "Return Home"
+    "goHome": "Return Home",
+    "forbidden": "Access Forbidden"
   },
   
-    "Auth": {
-      "loginTitle": "Welcome Back",
-      "emailLabel": "Email Address",
-      "passwordLabel": "Password",
-      "loginButton": "Sign In",
-      "loggingIn": "Checking credentials...",
-      "errorInvalid": "Invalid email or password",
-      "signupTitle": "Create Account",
-      "namePlaceholder": "Full Name",
-      "passwordRequirements": "Password must be 8+ chars with a letter, number, and symbol.",
-      "alreadyHaveAccount": "Already have an account?",
-      "loginLink": "Login here",
-      "signupButton": "Join Now"
+  "Auth": {
+    "loginTitle": "Welcome Back",
+    "emailLabel": "Email Address",
+    "passwordLabel": "Password",
+    "loginButton": "Sign In",
+    "loggingIn": "Checking credentials...",
+    "errorInvalid": "Invalid email or password",
+    "signupTitle": "Create Account",
+    "namePlaceholder": "Full Name",
+    "passwordRequirements": "Password must be 8+ chars with a letter, number, and symbol.",
+    "alreadyHaveAccount": "Already have an account?",
+    "loginLink": "Login here",
+    "signupButton": "Join Now"
+  },
+  "Dashboard": {
+    "admin": {
+      "title": "Admin Dashboard",
+      "totalUsers": "Total Users",
+      "activeCourses": "Active Courses",
+      "pendingPayments": "Pending Payments",
+      "revenue": "Revenue",
+      "quickActions": "Quick Actions",
+      "manageUsers": "Manage Users",
+      "manageCourses": "Manage Courses",
+      "reviewPayments": "Review Payments"
+    },
+    "instructor": {
+      "title": "Instructor Dashboard",
+      "myCourses": "My Courses",
+      "totalStudents": "Total Students",
+      "pendingReviews": "Pending Reviews",
+      "revenue": "Revenue",
+      "quickActions": "Quick Actions",
+      "createCourse": "Create New Course",
+      "manageCourses": "Manage Courses",
+      "viewStudents": "View Students"
+    },
+    "user": {
+      "title": "My Dashboard",
+      "enrolledCourses": "Enrolled Courses",
+      "completedCourses": "Completed Courses",
+      "pendingPayments": "Pending Payments",
+      "totalSpent": "Total Spent",
+      "quickActions": "Quick Actions",
+      "browseCourses": "Browse Courses",
+      "myCourses": "My Courses",
+      "paymentHistory": "Payment History"
     }
+  }
 
   
 }

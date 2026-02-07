@@ -5,12 +5,15 @@
     "prices": "Preise",
     "contact": "Kontakt",
     "login": "Anmelden",
-    "signup": "Registrieren"
+    "signup": "Registrieren",
+    "dashboard": "Dashboard",
+    "logout": "Abmelden"
   },
   "Hero": {
     "title": "Meistern Sie Sprachen heute",
     "subtitle": "Lernen Sie Englisch, Deutsch und Arabisch mit Experten.",
-    "cta": "Loslegen"
+    "cta": "Loslegen",
+    "journeyTitle": "Ihre Reise zur Meisterschaft beginnt hier"
   },
   "Articles": {
     "courses": {
@@ -26,5 +29,62 @@
       "desc": "Unser Support-Team ist rund um die Uhr für Sie da, um Sie auf Ihrer Sprachreise zu begleiten."
     },
     "cta": "Jetzt starten"
+  },
+  "Errors": {
+    "somethingWentWrong": "Etwas ist schief gelaufen!",
+    "tryAgain": "Erneut versuchen",
+    "notFoundTitle": "Ups! Seite nicht gefunden",
+    "notFoundDesc": "Die Seite, nach der Sie suchen, wurde möglicherweise entfernt.",
+    "goHome": "Zur Startseite",
+    "forbidden": "Zugriff verboten"
+  },
+  "Auth": {
+    "loginTitle": "Willkommen zurück",
+    "emailLabel": "E-Mail-Adresse",
+    "passwordLabel": "Passwort",
+    "loginButton": "Anmelden",
+    "loggingIn": "Anmeldedaten werden überprüft...",
+    "errorInvalid": "Ungültige E-Mail oder Passwort",
+    "signupTitle": "Konto erstellen",
+    "namePlaceholder": "Vollständiger Name",
+    "passwordRequirements": "Passwort muss 8+ Zeichen mit einem Buchstaben, einer Zahl und einem Symbol enthalten.",
+    "alreadyHaveAccount": "Haben Sie bereits ein Konto?",
+    "loginLink": "Hier anmelden",
+    "signupButton": "Jetzt beitreten"
+  },
+  "Dashboard": {
+    "admin": {
+      "title": "Admin-Dashboard",
+      "totalUsers": "Gesamtanzahl Benutzer",
+      "activeCourses": "Aktive Kurse",
+      "pendingPayments": "Ausstehende Zahlungen",
+      "revenue": "Einnahmen",
+      "quickActions": "Schnellaktionen",
+      "manageUsers": "Benutzer verwalten",
+      "manageCourses": "Kurse verwalten",
+      "reviewPayments": "Zahlungen überprüfen"
+    },
+    "instructor": {
+      "title": "Dozenten-Dashboard",
+      "myCourses": "Meine Kurse",
+      "totalStudents": "Gesamtanzahl Studenten",
+      "pendingReviews": "Ausstehende Bewertungen",
+      "revenue": "Einnahmen",
+      "quickActions": "Schnellaktionen",
+      "createCourse": "Neuen Kurs erstellen",
+      "manageCourses": "Kurse verwalten",
+      "viewStudents": "Studenten anzeigen"
+    },
+    "user": {
+      "title": "Mein Dashboard",
+      "enrolledCourses": "Eingeschriebene Kurse",
+      "completedCourses": "Abgeschlossene Kurse",
+      "pendingPayments": "Ausstehende Zahlungen",
+      "totalSpent": "Gesamtausgaben",
+      "quickActions": "Schnellaktionen",
+      "browseCourses": "Kurse durchsuchen",
+      "myCourses": "Meine Kurse",
+      "paymentHistory": "Zahlungshistorie"
+    }
   }
 }

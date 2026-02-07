@@ -73,10 +73,7 @@ export default async function HomePage({ params }: Props) {
           <HeroSlideshow />
           <div className="mt-12 text-center px-4">
             <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-              {/* This should also be localized in your JSON if you wish */}
-              {locale === 'ar' ? 'رحلتك نحو الإتقان تبدأ هنا' : 
-               locale === 'de' ? 'Ihre Reise zur Meisterschaft beginnt hier' : 
-               'Your Journey to Mastery Begins Here'}
+              {t('Hero.journeyTitle')}
             </h1>
             <p className="mt-4 text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
               {t('courses.desc')}
