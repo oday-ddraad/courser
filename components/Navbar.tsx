@@ -95,8 +95,9 @@ const Navbar = ({ locale }: { locale: string }) => {
             )}
           </div>
 
-          {/* Mobile Menu Btn */}
-          <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 text-gray-500">
+        {/* Mobile Menu Btn */}
+        <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2 text-gray-500 z-[80] relative">
+
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={isOpen ? "M6 18L18 6" : "M4 6h16M4 12h16m-7 6h7"} />
             </svg>
@@ -104,8 +105,8 @@ const Navbar = ({ locale }: { locale: string }) => {
         </div>
 
         {/* NAVIGATION LINKS */}
-        <div className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1`}>
-          <ul className="flex flex-col p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 dark:bg-slate-900 md:dark:bg-transparent">
+        <div className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1 z-[80] relative`}>
+          <ul className="flex flex-col p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 dark:bg-slate-900 md:dark:bg-transparent bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
             <NavLink href="/courses" label={t('courses')} active={segment === 'courses'} />
             <NavLink href="/#prices" label={t('prices')} active={segment === 'prices'} />
             <NavLink href="/#contact" label={t('contact')} active={segment === 'contact'} />
@@ -114,7 +115,10 @@ const Navbar = ({ locale }: { locale: string }) => {
             {/* Mobile-only Auth Buttons */}
             <li className="md:hidden pt-4 mt-4 border-t border-gray-200 dark:border-gray-700 flex flex-col space-y-2">
                {status === "authenticated" ? (
-                 <button onClick={() => signOut()} className="w-full py-2 bg-red-500 text-white rounded-lg">{t('logout')}</button>
+                 <>
+                   <Link href="/dashboard" className="w-full py-2 text-center bg-blue-600 text-white rounded-lg">{t('dashboard')}</Link>
+                   <button onClick={() => signOut()} className="w-full py-2 bg-red-500 text-white rounded-lg">{t('logout')}</button>
+                 </>
                ) : (
                  <>
                    <Link href="/login" className="w-full py-2 text-center text-gray-700 dark:text-gray-200">{t('login')}</Link>
@@ -124,6 +128,7 @@ const Navbar = ({ locale }: { locale: string }) => {
             </li>
           </ul>
         </div>
+
       </div>
     </nav>
   );

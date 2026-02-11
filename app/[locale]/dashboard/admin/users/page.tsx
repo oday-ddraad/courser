@@ -39,11 +39,10 @@ export default async function AdminUsersPage() {
   }));
 
   return (
-    <div className="p-6">
-      <UsersManagement 
-        initialUsers={serializedUsers} 
-        totalCount={totalCount} 
-      />
-    </div>
+    <UsersManagement 
+      initialUsers={serializedUsers} 
+      totalCount={totalCount} 
+    />
   );
+
 }

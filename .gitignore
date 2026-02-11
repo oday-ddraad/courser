@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+ADMIN_FEATURES_IMPLEMENTATION_SUMMARY.md
+ADMIN_FEATURES_TESTING_SUMMARY.md
+
+.vercel
+.env*.local

@@ -1,24 +1,45 @@
 import { NextResponse } from 'next/server';
 import { Types } from 'mongoose';
+import { getServerSession } from 'next-auth/next';
+import { authOptions } from '@/lib/auth/config';
+
 import connectDB from '@/lib/mongodb/connection';
 import { Course, User } from '@/lib/mongodb/models';
 
 // GET /api/courses/instructors - Get all instructors with published courses
-export async function GET() {
+// GET /api/courses/instructors?all=true - Get all instructors (admin only)
+export async function GET(request: Request) {
   try {
     await connectDB();
     
-    // Get unique instructor IDs from published courses
-    const instructorIds = await Course.distinct('instructor', { isPublished: true });
+    const { searchParams } = new URL(request.url);
+    const all = searchParams.get('all') === 'true';
+    
+    let instructorIds: Types.ObjectId[] = [];
+    
+    if (all) {
+      // Check if user is admin
+      const session = await getServerSession(authOptions);
+      if (!session || session.user.role !== 'admin') {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized' },
+          { status: 403 }
+        );
+      }
+      // Get all instructor IDs (not just those with published courses)
+      instructorIds = await User.distinct('_id', { role: 'instructor' }) as Types.ObjectId[];
+    } else {
+      // Get unique instructor IDs from published courses
+      instructorIds = await Course.distinct('instructor', { isPublished: true }) as Types.ObjectId[];
+    }
     
     // Fetch instructor details
     const instructors = await User.find(
       { 
-        _id: { $in: instructorIds as Types.ObjectId[] },
+        _id: { $in: instructorIds },
         role: 'instructor',
         isActive: true 
       },
-
       {
         _id: 1,
         name: 1,

@@ -129,8 +129,21 @@ export async function PUT(
     
     const body = await request.json();
     
+    console.log('PUT /api/courses/[id] - Request body:', JSON.stringify(body, null, 2));
+    console.log('Current course instructorId:', course.instructorId?.toString());
+    
+    // Remove empty strings for ObjectId fields to prevent cast errors
+    if (body.instructorId === '') {
+      console.log('Removing empty instructorId');
+      delete body.instructorId;
+    } else if (body.instructorId) {
+      console.log('Updating instructorId to:', body.instructorId);
+    }
+
+    
     // Prevent changing slug if course is published
     if (body.slug && body.slug !== course.slug && course.isPublished) {
+
       return NextResponse.json(
         { success: false, error: 'Cannot change slug of published course' },
         { status: 400 }
@@ -150,12 +163,16 @@ export async function PUT(
     
     // Update course
     Object.assign(course, body);
+    console.log('Course after Object.assign, instructorId:', course.instructorId?.toString());
+    
     await course.save();
+    console.log('Course saved successfully');
     
     return NextResponse.json({
       success: true,
       data: course,
     });
+
   } catch (error) {
     console.error('Error updating course:', error);
     return NextResponse.json(

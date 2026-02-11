@@ -74,7 +74,33 @@ export interface IGroup {
   };
   lessonIds: Types.ObjectId[];
   order: number;
+  maxStudents: number;
+  studentIds: Types.ObjectId[];
+  instructorId?: Types.ObjectId;
+  schedule: IGroupSchedule[];
+  notificationSettings: IGroupNotificationSettings;
   createdAt: Date;
+}
+
+// Group Schedule subdocument interface
+export interface IGroupSchedule {
+  _id: Types.ObjectId;
+  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  time: string; // HH:MM format
+  lessonType: 'live' | 'recorded';
+  lessonId?: Types.ObjectId;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// Group Notification Settings subdocument interface
+export interface IGroupNotificationSettings {
+  enabled: boolean;
+  earlyMorningEnabled: boolean;
+  earlyMorningTime: string; // HH:MM format
+  oneHourEnabled: boolean;
+  notificationTypes: ('email' | 'in_app')[];
+  alertType: 'live_lesson' | 'recorded_lesson';
 }
 
 export interface ICourse extends Document {
@@ -242,6 +268,69 @@ const MaterialSchema = new Schema<IMaterial>({
   },
 });
 
+// Group Schedule Schema
+const GroupScheduleSchema = new Schema<IGroupSchedule>({
+  dayOfWeek: {
+    type: String,
+    enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'],
+    required: true,
+  },
+  time: {
+    type: String,
+    required: true,
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, // HH:MM format
+  },
+  lessonType: {
+    type: String,
+    enum: ['live', 'recorded'],
+    required: true,
+  },
+  lessonId: {
+    type: Schema.Types.ObjectId,
+    ref: 'Lesson',
+    default: null,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
+// Group Notification Settings Schema
+const GroupNotificationSettingsSchema = new Schema<IGroupNotificationSettings>({
+  enabled: {
+    type: Boolean,
+    default: true,
+  },
+  earlyMorningEnabled: {
+    type: Boolean,
+    default: true,
+  },
+  earlyMorningTime: {
+    type: String,
+    default: '08:00',
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, // HH:MM format
+  },
+  oneHourEnabled: {
+    type: Boolean,
+    default: true,
+  },
+  notificationTypes: [{
+    type: String,
+    enum: ['email', 'in_app'],
+    default: ['email', 'in_app'],
+  }],
+  alertType: {
+    type: String,
+    enum: ['live_lesson', 'recorded_lesson'],
+    default: 'live_lesson',
+  },
+});
+
 // Group Schema
 const GroupSchema = new Schema<IGroup>({
   name: {
@@ -260,6 +349,26 @@ const GroupSchema = new Schema<IGroup>({
   order: {
     type: Number,
     default: 0,
+  },
+  maxStudents: {
+    type: Number,
+    default: 20,
+    min: 1,
+    max: 100,
+  },
+  studentIds: [{
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+  }],
+  instructorId: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+  },
+  schedule: [GroupScheduleSchema],
+  notificationSettings: {
+    type: GroupNotificationSettingsSchema,
+    default: () => ({}),
   },
   createdAt: {
     type: Date,
@@ -362,8 +471,9 @@ const CourseSchema = new Schema<ICourse>(
 );
 
 // Indexes for performance and search
-CourseSchema.index({ slug: 1 }, { unique: true });
+// Note: slug already has unique: true in schema definition, so no need for explicit index
 CourseSchema.index({ instructorId: 1 });
+
 CourseSchema.index({ isPublished: 1 });
 CourseSchema.index({ category: 1 });
 CourseSchema.index({ level: 1 });

@@ -4,7 +4,8 @@ import { notFound } from 'next/navigation';
 import { Inter, Cairo } from "next/font/google";
 import Navbar from "@/components/Navbar"; 
 import { ThemeProvider } from "@/components/ThemeProvider";
-import AuthProvider from "@/components/providers/AuthProvider"; // 1. Import your AuthProvider
+import AuthProvider from "@/components/providers/AuthProvider";
+import AdminLayoutWrapper from "./AdminLayoutWrapper";
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -40,9 +41,11 @@ export default async function LocaleLayout({
               disableTransitionOnChange
             >
               <Navbar locale={locale} />
-              <main className="max-w-screen-xl mx-auto p-4">
-                {children}
-              </main>
+              <AdminLayoutWrapper>
+                <main className="w-full p-4">
+                  {children}
+                </main>
+              </AdminLayoutWrapper>
             </ThemeProvider>
           </NextIntlClientProvider>
         </AuthProvider>

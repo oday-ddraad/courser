@@ -11,6 +11,7 @@ export async function GET(request: NextRequest) {
   try {
     await connectDB();
     
+    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     
     // Query parameters
@@ -25,18 +26,34 @@ export async function GET(request: NextRequest) {
     const sortBy = searchParams.get('sortBy') || 'createdAt';
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const locale = searchParams.get('locale') || 'en';
+    const status = searchParams.get('status'); // 'published' or 'draft'
     
     // Build query
-    const query: any = { isPublished: true };
+    // Admins can see all courses, regular users only see published
+    const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'instructor';
+    const query: any = isAdmin ? {} : { isPublished: true };
     
-    // Search by text (multi-language)
+    // Filter by status for admin
+    if (isAdmin && status === 'published') {
+      query.isPublished = true;
+    } else if (isAdmin && status === 'draft') {
+      query.isPublished = false;
+    }
+
+    
+    // Search by text (all languages)
     if (search) {
       query.$or = [
-        { [`title.${locale}`]: { $regex: search, $options: 'i' } },
-        { [`description.${locale}`]: { $regex: search, $options: 'i' } },
+        { 'title.en': { $regex: search, $options: 'i' } },
+        { 'title.de': { $regex: search, $options: 'i' } },
+        { 'title.ar': { $regex: search, $options: 'i' } },
+        { 'description.en': { $regex: search, $options: 'i' } },
+        { 'description.de': { $regex: search, $options: 'i' } },
+        { 'description.ar': { $regex: search, $options: 'i' } },
         { tags: { $in: [new RegExp(search, 'i')] } },
       ];
     }
+
     
     // Filters
     if (category) query.category = category;
