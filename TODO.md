@@ -75,8 +75,4 @@ pnpm seed
 - [ ] Add template preview functionality in admin dashboard
 - [ ] Implement A/B testing for marketing templates
 
-## Auth Redirect Fix
 
-## Tasks
-- [ ] Update redirect callback in lib/auth/config.ts to redirect to last page or home
-- [ ] Test login flow to verify redirects work correctly
