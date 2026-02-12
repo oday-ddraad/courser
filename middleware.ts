@@ -1,73 +1,75 @@
 import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { withAuth } from 'next-auth/middleware';
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 
-// Create i18n middleware
 const i18nMiddleware = createMiddleware(routing);
 
-// Auth options for page routes
-const authOptions = {
-  callbacks: {
-    authorized: ({ token, req }: any) => {
-      const { pathname } = req.nextUrl;
+const authMiddleware = withAuth(
+  // This runs AFTER the authorized callback returns true
+  function onSuccess(req) {
+    return i18nMiddleware(req);
+  },
+  {
+    callbacks: {
+      authorized: ({ token, req }) => {
+        const { pathname } = req.nextUrl;
 
-      // Public routes that don't require authentication
-      const publicRoutes = ['/signin', '/register', '/forbidden'];
+        // 1. Identify public segments
+        const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login'];
+        
+        // Remove the locale prefix (e.g., /en/login -> /login) to check against publicPaths
+        const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
 
-      // Check for root and localized root
-      if (pathname === '/' || pathname.match(/^\/[a-z]{2}\/?$/)) {
-        return true;
-      }
-
-      // Check for localized public routes
-      for (const route of publicRoutes) {
-        if (pathname.endsWith(route) || pathname.includes(route)) {
+        // 2. Allow root and public paths
+        if (
+          pathname === '/' || 
+          pathWithoutLocale === '/' ||
+          publicPaths.some(path => pathWithoutLocale.startsWith(path))
+        ) {
           return true;
         }
-      }
 
-      // Check for courses pages (public)
-      if (pathname.match(/^\/[a-z]{2}\/courses/)) {
-        return true;
-      }
-
-      // For all other routes, require authentication
-      return !!token;
+        // 3. Require token for everything else (dashboard, etc.)
+        return !!token;
+      },
     },
-  },
-  pages: {
-    signIn: '/en/login', // Updated to match the localized login page
-  },
-};
+    pages: {
+      // If unauthorized, the user is sent here. 
+      // Note: We handle the locale redirect in the main middleware function below.
+      signIn: '/login', 
+    },
+  }
+);
 
-// Custom middleware
-const middleware = (req: any, event: any) => {
+export default function middleware(req: NextRequest, event: any) {
   const { pathname } = req.nextUrl;
 
-  // Skip i18n and auth for API routes, static files, and Next.js internals
+  // 1. Exclude internal/static files
   if (
+    pathname.startsWith('/_next') ||
     pathname.includes('/api/') ||
-    pathname.startsWith('/_next/') ||
     pathname.includes('.') ||
     pathname.startsWith('/favicon.ico')
   ) {
-    // Allow all API and static routes without auth
     return NextResponse.next();
   }
 
-  // Redirect /signin to /en/signin to avoid 404
-  if (pathname === '/signin') {
-    return NextResponse.redirect(new URL('/en/signin', req.url));
+  // 2. Check if it's a public route that needs i18n but NO auth
+  const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login'];
+  const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
+  const isPublic = publicPaths.some(path => pathWithoutLocale.startsWith(path)) || pathWithoutLocale === '/';
+
+  if (isPublic) {
+    return i18nMiddleware(req);
   }
 
-  // For page routes, apply i18n and auth
-  return withAuth(i18nMiddleware, authOptions)(req, event);
-};
-
-export default middleware;
+  // 3. For protected routes, run authMiddleware
+  // @ts-ignore
+  return authMiddleware(req, event);
+}
 
 export const config = {
-  // Matches all routes except static files and icons
-  matcher: ['/((?!_next|.*\\..*).*)']
+  // Catch-all but ignore static files
+  matcher: ['/((?!api|_next|.*\\..*).*)']
 };

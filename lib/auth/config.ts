@@ -62,11 +62,10 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Always redirect to the dashboard after login, ignoring callbackUrl
-      return `${baseUrl}/en/dashboard/admin`;
+      // Redirect to the last page before login or home page
+      return url || baseUrl;
     }
   },
-  secret: process.env.NEXTAUTH_SECRET,
   pages: { signIn: "/signin" }
 };
 
