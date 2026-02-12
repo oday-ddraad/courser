@@ -13,7 +13,7 @@ const authOptions = {
       const { pathname } = req.nextUrl;
 
       // Public routes that don't require authentication
-      const publicRoutes = ['/login', '/register', '/forbidden'];
+      const publicRoutes = ['/signin', '/register', '/forbidden'];
 
       // Check for root and localized root
       if (pathname === '/' || pathname.match(/^\/[a-z]{2}\/?$/)) {
@@ -37,7 +37,7 @@ const authOptions = {
     },
   },
   pages: {
-    signIn: '/login', // This will be handled by i18n routing
+    signIn: '/en/login', // Updated to match the localized login page
   },
 };
 
@@ -56,9 +56,9 @@ const middleware = (req: any, event: any) => {
     return NextResponse.next();
   }
 
-  // Redirect /login to /en/login to avoid 404
-  if (pathname === '/login') {
-    return NextResponse.redirect(new URL('/en/login', req.url));
+  // Redirect /signin to /en/signin to avoid 404
+  if (pathname === '/signin') {
+    return NextResponse.redirect(new URL('/en/signin', req.url));
   }
 
   // For page routes, apply i18n and auth

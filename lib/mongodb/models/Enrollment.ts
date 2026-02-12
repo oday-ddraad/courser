@@ -10,6 +10,12 @@ export interface IEnrollment extends Document {
     lastAccessedLesson?: Types.ObjectId;
     lastAccessedAt?: Date;
     completionPercentage: number;
+    lessonWatchTimes: {
+      lessonId: Types.ObjectId;
+      watchTime: number; // in seconds
+      percentage: number; // 0-100
+      lastUpdated: Date;
+    }[];
   };
   enrolledAt: Date;
   completedAt?: Date;
@@ -20,6 +26,7 @@ export interface IEnrollment extends Document {
   completeLesson(lessonId: Types.ObjectId, totalLessons: number): IEnrollment;
   updateCompletionPercentage(totalLessons: number): number;
 }
+
 
 
 const EnrollmentSchema = new Schema<IEnrollment>(
@@ -62,7 +69,28 @@ const EnrollmentSchema = new Schema<IEnrollment>(
         min: 0,
         max: 100,
       },
+      lessonWatchTimes: [{
+        lessonId: {
+          type: Schema.Types.ObjectId,
+          required: true,
+        },
+        watchTime: {
+          type: Number,
+          default: 0,
+        },
+        percentage: {
+          type: Number,
+          default: 0,
+          min: 0,
+          max: 100,
+        },
+        lastUpdated: {
+          type: Date,
+          default: Date.now,
+        },
+      }],
     },
+
     enrolledAt: {
       type: Date,
       default: Date.now,

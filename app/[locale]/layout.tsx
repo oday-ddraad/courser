@@ -5,6 +5,7 @@ import { Inter, Cairo } from "next/font/google";
 import Navbar from "@/components/Navbar"; 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/providers/AuthProvider";
+import EmailTemplateInit from "@/components/providers/EmailTemplateInit";
 import AdminLayoutWrapper from "./AdminLayoutWrapper";
 import "../globals.css";
 
@@ -40,6 +41,7 @@ export default async function LocaleLayout({
               enableSystem
               disableTransitionOnChange
             >
+              <EmailTemplateInit />
               <Navbar locale={locale} />
               <AdminLayoutWrapper>
                 <main className="w-full p-4">

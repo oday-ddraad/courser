@@ -1,65 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import connectDB from '@/lib/mongodb/connection';
+import dbConnect from '@/lib/mongodb/connection';
 import { Course, Enrollment } from '@/lib/mongodb/models';
-import { Types } from 'mongoose';
+import mongoose from 'mongoose';
 
-// GET /api/courses/[id]/progress - Get course progress
+// GET /api/courses/[id]/progress - Get user's progress for a course
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
-    const { id } = await params;
-    
     const session = await getServerSession(authOptions);
-    
-    // Check authentication
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-    
-    await connectDB();
-    
-    // Validate ID format
-    if (!Types.ObjectId.isValid(id)) {
+
+    await dbConnect();
+
+    if (!mongoose.isValidObjectId(id)) {
       return NextResponse.json(
         { success: false, error: 'Invalid course ID' },
         { status: 400 }
       );
     }
-    
-    // Find enrollment
+
     const enrollment = await Enrollment.findOne({
       userId: session.user.id,
       courseId: id,
     }).lean();
-    
+
+
     if (!enrollment) {
       return NextResponse.json(
         { success: false, error: 'Not enrolled in this course' },
         { status: 404 }
       );
     }
-    
-    // Get course for total lessons count
-    const course = await Course.findById(id).select('lessons').lean();
-    const totalLessons = course?.lessons?.length || 0;
-    
+
     return NextResponse.json({
       success: true,
-      data: {
-        enrollment,
-        totalLessons,
-        completedLessons: enrollment.progress.completedLessons.length,
-        completionPercentage: enrollment.progress.completionPercentage,
-        lastAccessedLesson: enrollment.progress.lastAccessedLesson,
-        lastAccessedAt: enrollment.progress.lastAccessedAt,
-      },
+      data: enrollment.progress,
     });
   } catch (error) {
     console.error('Error fetching progress:', error);
@@ -70,108 +57,122 @@ export async function GET(
   }
 }
 
-// PUT /api/courses/[id]/progress - Update course progress
+// PUT /api/courses/[id]/progress - Update lesson progress
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
-    const { id } = await params;
-    
     const session = await getServerSession(authOptions);
-    
-    // Check authentication
+
     if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
-    
-    await connectDB();
-    
-    // Validate ID format
-    if (!Types.ObjectId.isValid(id)) {
+
+    await dbConnect();
+
+    if (!mongoose.isValidObjectId(id)) {
       return NextResponse.json(
         { success: false, error: 'Invalid course ID' },
         { status: 400 }
       );
     }
-    
+
     const body = await request.json();
-    const { lessonId, action, videoProgress } = body;
-    
-    if (!lessonId || !Types.ObjectId.isValid(lessonId)) {
+    const { lessonId, completed, watchTime, totalDuration } = body;
+
+    if (!lessonId) {
       return NextResponse.json(
-        { success: false, error: 'Invalid lesson ID' },
+        { success: false, error: 'Lesson ID is required' },
         { status: 400 }
       );
     }
-    
+
     // Find enrollment
     const enrollment = await Enrollment.findOne({
       userId: session.user.id,
       courseId: id,
-      status: { $in: ['active', 'completed'] },
     });
-    
+
+
     if (!enrollment) {
       return NextResponse.json(
         { success: false, error: 'Not enrolled in this course' },
         { status: 404 }
       );
     }
-    
-    // Get course for total lessons count
-    const course = await Course.findById(id);
+
+    // Get course to calculate total lessons
+    const course = await Course.findById(id).lean();
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'Course not found' },
         { status: 404 }
       );
     }
-    
-    const totalLessons = course.lessons.length;
-    
-    // Handle different actions
-    switch (action) {
-      case 'complete':
-        // Mark lesson as completed
-        enrollment.completeLesson(new Types.ObjectId(lessonId), totalLessons);
-        break;
-        
-      case 'access':
-        // Update last accessed lesson
-        enrollment.progress.lastAccessedLesson = new Types.ObjectId(lessonId);
-        enrollment.progress.lastAccessedAt = new Date();
-        break;
-        
-      case 'video-progress':
-        // Save video progress (can be used for resume playback)
-        enrollment.progress.lastAccessedLesson = new Types.ObjectId(lessonId);
-        enrollment.progress.lastAccessedAt = new Date();
-        // Video progress can be stored in a separate field if needed
-        break;
-        
-      default:
-        return NextResponse.json(
-          { success: false, error: 'Invalid action' },
-          { status: 400 }
-        );
+
+    const totalLessons = course.lessons?.length || 0;
+
+    // Update progress
+    if (completed) {
+      // Add to completed lessons if not already there
+      const lessonObjectId = new mongoose.Types.ObjectId(lessonId);
+      const alreadyCompleted = enrollment.progress.completedLessons.some(
+        (id: mongoose.Types.ObjectId) => id.toString() === lessonId
+      );
+
+      if (!alreadyCompleted) {
+        enrollment.progress.completedLessons.push(lessonObjectId);
+      }
     }
-    
+
+    // Update last accessed lesson
+    enrollment.progress.lastAccessedLesson = new mongoose.Types.ObjectId(lessonId);
+    enrollment.progress.lastAccessedAt = new Date();
+
+    // Update watch time if provided
+    if (watchTime && totalDuration) {
+      const existingWatchTime = enrollment.progress.lessonWatchTimes.find(
+        (wt: { lessonId: mongoose.Types.ObjectId }) => wt.lessonId.toString() === lessonId
+      );
+
+      if (existingWatchTime) {
+        existingWatchTime.watchTime = Math.max(existingWatchTime.watchTime, watchTime);
+        existingWatchTime.percentage = Math.min(100, Math.round((watchTime / totalDuration) * 100));
+        existingWatchTime.lastUpdated = new Date();
+      } else {
+        enrollment.progress.lessonWatchTimes.push({
+          lessonId: new mongoose.Types.ObjectId(lessonId),
+          watchTime,
+          percentage: Math.min(100, Math.round((watchTime / totalDuration) * 100)),
+          lastUpdated: new Date(),
+        });
+      }
+    }
+
+    // Calculate completion percentage
+    const completedCount = enrollment.progress.completedLessons.length;
+    enrollment.progress.completionPercentage = totalLessons > 0 
+      ? Math.round((completedCount / totalLessons) * 100) 
+      : 0;
+
+    // Check if course is completed
+    if (enrollment.progress.completionPercentage >= 100 && enrollment.status !== 'completed') {
+      enrollment.status = 'completed';
+      enrollment.completedAt = new Date();
+    }
+
     await enrollment.save();
-    
+
     return NextResponse.json({
       success: true,
-      data: {
-        enrollment,
-        totalLessons,
-        completedLessons: enrollment.progress.completedLessons.length,
-        completionPercentage: enrollment.progress.completionPercentage,
-        lastAccessedLesson: enrollment.progress.lastAccessedLesson,
-        lastAccessedAt: enrollment.progress.lastAccessedAt,
-      },
+      data: enrollment.progress,
+      message: 'Progress updated successfully',
     });
   } catch (error) {
     console.error('Error updating progress:', error);

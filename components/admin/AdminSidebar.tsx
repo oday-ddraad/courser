@@ -13,6 +13,7 @@ import {
   MessageSquare,
   CreditCard,
   Settings,
+  Mail,
   ChevronLeft,
   ChevronRight,
   Menu,
@@ -81,6 +82,7 @@ export default function AdminSidebar() {
       label: t('settings'),
       icon: <Settings className="w-5 h-5" />,
     },
+
   ];
 
   const isActive = (href: string) => {

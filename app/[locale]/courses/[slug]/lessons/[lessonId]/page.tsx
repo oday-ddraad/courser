@@ -1,13 +1,13 @@
 import { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
-import { Course, Enrollment } from '@/lib/mongodb/models';
-import { Types } from 'mongoose';
+import { Course, Enrollment, ChatMessage } from '@/lib/mongodb/models';
 import LessonPlayer from '@/components/courses/LessonPlayer';
 import LessonNavigation from '@/components/courses/LessonNavigation';
+import LiveChat from '@/components/courses/LiveChat';
 
 interface Props {
   params: Promise<{ locale: string; slug: string; lessonId: string }>;
@@ -37,10 +37,6 @@ export default async function LessonPage({ params }: Props) {
   
   const session = await getServerSession(authOptions);
   
-  if (!session?.user?.id) {
-    redirect(`/${locale}/login?callbackUrl=/${locale}/courses/${slug}/lessons/${lessonId}`);
-  }
-  
   await connectDB();
   
   // Fetch course
@@ -52,19 +48,19 @@ export default async function LessonPage({ params }: Props) {
     notFound();
   }
   
-  // Find lesson
-  const lesson = course.lessons?.find((l: any) => l._id.toString() === lessonId);
+  // Find current lesson
+  const currentLesson = course.lessons?.find((l: any) => l._id.toString() === lessonId);
   
-  if (!lesson) {
+  if (!currentLesson) {
     notFound();
   }
   
-  // Check if lesson is preview or user is enrolled
-  const isPreview = lesson.isPreview;
-  let isEnrolled = false;
+  // Check enrollment
   let enrollment = null;
+  let isEnrolled = false;
+  let isPreview = currentLesson.isPreview;
   
-  if (!isPreview) {
+  if (session?.user?.id) {
     enrollment = await Enrollment.findOne({
       userId: session.user.id,
       courseId: course._id,
@@ -72,144 +68,145 @@ export default async function LessonPage({ params }: Props) {
     }).lean();
     
     isEnrolled = !!enrollment;
-    
-    if (!isEnrolled) {
-      redirect(`/${locale}/courses/${slug}?error=not-enrolled`);
-    }
   }
   
-  // Get lesson index for navigation
-  const lessonIndex = course.lessons.findIndex((l: any) => l._id.toString() === lessonId);
-  const prevLesson = lessonIndex > 0 ? course.lessons[lessonIndex - 1] : null;
-  const nextLesson = lessonIndex < course.lessons.length - 1 ? course.lessons[lessonIndex + 1] : null;
+  // If not enrolled and not a preview lesson, redirect to course page
+  if (!isEnrolled && !isPreview) {
+    notFound();
+  }
   
-  // Get localized content
-  const lessonTitle = lesson.title[locale as keyof typeof lesson.title] || lesson.title.en;
-  const lessonDescription = lesson.description[locale as keyof typeof lesson.description] || lesson.description.en;
-  const lessonContent = lesson.content[locale as keyof typeof lesson.content] || lesson.content.en;
+  // Fetch chat messages for this lesson
+  const chatMessages = await ChatMessage.find({
+    courseId: course._id,
+    $or: [
+      { lessonId: currentLesson._id },
+      { lessonId: null }, // Course-wide messages
+    ],
+    deletedAt: null,
+  })
+    .populate('userId', 'name avatar role')
+    .sort({ createdAt: -1 })
+    .limit(50)
+    .lean();
+  
+  // Serialize data
+  const serializedCourse = {
+    ...course,
+    _id: course._id.toString(),
+    instructorId: course.instructorId ? {
+      ...course.instructorId,
+      _id: course.instructorId._id.toString(),
+    } : undefined,
+    lessons: course.lessons?.map((l: any) => ({
+      ...l,
+      _id: l._id.toString(),
+    })) || [],
+  };
+  
+  const serializedLesson = {
+    ...currentLesson,
+    _id: currentLesson._id.toString(),
+  };
+  
+  const serializedEnrollment = enrollment ? {
+    ...enrollment,
+    _id: enrollment._id.toString(),
+    userId: enrollment.userId.toString(),
+    courseId: enrollment.courseId.toString(),
+    progress: {
+      ...enrollment.progress,
+      completedLessons: enrollment.progress.completedLessons.map((id: any) => id.toString()),
+      lastAccessedLesson: enrollment.progress.lastAccessedLesson?.toString(),
+      lessonWatchTimes: enrollment.progress.lessonWatchTimes?.map((wt: any) => ({
+        ...wt,
+        lessonId: wt.lessonId.toString(),
+      })) || [],
+    },
+  } : null;
+  
+  const serializedMessages = chatMessages.map((msg: any) => ({
+    ...msg,
+    _id: msg._id.toString(),
+    courseId: msg.courseId.toString(),
+    lessonId: msg.lessonId?.toString(),
+    userId: msg.userId ? {
+      ...msg.userId,
+      _id: msg.userId._id.toString(),
+    } : undefined,
+  }));
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-6">
-          <a href={`/${locale}/courses`} className="hover:text-blue-600">
-            {t('allCourses')}
-          </a>
-          <span>/</span>
-          <a href={`/${locale}/courses/${slug}`} className="hover:text-blue-600">
-            {course.title[locale as keyof typeof course.title] || course.title.en}
-          </a>
-          <span>/</span>
-          <span className="text-gray-900 dark:text-white">{lessonTitle}</span>
-        </nav>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
             {/* Lesson Player */}
             <LessonPlayer
-              lesson={lesson}
-              course={course}
-              enrollment={enrollment}
+              course={serializedCourse as any}
+              lesson={serializedLesson as any}
+              enrollment={serializedEnrollment as any}
               locale={locale}
             />
             
             {/* Lesson Info */}
             <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                {lessonTitle}
+                {currentLesson.title[locale as keyof typeof currentLesson.title] || currentLesson.title.en}
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-4">
-                {lessonDescription}
+              <p className="text-gray-600 dark:text-gray-400">
+                {currentLesson.description[locale as keyof typeof currentLesson.description] || currentLesson.description.en}
               </p>
               
-              {/* Lesson Meta */}
-              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
-                <span>{t('lesson')} {lessonIndex + 1} {t('of')} {course.lessons.length}</span>
-                <span>•</span>
-                <span>{lesson.duration} {t('minutes')}</span>
-                {lesson.isLiveStream && (
-                  <>
-                    <span>•</span>
-                    <span className="text-red-600 dark:text-red-400 flex items-center gap-1">
-                      <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                      {t('liveStream')}
-                    </span>
-                  </>
-                )}
-              </div>
-              
-              {/* Lesson Content */}
-              {lessonContent && (
-                <div className="prose dark:prose-invert max-w-none">
-                  {lessonContent}
-                </div>
-              )}
-              
-              {/* Resources */}
-              {lesson.resources && lesson.resources.length > 0 && (
+              {/* Lesson Resources */}
+              {currentLesson.resources && currentLesson.resources.length > 0 && (
                 <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-                  <h3 className="font-medium text-gray-900 dark:text-white mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
                     {t('resources')}
                   </h3>
-                  <ul className="space-y-2">
-                    {lesson.resources.map((resource: any, index: number) => (
-                      <li key={index}>
-                        <a
-                          href={resource.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 text-blue-600 dark:text-blue-400 hover:underline"
-                        >
-                          {resource.type === 'pdf' && '📄'}
-                          {resource.type === 'video' && '🎥'}
-                          {resource.type === 'link' && '🔗'}
+                  <div className="space-y-2">
+                    {currentLesson.resources.map((resource: any, index: number) => (
+                      <a
+                        key={index}
+                        href={resource.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <span className="flex-1 text-gray-900 dark:text-white">
                           {resource.name}
-                        </a>
-                      </li>
+                        </span>
+                        <span className="text-sm text-gray-500 dark:text-gray-400 uppercase">
+                          {resource.type}
+                        </span>
+                      </a>
                     ))}
-                  </ul>
+                  </div>
                 </div>
               )}
             </div>
             
-            {/* Navigation */}
-            <div className="flex items-center justify-between">
-              {prevLesson ? (
-                <a
-                  href={`/${locale}/courses/${slug}/lessons/${prevLesson._id}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                >
-                  <span>←</span>
-                  <span className="hidden sm:inline">{t('previousLesson')}</span>
-                </a>
-              ) : (
-                <div />
-              )}
-              
-              {nextLesson ? (
-                <a
-                  href={`/${locale}/courses/${slug}/lessons/${nextLesson._id}`}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <span className="hidden sm:inline">{t('nextLesson')}</span>
-                  <span>→</span>
-                </a>
-              ) : (
-                <div />
-              )}
-            </div>
-          </div>
-          
-          {/* Sidebar - Lesson Navigation */}
-          <div className="lg:col-span-1">
+            {/* Lesson Navigation */}
             <LessonNavigation
-              course={course}
+              course={serializedCourse as any}
               currentLessonId={lessonId}
-              enrollment={enrollment}
+              enrollment={serializedEnrollment as any}
               locale={locale}
             />
+          </div>
+          
+          {/* Sidebar - Live Chat */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-4">
+              <LiveChat
+                courseId={course._id.toString()}
+                lessonId={currentLesson._id.toString()}
+                initialMessages={serializedMessages}
+                isEnrolled={isEnrolled}
+                userRole={session?.user?.role as 'admin' | 'instructor' | 'user' | undefined}
+                locale={locale}
+              />
+            </div>
           </div>
         </div>
       </div>

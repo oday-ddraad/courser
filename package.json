@@ -7,7 +7,9 @@
     "dev:turbo": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "seed:templates": "pnpm exec tsx scripts/seed-email-templates.ts",
+    "seed": "pnpm run seed:templates"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -42,6 +44,7 @@
     "eslint-config-next": "16.1.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }

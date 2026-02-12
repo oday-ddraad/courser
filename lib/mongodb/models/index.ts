@@ -7,6 +7,11 @@ export { default as Notification, type INotification } from './Notification';
 export { default as ChatMessage, type IChatMessage } from './ChatMessage';
 export { default as Category, type ICategory } from './Category';
 
+// Email system models
+export { default as EmailTemplate, type IEmailTemplate } from './EmailTemplate';
+export { default as EmailLog, type IEmailLog, type EmailStatus } from './EmailLog';
+export { default as EmailSettings, type IEmailSettings } from './EmailSettings';
+
 // Add other models here as we create them:
 // export { default as Payment, IPayment } from './Payment';
 // etc.

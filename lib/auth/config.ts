@@ -60,10 +60,14 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as UserRole;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Always redirect to the dashboard after login, ignoring callbackUrl
+      return `${baseUrl}/en/dashboard/admin`;
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-  pages: { signIn: "/login" }
+  pages: { signIn: "/signin" }
 };
 
 export const auth = NextAuth(authOptions);
