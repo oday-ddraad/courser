@@ -56,6 +56,11 @@ const middleware = (req: any, event: any) => {
     return NextResponse.next();
   }
 
+  // Redirect /login to /en/login to avoid 404
+  if (pathname === '/login') {
+    return NextResponse.redirect(new URL('/en/login', req.url));
+  }
+
   // For page routes, apply i18n and auth
   return withAuth(i18nMiddleware, authOptions)(req, event);
 };
