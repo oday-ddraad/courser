@@ -18,7 +18,17 @@ import {
   Play,
   Beaker,
   Send,
+  LayoutTemplate,
+  Image as ImageIcon,
+  Type,
+  MousePointer,
+  Minus,
+  PanelBottom,
+  Code,
+  ChevronUp,
+  ChevronDown,
 } from 'lucide-react';
+
 
 interface EmailTemplate {
   _id: string;
@@ -698,7 +708,7 @@ function ABTestModal({
   );
 }
 
-// Template Modal Component
+// Template Modal Component with Visual Builder
 function TemplateModal({
   template,
   onClose,
@@ -714,25 +724,206 @@ function TemplateModal({
     subject: template?.subject || '',
     htmlContent: template?.htmlContent || '',
     textContent: template?.textContent || '',
-    variables: template?.variables.join(', ') || '',
+    variables: template?.variables || [],
     category: template?.category || 'other',
     isActive: template?.isActive ?? true,
   });
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'builder' | 'html' | 'preview'>('builder');
+  const [selectedBlock, setSelectedBlock] = useState<number | null>(null);
+  const [showVariablePicker, setShowVariablePicker] = useState(false);
+  const [variableInput, setVariableInput] = useState('');
+
+  // Parse HTML content into blocks
+  const [blocks, setBlocks] = useState<TemplateBlock[]>(() => {
+    if (template?.htmlContent) {
+      return parseHtmlToBlocks(template.htmlContent);
+    }
+    return [];
+  });
+
+  // Pre-built template sections
+  const templateSections = {
+    header: {
+      name: 'Header',
+      icon: <LayoutTemplate className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #2563eb; padding: 20px;">
+  <tr>
+    <td align="center">
+      <h1 style="color: #ffffff; margin: 0; font-family: Arial, sans-serif; font-size: 24px;">{{companyName}}</h1>
+    </td>
+  </tr>
+</table>`,
+    },
+    hero: {
+      name: 'Hero Section',
+      icon: <ImageIcon className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+  <tr>
+    <td align="center">
+      <h2 style="color: #1f2937; margin: 0 0 16px 0; font-family: Arial, sans-serif; font-size: 28px; font-weight: bold;">{{title}}</h2>
+      <p style="color: #6b7280; margin: 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.5;">{{subtitle}}</p>
+    </td>
+  </tr>
+</table>`,
+    },
+    text: {
+      name: 'Text Block',
+      icon: <Type className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="padding: 20px;">
+  <tr>
+    <td>
+      <p style="color: #374151; margin: 0; font-family: Arial, sans-serif; font-size: 16px; line-height: 1.6;">{{content}}</p>
+    </td>
+  </tr>
+</table>`,
+    },
+    button: {
+      name: 'Call to Action',
+      icon: <MousePointer className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="padding: 20px;">
+  <tr>
+    <td align="center">
+      <a href="{{buttonUrl}}" style="display: inline-block; background-color: #2563eb; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 6px; font-family: Arial, sans-serif; font-size: 16px; font-weight: bold;">{{buttonText}}</a>
+    </td>
+  </tr>
+</table>`,
+    },
+    divider: {
+      name: 'Divider',
+      icon: <Minus className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="padding: 20px;">
+  <tr>
+    <td>
+      <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 0;" />
+    </td>
+  </tr>
+</table>`,
+    },
+    footer: {
+      name: 'Footer',
+      icon: <PanelBottom className="w-4 h-4" />,
+      html: `<table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f9fafb; padding: 20px;">
+  <tr>
+    <td align="center">
+      <p style="color: #9ca3af; margin: 0 0 8px 0; font-family: Arial, sans-serif; font-size: 14px;">{{companyName}} - {{companyAddress}}</p>
+      <p style="color: #9ca3af; margin: 0; font-family: Arial, sans-serif; font-size: 12px;">
+        <a href="{{unsubscribeUrl}}" style="color: #6b7280; text-decoration: underline;">Unsubscribe</a>
+      </p>
+    </td>
+  </tr>
+</table>`,
+    },
+  };
+
+  // Add a new block
+  const addBlock = (type: keyof typeof templateSections) => {
+    const newBlock: TemplateBlock = {
+      id: Date.now(),
+      type,
+      name: templateSections[type].name,
+      html: templateSections[type].html,
+      variables: extractVariables(templateSections[type].html),
+    };
+    const newBlocks = [...blocks, newBlock];
+    setBlocks(newBlocks);
+    updateHtmlFromBlocks(newBlocks);
+  };
+
+  // Remove a block
+  const removeBlock = (index: number) => {
+    const newBlocks = blocks.filter((_, i) => i !== index);
+    setBlocks(newBlocks);
+    updateHtmlFromBlocks(newBlocks);
+    if (selectedBlock === index) setSelectedBlock(null);
+  };
+
+  // Move block up/down
+  const moveBlock = (index: number, direction: 'up' | 'down') => {
+    if (direction === 'up' && index > 0) {
+      const newBlocks = [...blocks];
+      [newBlocks[index], newBlocks[index - 1]] = [newBlocks[index - 1], newBlocks[index]];
+      setBlocks(newBlocks);
+      updateHtmlFromBlocks(newBlocks);
+      setSelectedBlock(index - 1);
+    } else if (direction === 'down' && index < blocks.length - 1) {
+      const newBlocks = [...blocks];
+      [newBlocks[index], newBlocks[index + 1]] = [newBlocks[index + 1], newBlocks[index]];
+      setBlocks(newBlocks);
+      updateHtmlFromBlocks(newBlocks);
+      setSelectedBlock(index + 1);
+    }
+  };
+
+  // Update block HTML
+  const updateBlockHtml = (index: number, newHtml: string) => {
+    const newBlocks = [...blocks];
+    newBlocks[index].html = newHtml;
+    newBlocks[index].variables = extractVariables(newHtml);
+    setBlocks(newBlocks);
+    updateHtmlFromBlocks(newBlocks);
+  };
+
+  // Update full HTML from blocks
+  const updateHtmlFromBlocks = (currentBlocks: TemplateBlock[]) => {
+    const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${formData.subject}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f3f4f6;">
+  <table width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+      <td align="center" style="padding: 20px 0;">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; max-width: 600px; width: 100%;">
+          ${currentBlocks.map(block => block.html).join('\n')}
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+    setFormData(prev => ({ ...prev, htmlContent: fullHtml }));
+    
+    // Extract all unique variables
+    const allVars = new Set<string>();
+    currentBlocks.forEach(block => {
+      block.variables.forEach(v => allVars.add(v));
+    });
+    setFormData(prev => ({ ...prev, variables: Array.from(allVars) }));
+  };
+
+  // Add custom variable
+  const addVariable = () => {
+    if (variableInput.trim()) {
+      const newVar = variableInput.trim().replace(/[{}]/g, '');
+      if (!formData.variables.includes(newVar)) {
+        setFormData(prev => ({ ...prev, variables: [...prev.variables, newVar] }));
+      }
+      setVariableInput('');
+      setShowVariablePicker(false);
+    }
+  };
+
+  // Insert variable at cursor position in selected block
+  const insertVariable = (variable: string) => {
+    if (selectedBlock !== null) {
+      const block = blocks[selectedBlock];
+      const newHtml = block.html + `{{${variable}}}`;
+      updateBlockHtml(selectedBlock, newHtml);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
 
     try {
-      const variables = formData.variables
-        .split(',')
-        .map(v => v.trim())
-        .filter(v => v.length > 0);
-
       const data = {
         ...formData,
-        variables,
+        textContent: formData.textContent || generateTextVersion(formData.htmlContent),
       };
 
       const response = await fetch(
@@ -760,22 +951,29 @@ function TemplateModal({
     }
   };
 
+  // Generate preview HTML with sample values
+  const generatePreviewHtml = () => {
+    let html = formData.htmlContent;
+    formData.variables.forEach(variable => {
+      html = html.replace(new RegExp(`{{${variable}}}`, 'g'), `[${variable}]`);
+    });
+    return html;
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-6xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold">
             {template ? 'Edit Template' : 'Create Template'}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Info */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -789,7 +987,6 @@ function TemplateModal({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
               />
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Category
@@ -809,18 +1006,6 @@ function TemplateModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Description
-            </label>
-            <input
-              type="text"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Subject Line *
             </label>
             <input
@@ -832,45 +1017,227 @@ function TemplateModal({
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Variables (comma-separated, e.g., name, courseName, date)
-            </label>
-            <input
-              type="text"
-              value={formData.variables}
-              onChange={(e) => setFormData({ ...formData, variables: e.target.value })}
-              placeholder="name, courseName, date"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-            />
+          {/* Tabs */}
+          <div className="flex space-x-1 border-b border-gray-200 dark:border-gray-700">
+            <button
+              type="button"
+              onClick={() => setActiveTab('builder')}
+              className={`px-4 py-2 font-medium text-sm ${
+                activeTab === 'builder'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <LayoutTemplate className="w-4 h-4 inline mr-2" />
+              Visual Builder
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('html')}
+              className={`px-4 py-2 font-medium text-sm ${
+                activeTab === 'html'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Code className="w-4 h-4 inline mr-2" />
+              HTML Code
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('preview')}
+              className={`px-4 py-2 font-medium text-sm ${
+                activeTab === 'preview'
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Eye className="w-4 h-4 inline mr-2" />
+              Preview
+            </button>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              HTML Content *
-            </label>
-            <textarea
-              required
-              rows={8}
-              value={formData.htmlContent}
-              onChange={(e) => setFormData({ ...formData, htmlContent: e.target.value })}
-              placeholder="Use {{variable}} for dynamic content"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-sm"
-            />
-          </div>
+          {/* Visual Builder Tab */}
+          {activeTab === 'builder' && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Block Library */}
+              <div className="lg:col-span-1 space-y-4">
+                <h3 className="font-medium text-gray-900 dark:text-white">Add Sections</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(templateSections).map(([key, section]) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => addBlock(key as keyof typeof templateSections)}
+                      className="flex flex-col items-center p-3 bg-gray-50 dark:bg-slate-700 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-600 transition border border-gray-200 dark:border-gray-600"
+                    >
+                      {section.icon}
+                      <span className="text-xs mt-1 text-gray-700 dark:text-gray-300">{section.name}</span>
+                    </button>
+                  ))}
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Text Content (optional)
-            </label>
-            <textarea
-              rows={4}
-              value={formData.textContent}
-              onChange={(e) => setFormData({ ...formData, textContent: e.target.value })}
-              placeholder="Plain text version"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-sm"
-            />
-          </div>
+                <div className="border-t border-gray-200 dark:border-gray-700 pt-4">
+                  <h3 className="font-medium text-gray-900 dark:text-white mb-2">Variables</h3>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {formData.variables.map((variable) => (
+                      <button
+                        key={variable}
+                        type="button"
+                        onClick={() => insertVariable(variable)}
+                        disabled={selectedBlock === null}
+                        className="px-2 py-1 text-xs bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded hover:bg-blue-200 dark:hover:bg-blue-800 transition disabled:opacity-50"
+                        title={selectedBlock === null ? 'Select a block first' : `Insert {{${variable}}}`}
+                      >
+                        {variable}
+                      </button>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowVariablePicker(true)}
+                    className="text-sm text-blue-600 hover:text-blue-700 flex items-center"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Variable
+                  </button>
+                </div>
+              </div>
+
+              {/* Block Editor */}
+              <div className="lg:col-span-2 space-y-4">
+                <h3 className="font-medium text-gray-900 dark:text-white">Template Structure</h3>
+                {blocks.length === 0 ? (
+                  <div className="text-center py-12 bg-gray-50 dark:bg-slate-700 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600">
+                    <LayoutTemplate className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <p className="text-gray-500 dark:text-gray-400">Click sections from the left to build your template</p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {blocks.map((block, index) => (
+                      <div
+                        key={block.id}
+                        className={`border rounded-lg p-4 ${
+                          selectedBlock === index
+                            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                            : 'border-gray-200 dark:border-gray-600'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            {templateSections[block.type as keyof typeof templateSections]?.icon}
+                            <span className="font-medium text-sm">{block.name}</span>
+                          </div>
+                          <div className="flex items-center space-x-1">
+                            <button
+                              type="button"
+                              onClick={() => moveBlock(index, 'up')}
+                              disabled={index === 0}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                            >
+                              <ChevronUp className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveBlock(index, 'down')}
+                              disabled={index === blocks.length - 1}
+                              className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-30"
+                            >
+                              <ChevronDown className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setSelectedBlock(selectedBlock === index ? null : index)}
+                              className={`p-1 ${selectedBlock === index ? 'text-blue-600' : 'text-gray-400 hover:text-gray-600'}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeBlock(index)}
+                              className="p-1 text-red-400 hover:text-red-600"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                        
+                        {selectedBlock === index && (
+                          <div className="mt-3">
+                            <textarea
+                              value={block.html}
+                              onChange={(e) => updateBlockHtml(index, e.target.value)}
+                              rows={6}
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-xs"
+                            />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Variables: {block.variables.join(', ') || 'None'}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* HTML Code Tab */}
+          {activeTab === 'html' && (
+            <div>
+              <textarea
+                value={formData.htmlContent}
+                onChange={(e) => setFormData({ ...formData, htmlContent: e.target.value })}
+                rows={16}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white font-mono text-sm"
+              />
+            </div>
+          )}
+
+          {/* Preview Tab */}
+          {activeTab === 'preview' && (
+
+            <div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden">
+              <iframe
+                srcDoc={generatePreviewHtml()}
+                className="w-full h-96 bg-white"
+                title="Template Preview"
+              />
+            </div>
+          )}
+
+          {/* Variable Picker Modal */}
+          {showVariablePicker && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-slate-800 rounded-lg p-6 max-w-md w-full mx-4">
+                <h3 className="text-lg font-bold mb-4">Add Variable</h3>
+                <input
+                  type="text"
+                  value={variableInput}
+                  onChange={(e) => setVariableInput(e.target.value)}
+                  placeholder="e.g., firstName, courseTitle"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white mb-4"
+                />
+                <div className="flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setShowVariablePicker(false)}
+                    className="px-4 py-2 bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={addVariable}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+                  >
+                    Add
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="flex items-center">
             <input
@@ -907,6 +1274,59 @@ function TemplateModal({
     </div>
   );
 }
+
+// Helper types and functions
+interface TemplateBlock {
+  id: number;
+  type: string;
+  name: string;
+  html: string;
+  variables: string[];
+}
+
+function parseHtmlToBlocks(html: string): TemplateBlock[] {
+  // Simple parser to extract table sections from HTML
+  const blocks: TemplateBlock[] = [];
+  const tableRegex = /<table[^>]*>[\s\S]*?<\/table>/gi;
+  const matches = html.match(tableRegex);
+  
+  if (matches) {
+    matches.forEach((match, index) => {
+      const type = detectBlockType(match);
+      blocks.push({
+        id: Date.now() + index,
+        type,
+        name: type.charAt(0).toUpperCase() + type.slice(1),
+        html: match,
+        variables: extractVariables(match),
+      });
+    });
+  }
+  
+  return blocks;
+}
+
+function detectBlockType(html: string): string {
+  if (html.includes('background-color: #2563eb')) return 'header';
+  if (html.includes('font-size: 28px')) return 'hero';
+  if (html.includes('href=') && html.includes('button')) return 'button';
+  if (html.includes('<hr')) return 'divider';
+  if (html.includes('Unsubscribe')) return 'footer';
+  return 'text';
+}
+
+function extractVariables(html: string): string[] {
+  const matches = html.match(/\{\{(\w+)\}\}/g) || [];
+  return [...new Set(matches.map(m => m.replace(/[{}]/g, '')))];
+}
+
+function generateTextVersion(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 
 // View Template Modal Component
 function ViewTemplateModal({
