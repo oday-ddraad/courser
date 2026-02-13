@@ -5,17 +5,15 @@ import EmailTemplate from '@/lib/mongodb/models/EmailTemplate';
 import EmailLog from '@/lib/mongodb/models/EmailLog';
 import mongoose from 'mongoose';
 
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
 /**
  * GET /api/admin/email-templates/[id]/ab-test/results
  * Get A/B test results and statistics
  */
-export async function GET(request: NextRequest, { params }: RouteParams) {
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+
   try {
     const session = await getServerSession(authOptions);
 
@@ -26,7 +24,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { id } = params;
+    const { id } = await params;
+
 
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return NextResponse.json(
