@@ -32,6 +32,9 @@ export async function GET(request: NextRequest) {
       success: true,
       data: {
         settings: {
+          enabled: settings.enabled,
+          otpEnabled: settings.otpEnabled,
+          notificationsEnabled: settings.notificationsEnabled,
           monthlyLimit: settings.monthlyLimit,
           warningThreshold: settings.warningThreshold,
           monthlyConversations: settings.monthlyConversations,
@@ -50,6 +53,7 @@ export async function GET(request: NextRequest) {
         },
       },
     });
+
   } catch (error) {
     console.error('Error fetching WhatsApp settings:', error);
     return NextResponse.json(

@@ -136,11 +136,11 @@ export default function SettingsPage() {
       const response = await fetch('/api/admin/whatsapp-settings');
       const data = await response.json();
       if (data.success) {
-        // Ensure all boolean fields have default values
+        // Use values from API response - now includes enabled, otpEnabled, notificationsEnabled
         setWhatsappSettings({
-          enabled: data.data.settings.enabled ?? true,
-          otpEnabled: data.data.settings.otpEnabled ?? true,
-          notificationsEnabled: data.data.settings.notificationsEnabled ?? true,
+          enabled: data.data.settings.enabled,
+          otpEnabled: data.data.settings.otpEnabled,
+          notificationsEnabled: data.data.settings.notificationsEnabled,
           monthlyLimit: data.data.settings.monthlyLimit,
           warningThreshold: data.data.settings.warningThreshold,
           monthlyConversations: data.data.settings.monthlyConversations,
@@ -157,6 +157,7 @@ export default function SettingsPage() {
       setLoading(false);
     }
   };
+
 
 
   const handleSaveEmailSettings = async () => {
