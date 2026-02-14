@@ -97,8 +97,18 @@ export default function SettingsPage() {
     if (!whatsappSettings) return;
     
     // Update local state immediately for responsive UI
-    const newSettings = { ...whatsappSettings, [key]: value };
-    setWhatsappSettings(newSettings);
+    let newSettings = { ...whatsappSettings, [key]: value };
+    
+    // If master toggle is turned OFF, also disable dependent features
+    if (key === 'enabled' && value === false) {
+      newSettings.otpEnabled = false;
+      newSettings.notificationsEnabled = false;
+      // Update UI immediately to show dependent toggles as disabled
+      setWhatsappSettings(newSettings);
+    } else {
+      setWhatsappSettings(newSettings);
+    }
+    
     setAutoSaveStatus('saving...');
     
     try {
@@ -122,13 +132,18 @@ export default function SettingsPage() {
       } else {
         setAutoSaveStatus('save failed');
         setTimeout(() => setAutoSaveStatus(''), 3000);
+        // Revert to previous state on error
+        fetchWhatsappSettings();
       }
     } catch (error) {
       console.error('Error auto-saving WhatsApp settings:', error);
       setAutoSaveStatus('save failed');
       setTimeout(() => setAutoSaveStatus(''), 3000);
+      // Revert to previous state on error
+      fetchWhatsappSettings();
     }
   };
+
 
 
   useEffect(() => {
