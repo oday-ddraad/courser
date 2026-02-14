@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth/config';
-import { whatsappService } from '@/lib/services/whatsapp';
-import User from '@/lib/mongodb/models/User';
+import whatsappService from '@/lib/services/whatsapp';
 import dbConnect from '@/lib/mongodb/connection';
+import User from '@/lib/mongodb/models/User';
+
+/**
+ * GET /api/notifications/whatsapp
+ * Check WhatsApp service status
+ */
+export async function GET() {
+  try {
+    const isConfigured = whatsappService.isConfigured();
+    
+    return NextResponse.json({
+      success: true,
+      data: {
+        configured: isConfigured,
+        message: isConfigured 
+          ? 'WhatsApp service is configured and ready'
+          : 'WhatsApp service is not configured. Please set environment variables.',
+      },
+    });
+  } catch (error) {
+    console.error('WhatsApp status check error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to check WhatsApp status' },
+      { status: 500 }
+    );
+  }
+}
 
 /**
  * POST /api/notifications/whatsapp
@@ -14,29 +40,30 @@ export async function POST(request: NextRequest) {
   try {
     // Check authentication
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 401 }
       );
     }
 
-    // Check permissions (admin or instructor)
-    const allowedRoles = ['admin', 'instructor'];
-    if (!allowedRoles.includes(session.user.role)) {
+    // Check authorization (admin or instructor only)
+    const userRole = session.user.role;
+    if (!['admin', 'instructor'].includes(userRole)) {
       return NextResponse.json(
-        { success: false, error: 'Forbidden: Insufficient permissions' },
+        { success: false, error: 'Forbidden - Admin or Instructor access required' },
         { status: 403 }
       );
     }
 
+    // Parse request body
     const body = await request.json();
-    const { userId, type, data } = body;
+    const { userId, templateName, parameters } = body;
 
     // Validate required fields
-    if (!userId || !type) {
+    if (!userId || !templateName) {
       return NextResponse.json(
-        { success: false, error: 'User ID and notification type are required' },
+        { success: false, error: 'Missing required fields: userId, templateName' },
         { status: 400 }
       );
     }
@@ -44,16 +71,16 @@ export async function POST(request: NextRequest) {
     // Connect to database
     await dbConnect();
 
-    // Get target user
+    // Get user
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json(
-        { success: false, error: 'Target user not found' },
+        { success: false, error: 'User not found' },
         { status: 404 }
       );
     }
 
-    // Check if user has verified phone and enabled WhatsApp notifications
+    // Check if user has verified phone number
     if (!user.phoneNumber || !user.phoneVerified) {
       return NextResponse.json(
         { success: false, error: 'User does not have a verified phone number' },
@@ -61,57 +88,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!user.whatsappNotificationsEnabled) {
+    // Check if WhatsApp notifications are enabled for user
+    if (user.whatsappNotificationsEnabled === false) {
       return NextResponse.json(
-        { success: false, error: 'User has disabled WhatsApp notifications' },
+        { success: false, error: 'WhatsApp notifications are disabled for this user' },
         { status: 400 }
       );
     }
 
-    // Send appropriate notification based on type
-    let result;
-    switch (type) {
-      case 'welcome':
-        result = await whatsappService.sendWelcomeMessage(
-          user.phoneNumber,
-          data.userName || user.name
-        );
-        break;
-
-      case 'course_enrollment':
-        result = await whatsappService.sendCourseEnrollmentNotification(
-          user.phoneNumber,
-          data.userName || user.name,
-          data.courseTitle
-        );
-        break;
-
-      case 'live_stream_starting':
-        result = await whatsappService.sendLiveStreamNotification(
-          user.phoneNumber,
-          data.courseTitle,
-          data.startTime
-        );
-        break;
-
-      case 'payment_approved':
-        result = await whatsappService.sendPaymentApprovedNotification(
-          user.phoneNumber,
-          data.userName || user.name,
-          data.courseTitle
-        );
-        break;
-
-      default:
-        return NextResponse.json(
-          { success: false, error: `Unknown notification type: ${type}` },
-          { status: 400 }
-        );
-    }
+    // Send WhatsApp message
+    const result = await whatsappService.sendMessage({
+      to: user.phoneNumber,
+      templateName,
+      parameters: parameters || [],
+    });
 
     if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error || 'Failed to send WhatsApp notification' },
+        { success: false, error: result.error || 'Failed to send WhatsApp message' },
         { status: 500 }
       );
     }
@@ -123,42 +117,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Send WhatsApp notification API error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
-
-/**
- * GET /api/notifications/whatsapp/status
- * Check WhatsApp service configuration status
- */
-export async function GET(request: NextRequest) {
-  try {
-    // Check authentication
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    // Check if service is configured
-    const isConfigured = whatsappService.isConfigured();
-
-    return NextResponse.json({
-      success: true,
-      configured: isConfigured,
-      message: isConfigured 
-        ? 'WhatsApp service is configured' 
-        : 'WhatsApp service is not configured. Please set environment variables.',
-    });
-
-  } catch (error) {
-    console.error('WhatsApp status API error:', error);
+    console.error('Send WhatsApp notification error:', error);
     return NextResponse.json(
       { success: false, error: 'Internal server error' },
       { status: 500 }

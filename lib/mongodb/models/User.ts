@@ -7,14 +7,13 @@ export interface IUser extends Document {
   role: 'admin' | 'instructor' | 'user';
   locale: 'en' | 'de' | 'ar';
   country: string; // ISO 3166-1 alpha-2 country code (e.g., 'US', 'DE', 'SA', 'SY')
-  avatar?: string;
-  emailVerified?: Date;
   phoneNumber?: string; // E.164 format (e.g., +1234567890)
   phoneVerified?: Date;
   whatsappNotificationsEnabled: boolean;
+  avatar?: string;
+  emailVerified?: Date;
   isActive: boolean;
   instructorProfile?: {
-
     bio: {
       en: string;
       de: string;
@@ -67,18 +66,10 @@ const UserSchema = new Schema<IUser>(
       minlength: 2,
       maxlength: 2,
     },
-    avatar: {
-      type: String,
-      default: '',
-    },
-    emailVerified: {
-      type: Date,
-      default: null,
-    },
     phoneNumber: {
       type: String,
       unique: true,
-      sparse: true, // Allows null/undefined values without violating unique constraint
+      sparse: true, // Allow null/undefined values
       trim: true,
       match: [/^\+[1-9]\d{1,14}$/, 'Please provide a valid phone number in E.164 format (e.g., +1234567890)'],
     },
@@ -90,11 +81,18 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    avatar: {
+      type: String,
+      default: '',
+    },
+    emailVerified: {
+      type: Date,
+      default: null,
+    },
     isActive: {
       type: Boolean,
       default: true,
     },
-
     instructorProfile: {
       bio: {
         en: { type: String, default: '' },
@@ -129,11 +127,8 @@ const UserSchema = new Schema<IUser>(
 // Indexes for performance
 // Note: email already has unique: true in schema definition
 UserSchema.index({ role: 1 });
-
 UserSchema.index({ country: 1 });
 UserSchema.index({ isActive: 1 });
-UserSchema.index({ phoneNumber: 1 });
-
 
 // Only include instructorProfile if role is instructor
 // Using async function to avoid TypeScript callback typing issues
