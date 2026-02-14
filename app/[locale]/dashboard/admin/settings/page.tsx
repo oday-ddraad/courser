@@ -90,6 +90,46 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'email' | 'whatsapp' | 'general'>('email');
+  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
+
+  // Auto-save WhatsApp toggle settings
+  const handleWhatsappToggleChange = async (key: 'enabled' | 'otpEnabled' | 'notificationsEnabled', value: boolean) => {
+    if (!whatsappSettings) return;
+    
+    // Update local state immediately for responsive UI
+    const newSettings = { ...whatsappSettings, [key]: value };
+    setWhatsappSettings(newSettings);
+    setAutoSaveStatus('saving...');
+    
+    try {
+      const response = await fetch('/api/admin/whatsapp-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          enabled: newSettings.enabled,
+          otpEnabled: newSettings.otpEnabled,
+          notificationsEnabled: newSettings.notificationsEnabled,
+          monthlyLimit: newSettings.monthlyLimit,
+          warningThreshold: newSettings.warningThreshold,
+          adminEmail: newSettings.adminEmail,
+          notifyAdminOnLimit: newSettings.notifyAdminOnLimit,
+        }),
+      });
+
+      if (response.ok) {
+        setAutoSaveStatus('saved');
+        setTimeout(() => setAutoSaveStatus(''), 2000);
+      } else {
+        setAutoSaveStatus('save failed');
+        setTimeout(() => setAutoSaveStatus(''), 3000);
+      }
+    } catch (error) {
+      console.error('Error auto-saving WhatsApp settings:', error);
+      setAutoSaveStatus('save failed');
+      setTimeout(() => setAutoSaveStatus(''), 3000);
+    }
+  };
+
 
   useEffect(() => {
     if (status !== 'loading' && session && session.user.role === 'admin') {
@@ -522,18 +562,26 @@ export default function SettingsPage() {
                 </div>
 
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={whatsappSettings.enabled}
-                  onChange={(e) => setWhatsappSettings({
-                    ...whatsappSettings,
-                    enabled: e.target.checked
-                  })}
-                  className="sr-only peer"
-                />
-                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
-              </label>
+              <div className="flex items-center space-x-3">
+                {autoSaveStatus && (
+                  <span className={`text-xs ${
+                    autoSaveStatus === 'saved' ? 'text-green-600' : 
+                    autoSaveStatus === 'saving...' ? 'text-gray-500' : 'text-red-500'
+                  }`}>
+                    {autoSaveStatus}
+                  </span>
+                )}
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={whatsappSettings.enabled}
+                    onChange={(e) => handleWhatsappToggleChange('enabled', e.target.checked)}
+                    className="sr-only peer"
+                  />
+                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+                </label>
+              </div>
+
             </div>
           </div>
 
@@ -675,16 +723,14 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.otpDescription')}</p>
                   </div>
 
-                  <input
-                    type="checkbox"
-                    checked={whatsappSettings.otpEnabled}
-                    disabled={!whatsappSettings.enabled}
-                    onChange={(e) => setWhatsappSettings({
-                      ...whatsappSettings,
-                      otpEnabled: e.target.checked
-                    })}
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
-                  />
+                <input
+                  type="checkbox"
+                  checked={whatsappSettings.otpEnabled}
+                  disabled={!whatsappSettings.enabled}
+                  onChange={(e) => handleWhatsappToggleChange('otpEnabled', e.target.checked)}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
+                />
+
                 </label>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
@@ -692,16 +738,14 @@ export default function SettingsPage() {
                     <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.notificationsDescription')}</p>
                   </div>
 
-                  <input
-                    type="checkbox"
-                    checked={whatsappSettings.notificationsEnabled}
-                    disabled={!whatsappSettings.enabled}
-                    onChange={(e) => setWhatsappSettings({
-                      ...whatsappSettings,
-                      notificationsEnabled: e.target.checked
-                    })}
-                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
-                  />
+                <input
+                  type="checkbox"
+                  checked={whatsappSettings.notificationsEnabled}
+                  disabled={!whatsappSettings.enabled}
+                  onChange={(e) => handleWhatsappToggleChange('notificationsEnabled', e.target.checked)}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
+                />
+
                 </label>
               </div>
             </div>
