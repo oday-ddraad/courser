@@ -240,6 +240,14 @@ export default function SettingsPage() {
   const handleSaveWhatsappSettings = async () => {
     if (!whatsappSettings) return;
     setSaving(true);
+    
+    // Debug: Log what we're about to save
+    console.log('Saving WhatsApp settings:', {
+      enabled: whatsappSettings.enabled,
+      otpEnabled: whatsappSettings.otpEnabled,
+      notificationsEnabled: whatsappSettings.notificationsEnabled,
+    });
+    
     try {
       const response = await fetch('/api/admin/whatsapp-settings', {
         method: 'PUT',
@@ -255,11 +263,23 @@ export default function SettingsPage() {
         }),
       });
 
-      if (response.ok) {
+      const data = await response.json();
+      console.log('Save response:', data);
+
+      if (response.ok && data.success) {
         alert(t('settings.whatsappSettingsSaved'));
-        fetchWhatsappSettings();
+        // Update local state with returned data to ensure consistency
+        if (data.data) {
+          setWhatsappSettings(prev => prev ? {
+            ...prev,
+            enabled: data.data.enabled,
+            otpEnabled: data.data.otpEnabled,
+            notificationsEnabled: data.data.notificationsEnabled,
+          } : null);
+        }
       } else {
-        alert(t('settings.whatsappSettingsSaveFailed'));
+        console.error('Save failed:', data);
+        alert(t('settings.whatsappSettingsSaveFailed') + (data.error ? `: ${data.error}` : ''));
       }
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
@@ -269,6 +289,7 @@ export default function SettingsPage() {
       setSaving(false);
     }
   };
+
 
   const handleResetEmailCounters = async (type: 'daily' | 'monthly') => {
     if (!confirm(`Are you sure you want to reset ${type} counters?`)) return;
