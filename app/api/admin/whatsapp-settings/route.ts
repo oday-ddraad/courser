@@ -76,6 +76,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
+    console.log('API received body:', body);
+
     const {
       enabled,
       otpEnabled,
@@ -89,6 +91,11 @@ export async function PUT(request: NextRequest) {
     await dbConnect();
 
     const settings = await WhatsAppSettings.getSettings();
+    console.log('Current settings before update:', {
+      enabled: settings.enabled,
+      otpEnabled: settings.otpEnabled,
+      notificationsEnabled: settings.notificationsEnabled,
+    });
 
     // Update fields
     if (enabled !== undefined) settings.enabled = enabled;
@@ -99,18 +106,29 @@ export async function PUT(request: NextRequest) {
     if (adminEmail !== undefined) settings.adminEmail = adminEmail;
     if (notifyAdminOnLimit !== undefined) settings.notifyAdminOnLimit = notifyAdminOnLimit;
 
-    await settings.save();
+    console.log('Settings after update (before save):', {
+      enabled: settings.enabled,
+      otpEnabled: settings.otpEnabled,
+      notificationsEnabled: settings.notificationsEnabled,
+    });
+
+    const savedSettings = await settings.save();
+    console.log('Settings after save:', {
+      enabled: savedSettings.enabled,
+      otpEnabled: savedSettings.otpEnabled,
+      notificationsEnabled: savedSettings.notificationsEnabled,
+    });
 
     return NextResponse.json({
       success: true,
       data: {
-        enabled: settings.enabled,
-        otpEnabled: settings.otpEnabled,
-        notificationsEnabled: settings.notificationsEnabled,
-        monthlyLimit: settings.monthlyLimit,
-        warningThreshold: settings.warningThreshold,
-        adminEmail: settings.adminEmail,
-        notifyAdminOnLimit: settings.notifyAdminOnLimit,
+        enabled: savedSettings.enabled,
+        otpEnabled: savedSettings.otpEnabled,
+        notificationsEnabled: savedSettings.notificationsEnabled,
+        monthlyLimit: savedSettings.monthlyLimit,
+        warningThreshold: savedSettings.warningThreshold,
+        adminEmail: savedSettings.adminEmail,
+        notifyAdminOnLimit: savedSettings.notifyAdminOnLimit,
       },
     });
 
@@ -122,6 +140,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
 
 // POST /api/admin/whatsapp-settings - Reset counters
 export async function POST(request: NextRequest) {
