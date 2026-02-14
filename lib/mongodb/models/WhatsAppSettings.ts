@@ -4,6 +4,7 @@ export interface IWhatsAppSettings extends Document {
   enabled: boolean; // Master switch for WhatsApp
   otpEnabled: boolean; // Enable OTP via WhatsApp
   notificationsEnabled: boolean; // Enable WhatsApp notifications
+  serviceState: 'connected' | 'disconnected' | 'connecting' | 'error'; // WhatsApp service connection state
   monthlyLimit: number;
   warningThreshold: number; // Percentage (e.g., 80 for 80%)
   monthlyConversations: number;
@@ -16,6 +17,7 @@ export interface IWhatsAppSettings extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
+
 
 
 interface WhatsAppSettingsModel extends Model<IWhatsAppSettings> {
@@ -82,20 +84,33 @@ const WhatsAppSettingsSchema = new Schema<IWhatsAppSettings, WhatsAppSettingsMod
       type: Boolean,
       default: true,
     },
+    serviceState: {
+      type: String,
+      enum: ['connected', 'disconnected', 'connecting', 'error'],
+      default: 'disconnected',
+    },
   },
+
   {
     timestamps: true,
   }
 );
 
-// Static method to get or create settings
+// Static method to get or create settings (atomic operation)
 WhatsAppSettingsSchema.statics.getSettings = async function(): Promise<IWhatsAppSettings> {
-  let settings = await this.findOne();
-  if (!settings) {
-    settings = await this.create({});
-  }
+  // Use findOneAndUpdate with upsert to ensure atomic creation
+  const settings = await this.findOneAndUpdate(
+    {}, // Match any document
+    { $setOnInsert: { createdAt: new Date() } }, // Only set on insert
+    { 
+      upsert: true, // Create if doesn't exist
+      new: true, // Return the updated document
+      setDefaultsOnInsert: true, // Apply schema defaults on insert
+    }
+  );
   return settings;
 };
+
 
 // Increment conversation count
 WhatsAppSettingsSchema.statics.incrementConversationCount = async function(): Promise<void> {
