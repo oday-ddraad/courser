@@ -9,8 +9,12 @@ export interface IUser extends Document {
   country: string; // ISO 3166-1 alpha-2 country code (e.g., 'US', 'DE', 'SA', 'SY')
   avatar?: string;
   emailVerified?: Date;
+  phoneNumber?: string; // E.164 format (e.g., +1234567890)
+  phoneVerified?: Date;
+  whatsappNotificationsEnabled: boolean;
   isActive: boolean;
   instructorProfile?: {
+
     bio: {
       en: string;
       de: string;
@@ -71,10 +75,26 @@ const UserSchema = new Schema<IUser>(
       type: Date,
       default: null,
     },
+    phoneNumber: {
+      type: String,
+      unique: true,
+      sparse: true, // Allows null/undefined values without violating unique constraint
+      trim: true,
+      match: [/^\+[1-9]\d{1,14}$/, 'Please provide a valid phone number in E.164 format (e.g., +1234567890)'],
+    },
+    phoneVerified: {
+      type: Date,
+      default: null,
+    },
+    whatsappNotificationsEnabled: {
+      type: Boolean,
+      default: true,
+    },
     isActive: {
       type: Boolean,
       default: true,
     },
+
     instructorProfile: {
       bio: {
         en: { type: String, default: '' },
@@ -112,6 +132,8 @@ UserSchema.index({ role: 1 });
 
 UserSchema.index({ country: 1 });
 UserSchema.index({ isActive: 1 });
+UserSchema.index({ phoneNumber: 1 });
+
 
 // Only include instructorProfile if role is instructor
 // Using async function to avoid TypeScript callback typing issues

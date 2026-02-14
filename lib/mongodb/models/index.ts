@@ -12,6 +12,9 @@ export { default as EmailTemplate, type IEmailTemplate } from './EmailTemplate';
 export { default as EmailLog, type IEmailLog, type EmailStatus } from './EmailLog';
 export { default as EmailSettings, type IEmailSettings } from './EmailSettings';
 
+// WhatsApp OTP system models
+export { default as OTP, type IOTP } from './OTP';
+
 // Add other models here as we create them:
 // export { default as Payment, IPayment } from './Payment';
 // etc.
