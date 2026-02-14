@@ -57,6 +57,9 @@ interface EmailStats {
 }
 
 interface WhatsAppSettingsData {
+  enabled: boolean;
+  otpEnabled: boolean;
+  notificationsEnabled: boolean;
   monthlyLimit: number;
   warningThreshold: number;
   monthlyConversations: number;
@@ -65,6 +68,7 @@ interface WhatsAppSettingsData {
   adminEmail: string;
   notifyAdminOnLimit: boolean;
 }
+
 
 interface WhatsAppStats {
   usagePercentage: number;
@@ -172,12 +176,16 @@ export default function SettingsPage() {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          enabled: whatsappSettings.enabled,
+          otpEnabled: whatsappSettings.otpEnabled,
+          notificationsEnabled: whatsappSettings.notificationsEnabled,
           monthlyLimit: whatsappSettings.monthlyLimit,
           warningThreshold: whatsappSettings.warningThreshold,
           adminEmail: whatsappSettings.adminEmail,
           notifyAdminOnLimit: whatsappSettings.notifyAdminOnLimit,
         }),
       });
+
       if (response.ok) {
         alert('WhatsApp settings saved successfully!');
         fetchWhatsappSettings();
@@ -469,7 +477,49 @@ export default function SettingsPage() {
 
       {activeTab === 'whatsapp' && whatsappSettings && whatsappStats && (
         <div className="space-y-6">
+          {/* Master Toggle Banner */}
+          <div className={`p-4 rounded-lg border ${
+            whatsappSettings.enabled
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800'
+              : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+          }`}>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <div className={`p-2 rounded-full mr-3 ${
+                  whatsappSettings.enabled ? 'bg-green-100 dark:bg-green-800' : 'bg-gray-200 dark:bg-gray-700'
+                }`}>
+                  <MessageCircle className={`w-5 h-5 ${
+                    whatsappSettings.enabled ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'
+                  }`} />
+                </div>
+                <div>
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    WhatsApp Integration
+                  </h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    {whatsappSettings.enabled 
+                      ? 'WhatsApp is enabled and active' 
+                      : 'WhatsApp is currently disabled'}
+                  </p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={whatsappSettings.enabled}
+                  onChange={(e) => setWhatsappSettings({
+                    ...whatsappSettings,
+                    enabled: e.target.checked
+                  })}
+                  className="sr-only peer"
+                />
+                <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 dark:peer-focus:ring-green-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-600"></div>
+              </label>
+            </div>
+          </div>
+
           {/* WhatsApp Statistics */}
+
           <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
             <div className="flex items-center mb-4">
               <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
@@ -572,11 +622,14 @@ export default function SettingsPage() {
           </div>
 
           {/* WhatsApp Settings Form */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+          <div className={`bg-white dark:bg-slate-800 rounded-lg shadow p-6 ${
+            !whatsappSettings.enabled ? 'opacity-50 pointer-events-none' : ''
+          }`}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 WhatsApp Configuration
               </h2>
+
               <button
                 onClick={handleSaveWhatsappSettings}
                 disabled={saving}
@@ -587,9 +640,49 @@ export default function SettingsPage() {
               </button>
             </div>
 
+            {/* Feature Toggles */}
+            <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
+              <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Feature Toggles</h3>
+              <div className="space-y-3">
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">OTP Verification</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Send verification codes via WhatsApp</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={whatsappSettings.otpEnabled}
+                    disabled={!whatsappSettings.enabled}
+                    onChange={(e) => setWhatsappSettings({
+                      ...whatsappSettings,
+                      otpEnabled: e.target.checked
+                    })}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
+                  />
+                </label>
+                <label className="flex items-center justify-between cursor-pointer">
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notifications</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Send course notifications via WhatsApp</p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={whatsappSettings.notificationsEnabled}
+                    disabled={!whatsappSettings.enabled}
+                    onChange={(e) => setWhatsappSettings({
+                      ...whatsappSettings,
+                      notificationsEnabled: e.target.checked
+                    })}
+                    className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500 disabled:opacity-50"
+                  />
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <h3 className="text-md font-medium text-gray-900 dark:text-white">Limits & Alerts</h3>
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Monthly Conversation Limit

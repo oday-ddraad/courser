@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import dbConnect from '@/lib/mongodb/connection';
 import OTP from '@/lib/mongodb/models/OTP';
 import User from '@/lib/mongodb/models/User';
+import WhatsAppSettings from '@/lib/mongodb/models/WhatsAppSettings';
+
 
 // WhatsApp API configuration
 const WHATSAPP_API_VERSION = process.env.WHATSAPP_API_VERSION || 'v18.0';
@@ -122,6 +124,46 @@ class WhatsAppService {
   }
 
   /**
+   * Check if WhatsApp is enabled in settings
+   */
+  async isEnabled(): Promise<boolean> {
+    try {
+      await dbConnect();
+      const settings = await WhatsAppSettings.getSettings();
+      return settings.enabled;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if OTP is enabled in settings
+   */
+  async isOTPEnabled(): Promise<boolean> {
+    try {
+      await dbConnect();
+      const settings = await WhatsAppSettings.getSettings();
+      return settings.enabled && settings.otpEnabled;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if notifications are enabled in settings
+   */
+  async isNotificationsEnabled(): Promise<boolean> {
+    try {
+      await dbConnect();
+      const settings = await WhatsAppSettings.getSettings();
+      return settings.enabled && settings.notificationsEnabled;
+    } catch {
+      return false;
+    }
+  }
+
+
+  /**
    * Generate a random 6-digit OTP
    */
   private generateOTP(): string {
@@ -221,8 +263,18 @@ class WhatsAppService {
   async sendOTP(userId: string, phoneNumber: string, purpose: 'verification' | 'password_reset' | 'login' = 'verification'): Promise<OTPResult> {
     await dbConnect();
 
+    // Check if OTP is enabled
+    const otpEnabled = await this.isOTPEnabled();
+    if (!otpEnabled) {
+      return {
+        success: false,
+        error: 'WhatsApp OTP is currently disabled',
+      };
+    }
+
     try {
       // Check for existing active OTP
+
       const existingOTP = await OTP.findActiveOTP(userId, purpose);
       if (existingOTP) {
         // Check if we can resend (cooldown: 60 seconds)
@@ -359,6 +411,10 @@ class WhatsAppService {
    * Send welcome message
    */
   async sendWelcomeMessage(phoneNumber: string, userName: string): Promise<{ success: boolean; error?: string }> {
+    const enabled = await this.isNotificationsEnabled();
+    if (!enabled) {
+      return { success: false, error: 'WhatsApp notifications are disabled' };
+    }
     return this.sendMessage({
       to: phoneNumber,
       templateName: 'welcome',
@@ -374,6 +430,10 @@ class WhatsAppService {
     userName: string,
     courseTitle: string
   ): Promise<{ success: boolean; error?: string }> {
+    const enabled = await this.isNotificationsEnabled();
+    if (!enabled) {
+      return { success: false, error: 'WhatsApp notifications are disabled' };
+    }
     return this.sendMessage({
       to: phoneNumber,
       templateName: 'course_enrollment',
@@ -389,6 +449,10 @@ class WhatsAppService {
     courseTitle: string,
     startTime: string
   ): Promise<{ success: boolean; error?: string }> {
+    const enabled = await this.isNotificationsEnabled();
+    if (!enabled) {
+      return { success: false, error: 'WhatsApp notifications are disabled' };
+    }
     return this.sendMessage({
       to: phoneNumber,
       templateName: 'live_stream_starting',
@@ -404,12 +468,17 @@ class WhatsAppService {
     userName: string,
     courseTitle: string
   ): Promise<{ success: boolean; error?: string }> {
+    const enabled = await this.isNotificationsEnabled();
+    if (!enabled) {
+      return { success: false, error: 'WhatsApp notifications are disabled' };
+    }
     return this.sendMessage({
       to: phoneNumber,
       templateName: 'payment_approved',
       parameters: [userName, courseTitle],
     });
   }
+
 
   /**
    * Verify webhook signature from Meta

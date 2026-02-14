@@ -73,6 +73,9 @@ export async function PUT(request: NextRequest) {
 
     const body = await request.json();
     const {
+      enabled,
+      otpEnabled,
+      notificationsEnabled,
       monthlyLimit,
       warningThreshold,
       adminEmail,
@@ -84,6 +87,9 @@ export async function PUT(request: NextRequest) {
     const settings = await WhatsAppSettings.getSettings();
 
     // Update fields
+    if (enabled !== undefined) settings.enabled = enabled;
+    if (otpEnabled !== undefined) settings.otpEnabled = otpEnabled;
+    if (notificationsEnabled !== undefined) settings.notificationsEnabled = notificationsEnabled;
     if (monthlyLimit !== undefined) settings.monthlyLimit = monthlyLimit;
     if (warningThreshold !== undefined) settings.warningThreshold = warningThreshold;
     if (adminEmail !== undefined) settings.adminEmail = adminEmail;
@@ -94,12 +100,16 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
+        enabled: settings.enabled,
+        otpEnabled: settings.otpEnabled,
+        notificationsEnabled: settings.notificationsEnabled,
         monthlyLimit: settings.monthlyLimit,
         warningThreshold: settings.warningThreshold,
         adminEmail: settings.adminEmail,
         notifyAdminOnLimit: settings.notifyAdminOnLimit,
       },
     });
+
   } catch (error) {
     console.error('Error updating WhatsApp settings:', error);
     return NextResponse.json(

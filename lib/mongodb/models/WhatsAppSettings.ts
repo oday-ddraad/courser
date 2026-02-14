@@ -1,6 +1,9 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IWhatsAppSettings extends Document {
+  enabled: boolean; // Master switch for WhatsApp
+  otpEnabled: boolean; // Enable OTP via WhatsApp
+  notificationsEnabled: boolean; // Enable WhatsApp notifications
   monthlyLimit: number;
   warningThreshold: number; // Percentage (e.g., 80 for 80%)
   monthlyConversations: number;
@@ -14,6 +17,7 @@ export interface IWhatsAppSettings extends Document {
   updatedAt: Date;
 }
 
+
 interface WhatsAppSettingsModel extends Model<IWhatsAppSettings> {
   getSettings(): Promise<IWhatsAppSettings>;
   incrementConversationCount(): Promise<void>;
@@ -23,11 +27,24 @@ interface WhatsAppSettingsModel extends Model<IWhatsAppSettings> {
 
 const WhatsAppSettingsSchema = new Schema<IWhatsAppSettings, WhatsAppSettingsModel>(
   {
+    enabled: {
+      type: Boolean,
+      default: true, // WhatsApp enabled by default
+    },
+    otpEnabled: {
+      type: Boolean,
+      default: true, // OTP enabled by default
+    },
+    notificationsEnabled: {
+      type: Boolean,
+      default: true, // Notifications enabled by default
+    },
     monthlyLimit: {
       type: Number,
       default: 1000, // Default 1000 conversations per month
       min: 0,
     },
+
     warningThreshold: {
       type: Number,
       default: 80, // 80% warning threshold
