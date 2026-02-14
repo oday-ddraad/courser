@@ -14,6 +14,7 @@ export { default as EmailSettings, type IEmailSettings } from './EmailSettings';
 
 // WhatsApp OTP system models
 export { default as OTP, type IOTP } from './OTP';
+export { default as WhatsAppSettings, type IWhatsAppSettings } from './WhatsAppSettings';
 
 // Add other models here as we create them:
 // export { default as Payment, IPayment } from './Payment';
