@@ -435,8 +435,12 @@
         "notifyAdminOnLimit": "Notify admin when limit warning reached",
         "resetMonthlyCounter": "Reset Monthly Counter",
         "whatsappSettingsSaved": "WhatsApp settings saved successfully",
-        "whatsappSettingsSaveFailed": "Failed to save WhatsApp settings"
+        "whatsappSettingsSaveFailed": "Failed to save WhatsApp settings",
+        "confirmReset": "Are you sure you want to reset {type} counters?",
+        "countersReset": "Counters reset successfully",
+        "countersResetFailed": "Failed to reset counters"
       },
+
 
       "messages": {
 

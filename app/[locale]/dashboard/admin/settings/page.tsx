@@ -200,14 +200,15 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        alert('WhatsApp settings saved successfully!');
+        alert(t('settings.whatsappSettingsSaved'));
         fetchWhatsappSettings();
       } else {
-        alert('Failed to save WhatsApp settings');
+        alert(t('settings.whatsappSettingsSaveFailed'));
       }
     } catch (error) {
       console.error('Error saving WhatsApp settings:', error);
-      alert('Error saving WhatsApp settings');
+      alert(t('settings.whatsappSettingsSaveFailed'));
+
     } finally {
       setSaving(false);
     }
@@ -231,21 +232,23 @@ export default function SettingsPage() {
   };
 
   const handleResetWhatsappCounters = async () => {
-    if (!confirm('Are you sure you want to reset monthly WhatsApp conversation counters?')) return;
+    if (!confirm(t('settings.confirmReset', { type: 'monthly' }))) return;
     try {
       const response = await fetch('/api/admin/whatsapp-settings?type=monthly', {
         method: 'POST',
       });
       if (response.ok) {
         fetchWhatsappSettings();
-        alert('WhatsApp counters reset successfully');
+        alert(t('settings.countersReset'));
       } else {
-        alert('Failed to reset WhatsApp counters');
+        alert(t('settings.countersResetFailed'));
       }
     } catch (error) {
       console.error('Error resetting WhatsApp counters:', error);
+      alert(t('settings.countersResetFailed'));
     }
   };
+
 
   if (loading) {
     return (
@@ -291,8 +294,9 @@ export default function SettingsPage() {
           }`}
         >
           <MessageCircle className="w-4 h-4 inline mr-2" />
-          WhatsApp
+          {t('settings.whatsappSettings')}
         </button>
+
         <button
           onClick={() => setActiveTab('general')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
@@ -507,14 +511,15 @@ export default function SettingsPage() {
                 </div>
                 <div>
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    WhatsApp Integration
+                    {t('settings.whatsappIntegration')}
                   </h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">
                     {whatsappSettings.enabled 
-                      ? 'WhatsApp is enabled and active' 
-                      : 'WhatsApp is currently disabled'}
+                      ? t('settings.whatsappEnabled')
+                      : t('settings.whatsappDisabled')}
                   </p>
                 </div>
+
               </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
@@ -537,18 +542,20 @@ export default function SettingsPage() {
             <div className="flex items-center mb-4">
               <MessageCircle className="w-5 h-5 text-green-600 mr-2" />
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                WhatsApp Conversation Tracking
+                {t('settings.conversationTracking')}
               </h2>
             </div>
+
 
             {/* Usage Bar */}
             <div className="mb-6">
               <div className="flex justify-between text-sm mb-2">
-                <span className="text-gray-700 dark:text-gray-300">Monthly Usage</span>
+                <span className="text-gray-700 dark:text-gray-300">{t('settings.monthlyUsage')}</span>
                 <span className="text-gray-700 dark:text-gray-300">
-                  {whatsappSettings.monthlyConversations} / {whatsappSettings.monthlyLimit} conversations
+                  {whatsappSettings.monthlyConversations} / {whatsappSettings.monthlyLimit} {t('settings.conversations')}
                 </span>
               </div>
+
               <div className="w-full bg-gray-200 dark:bg-slate-700 rounded-full h-4">
                 <div
                   className={`h-4 rounded-full transition-all ${
@@ -575,27 +582,28 @@ export default function SettingsPage() {
                 <div className="text-2xl font-bold text-gray-900 dark:text-white">
                   {whatsappSettings.monthlyConversations}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">This Month</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('settings.thisMonth')}</div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="text-2xl font-bold text-green-600">
                   {whatsappStats.remainingConversations}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Remaining</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('settings.remaining')}</div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="text-2xl font-bold text-blue-600">
                   {whatsappSettings.activeConversations}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Active (24h)</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('settings.active24h')}</div>
               </div>
               <div className="text-center p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
                 <div className="text-2xl font-bold text-purple-600">
                   {whatsappSettings.totalConversations}
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">Total Ever</div>
+                <div className="text-sm text-gray-500 dark:text-gray-400">{t('settings.totalEver')}</div>
               </div>
             </div>
+
 
             {/* Warning Banner */}
             {(whatsappStats.warningTriggered || whatsappStats.limitReached) && (
@@ -614,24 +622,26 @@ export default function SettingsPage() {
                       : 'text-yellow-800 dark:text-yellow-200'
                   }`}>
                     {whatsappStats.limitReached
-                      ? 'Monthly conversation limit reached! No more conversations can be initiated.'
-                      : `Warning: ${whatsappStats.usagePercentage.toFixed(1)}% of monthly limit used.`
+                      ? t('settings.limitReached')
+                      : t('settings.usageWarning', { percentage: whatsappStats.usagePercentage.toFixed(1) })
                     }
                   </span>
+
                 </div>
               </div>
             )}
 
             {/* Info Box */}
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-              <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">How Conversations Work</h4>
+              <h4 className="font-medium text-blue-900 dark:text-blue-200 mb-2">{t('settings.howConversationsWork')}</h4>
               <ul className="text-sm text-blue-800 dark:text-blue-300 space-y-1">
-                <li>• Meta counts each <strong>new chat</strong> initiated within a 24-hour window as a new conversation</li>
-                <li>• After 24 hours, a new message to the same user starts a new conversation</li>
-                <li>• The monthly limit resets on the first day of each month</li>
-                <li>• Default limit: 1000 conversations/month with 80% warning threshold</li>
+                <li>• {t('settings.conversationExplanation1')}</li>
+                <li>• {t('settings.conversationExplanation2')}</li>
+                <li>• {t('settings.conversationExplanation3')}</li>
+                <li>• {t('settings.conversationExplanation4')}</li>
               </ul>
             </div>
+
           </div>
 
           {/* WhatsApp Settings Form */}
@@ -640,7 +650,7 @@ export default function SettingsPage() {
           }`}>
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-                WhatsApp Configuration
+                {t('settings.whatsappConfiguration')}
               </h2>
 
               <button
@@ -649,19 +659,21 @@ export default function SettingsPage() {
                 className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50"
               >
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
-                Save Settings
+                {t('settings.saveSettings')}
               </button>
             </div>
 
+
             {/* Feature Toggles */}
             <div className="mb-6 p-4 bg-gray-50 dark:bg-slate-700 rounded-lg">
-              <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Feature Toggles</h3>
+              <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">{t('settings.featureToggles')}</h3>
               <div className="space-y-3">
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">OTP Verification</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Send verification codes via WhatsApp</p>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.otpVerification')}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.otpDescription')}</p>
                   </div>
+
                   <input
                     type="checkbox"
                     checked={whatsappSettings.otpEnabled}
@@ -675,9 +687,10 @@ export default function SettingsPage() {
                 </label>
                 <label className="flex items-center justify-between cursor-pointer">
                   <div>
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notifications</span>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">Send course notifications via WhatsApp</p>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{t('settings.whatsappNotifications')}</span>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{t('settings.notificationsDescription')}</p>
                   </div>
+
                   <input
                     type="checkbox"
                     checked={whatsappSettings.notificationsEnabled}
@@ -694,11 +707,11 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-900 dark:text-white">Limits & Alerts</h3>
+                <h3 className="text-md font-medium text-gray-900 dark:text-white">{t('settings.sendingLimits')}</h3>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Monthly Conversation Limit
+                    {t('settings.monthlyConversationLimit')}
                   </label>
                   <input
                     type="number"
@@ -710,12 +723,12 @@ export default function SettingsPage() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-white"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Default: 1000 conversations per month
+                    {t('settings.limitDefault')}
                   </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Warning Threshold (%)
+                    {t('settings.warningThreshold')}
                   </label>
                   <input
                     type="number"
@@ -729,17 +742,19 @@ export default function SettingsPage() {
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 dark:bg-slate-700 dark:text-white"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Default: 80% - triggers warning notification
+                    {t('settings.thresholdDefault')}
                   </p>
                 </div>
               </div>
 
+
               <div className="space-y-4">
-                <h3 className="text-md font-medium text-gray-900 dark:text-white">Notifications</h3>
+                <h3 className="text-md font-medium text-gray-900 dark:text-white">{t('settings.notifications')}</h3>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Admin Email
+                    {t('settings.adminEmail')}
                   </label>
+
                   <input
                     type="email"
                     value={whatsappSettings.adminEmail}
@@ -761,22 +776,24 @@ export default function SettingsPage() {
                     className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                   />
                   <span className="ml-2 text-sm text-gray-700 dark:text-gray-300">
-                    Notify admin when limit warning reached
+                    {t('settings.notifyAdminOnLimit')}
                   </span>
+
                 </label>
               </div>
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">Counter Management</h3>
+              <h3 className="text-md font-medium text-gray-900 dark:text-white mb-4">{t('settings.counterManagement')}</h3>
               <button
                 onClick={handleResetWhatsappCounters}
                 className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
               >
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Reset Monthly Counter
+                {t('settings.resetMonthlyCounter')}
               </button>
             </div>
+
           </div>
         </div>
       )}

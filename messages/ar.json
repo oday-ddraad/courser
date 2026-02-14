@@ -435,8 +435,12 @@
         "notifyAdminOnLimit": "إشعار المدير عند الوصول لعتبة التحذير",
         "resetMonthlyCounter": "إعادة تعيين العداد الشهري",
         "whatsappSettingsSaved": "تم حفظ إعدادات واتساب بنجاح",
-        "whatsappSettingsSaveFailed": "فشل في حفظ إعدادات واتساب"
+        "whatsappSettingsSaveFailed": "فشل في حفظ إعدادات واتساب",
+        "confirmReset": "هل أنت متأكد من إعادة تعيين عدادات {type}؟",
+        "countersReset": "تم إعادة تعيين العدادات بنجاح",
+        "countersResetFailed": "فشل في إعادة تعيين العدادات"
       },
+
 
       "messages": {
 

@@ -435,8 +435,12 @@
         "notifyAdminOnLimit": "Admin bei Erreichen der Warnschwelle benachrichtigen",
         "resetMonthlyCounter": "Monatlichen Zähler zurücksetzen",
         "whatsappSettingsSaved": "WhatsApp-Einstellungen erfolgreich gespeichert",
-        "whatsappSettingsSaveFailed": "Fehler beim Speichern der WhatsApp-Einstellungen"
+        "whatsappSettingsSaveFailed": "Fehler beim Speichern der WhatsApp-Einstellungen",
+        "confirmReset": "Sind Sie sicher, dass Sie {type}-Zähler zurücksetzen möchten?",
+        "countersReset": "Zähler erfolgreich zurückgesetzt",
+        "countersResetFailed": "Zähler konnten nicht zurückgesetzt werden"
       },
+
 
       "messages": {
 
