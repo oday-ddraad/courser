@@ -289,6 +289,8 @@
         "counterManagement": "Counter Management",
         "resetDailyCounter": "Reset Daily Counter",
         "resetMonthlyCounter": "Reset Monthly Counter",
+        "notifications": "Notifications",
+
         "settingsSaved": "Settings saved successfully",
         "settingsSaveFailed": "Failed to save settings",
         "countersReset": "Counters reset successfully",
