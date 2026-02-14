@@ -20,34 +20,38 @@ export async function GET(request: NextRequest) {
 
     const settings = await WhatsAppSettings.getSettings();
 
+    // Ensure all fields have defaults (handle missing fields in old documents)
+    const safeSettings = {
+      enabled: settings.enabled ?? true,
+      otpEnabled: settings.otpEnabled ?? true,
+      notificationsEnabled: settings.notificationsEnabled ?? true,
+      serviceState: settings.serviceState ?? 'disconnected',
+      monthlyLimit: settings.monthlyLimit ?? 1000,
+      warningThreshold: settings.warningThreshold ?? 80,
+      monthlyConversations: settings.monthlyConversations ?? 0,
+      conversationsResetDate: settings.conversationsResetDate ?? new Date(),
+      lastConversationDate: settings.lastConversationDate ?? null,
+      totalConversations: settings.totalConversations ?? 0,
+      activeConversations: settings.activeConversations ?? 0,
+      adminEmail: settings.adminEmail ?? '',
+      notifyAdminOnLimit: settings.notifyAdminOnLimit ?? true,
+    };
+
     // Calculate usage statistics
-    const usagePercentage = settings.monthlyLimit > 0
-      ? (settings.monthlyConversations / settings.monthlyLimit) * 100
+    const usagePercentage = safeSettings.monthlyLimit > 0
+      ? (safeSettings.monthlyConversations / safeSettings.monthlyLimit) * 100
       : 0;
 
-    const warningTriggered = usagePercentage >= settings.warningThreshold;
-    const limitReached = settings.monthlyConversations >= settings.monthlyLimit;
+    const warningTriggered = usagePercentage >= safeSettings.warningThreshold;
+    const limitReached = safeSettings.monthlyConversations >= safeSettings.monthlyLimit;
 
     return NextResponse.json({
       success: true,
       data: {
-        settings: {
-          enabled: settings.enabled,
-          otpEnabled: settings.otpEnabled,
-          notificationsEnabled: settings.notificationsEnabled,
-          monthlyLimit: settings.monthlyLimit,
-          warningThreshold: settings.warningThreshold,
-          monthlyConversations: settings.monthlyConversations,
-          conversationsResetDate: settings.conversationsResetDate,
-          lastConversationDate: settings.lastConversationDate,
-          totalConversations: settings.totalConversations,
-          activeConversations: settings.activeConversations,
-          adminEmail: settings.adminEmail,
-          notifyAdminOnLimit: settings.notifyAdminOnLimit,
-        },
+        settings: safeSettings,
         stats: {
           usagePercentage: Math.round(usagePercentage * 100) / 100,
-          remainingConversations: Math.max(0, settings.monthlyLimit - settings.monthlyConversations),
+          remainingConversations: Math.max(0, safeSettings.monthlyLimit - safeSettings.monthlyConversations),
           warningTriggered,
           limitReached,
         },
@@ -62,6 +66,7 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
 
 // PUT /api/admin/whatsapp-settings - Update WhatsApp settings
 export async function PUT(request: NextRequest) {
@@ -90,45 +95,55 @@ export async function PUT(request: NextRequest) {
 
     await dbConnect();
 
-    const settings = await WhatsAppSettings.getSettings();
-    console.log('Current settings before update:', {
-      enabled: settings.enabled,
-      otpEnabled: settings.otpEnabled,
-      notificationsEnabled: settings.notificationsEnabled,
-    });
+    // Use findOneAndUpdate to ensure atomic update with all fields
+    const updateData: any = {};
+    
+    // Only update fields that are provided in the request
+    if (enabled !== undefined) updateData.enabled = enabled;
+    if (otpEnabled !== undefined) updateData.otpEnabled = otpEnabled;
+    if (notificationsEnabled !== undefined) updateData.notificationsEnabled = notificationsEnabled;
+    if (monthlyLimit !== undefined) updateData.monthlyLimit = monthlyLimit;
+    if (warningThreshold !== undefined) updateData.warningThreshold = warningThreshold;
+    if (adminEmail !== undefined) updateData.adminEmail = adminEmail;
+    if (notifyAdminOnLimit !== undefined) updateData.notifyAdminOnLimit = notifyAdminOnLimit;
 
-    // Update fields
-    if (enabled !== undefined) settings.enabled = enabled;
-    if (otpEnabled !== undefined) settings.otpEnabled = otpEnabled;
-    if (notificationsEnabled !== undefined) settings.notificationsEnabled = notificationsEnabled;
-    if (monthlyLimit !== undefined) settings.monthlyLimit = monthlyLimit;
-    if (warningThreshold !== undefined) settings.warningThreshold = warningThreshold;
-    if (adminEmail !== undefined) settings.adminEmail = adminEmail;
-    if (notifyAdminOnLimit !== undefined) settings.notifyAdminOnLimit = notifyAdminOnLimit;
+    console.log('Updating with data:', updateData);
 
-    console.log('Settings after update (before save):', {
-      enabled: settings.enabled,
-      otpEnabled: settings.otpEnabled,
-      notificationsEnabled: settings.notificationsEnabled,
-    });
+    // Use findOneAndUpdate to atomically update the document
+    // This ensures all fields are properly set even if they didn't exist before
+    const savedSettings = await WhatsAppSettings.findOneAndUpdate(
+      {}, // Match any document
+      { $set: updateData },
+      { 
+        new: true, // Return updated document
+        upsert: true, // Create if doesn't exist
+        setDefaultsOnInsert: true, // Apply schema defaults on insert
+      }
+    );
 
-    const savedSettings = await settings.save();
     console.log('Settings after save:', {
-      enabled: savedSettings.enabled,
-      otpEnabled: savedSettings.otpEnabled,
-      notificationsEnabled: savedSettings.notificationsEnabled,
+      enabled: savedSettings?.enabled,
+      otpEnabled: savedSettings?.otpEnabled,
+      notificationsEnabled: savedSettings?.notificationsEnabled,
     });
+
+    if (!savedSettings) {
+      return NextResponse.json(
+        { success: false, error: 'Failed to save settings' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       data: {
-        enabled: savedSettings.enabled,
-        otpEnabled: savedSettings.otpEnabled,
-        notificationsEnabled: savedSettings.notificationsEnabled,
-        monthlyLimit: savedSettings.monthlyLimit,
-        warningThreshold: savedSettings.warningThreshold,
-        adminEmail: savedSettings.adminEmail,
-        notifyAdminOnLimit: savedSettings.notifyAdminOnLimit,
+        enabled: savedSettings.enabled ?? true,
+        otpEnabled: savedSettings.otpEnabled ?? true,
+        notificationsEnabled: savedSettings.notificationsEnabled ?? true,
+        monthlyLimit: savedSettings.monthlyLimit ?? 1000,
+        warningThreshold: savedSettings.warningThreshold ?? 80,
+        adminEmail: savedSettings.adminEmail ?? '',
+        notifyAdminOnLimit: savedSettings.notifyAdminOnLimit ?? true,
       },
     });
 
@@ -140,6 +155,7 @@ export async function PUT(request: NextRequest) {
     );
   }
 }
+
 
 
 // POST /api/admin/whatsapp-settings - Reset counters
