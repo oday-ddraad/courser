@@ -136,7 +136,19 @@ export default function SettingsPage() {
       const response = await fetch('/api/admin/whatsapp-settings');
       const data = await response.json();
       if (data.success) {
-        setWhatsappSettings(data.data.settings);
+        // Ensure all boolean fields have default values
+        setWhatsappSettings({
+          enabled: data.data.settings.enabled ?? true,
+          otpEnabled: data.data.settings.otpEnabled ?? true,
+          notificationsEnabled: data.data.settings.notificationsEnabled ?? true,
+          monthlyLimit: data.data.settings.monthlyLimit,
+          warningThreshold: data.data.settings.warningThreshold,
+          monthlyConversations: data.data.settings.monthlyConversations,
+          totalConversations: data.data.settings.totalConversations,
+          activeConversations: data.data.settings.activeConversations,
+          adminEmail: data.data.settings.adminEmail,
+          notifyAdminOnLimit: data.data.settings.notifyAdminOnLimit,
+        });
         setWhatsappStats(data.data.stats);
       }
     } catch (error) {
@@ -145,6 +157,7 @@ export default function SettingsPage() {
       setLoading(false);
     }
   };
+
 
   const handleSaveEmailSettings = async () => {
     if (!emailSettings) return;
