@@ -1,89 +1,90 @@
-# WhatsApp OTP and Notifications Implementation
+# WhatsApp OTP and Notifications - Implementation TODO
 
+## Branch: `blackboxai/whatsapp-otp-notifications`
 
-## Branch: blackboxai/whatsapp-otp-notifications
+## Current Status
+- [x] Created branch for WhatsApp OTP and notifications testing
+- [x] Added serviceState field to WhatsAppSettings model
+- [x] Improved atomic document creation with findOneAndUpdate
+- [x] Added server-side debugging logs
+- [x] Added client-side debugging logs
+- [x] Fixed controlled/uncontrolled input warning
+- [x] Implemented auto-save for toggle switches
+- [x] Added translations for all WhatsApp UI elements
 
-### Database Schema Updates
-- [x] Update `lib/mongodb/models/User.ts` - Add phoneNumber, phoneVerified, whatsappNotificationsEnabled fields
-- [x] Update `lib/mongodb/models/index.ts` - Export new models
-- [x] Create `lib/mongodb/models/OTP.ts` - OTP storage model with expiration
+## Critical Issues to Fix
 
-### WhatsApp Service Layer
-- [x] Create `lib/services/whatsapp.ts` - WhatsApp API integration service
+### 1. Settings Persistence (HIGH PRIORITY)
+**Problem**: Toggle switches don't persist after page refresh
+- [ ] Debug database save operation
+- [ ] Verify MongoDB connection is working
+- [ ] Check if document is being created/updated correctly
+- [ ] Test with direct database query to confirm storage
 
-### API Routes - OTP
-- [x] Create `app/api/whatsapp/otp/send/route.ts` - Send OTP endpoint with rate limiting
-- [x] Create `app/api/whatsapp/otp/verify/route.ts` - Verify OTP endpoint
-- [x] Create `app/api/whatsapp/webhook/route.ts` - Webhook handler for callbacks
+**Files to check**:
+- `app/api/admin/whatsapp-settings/route.ts` - PUT endpoint
+- `lib/mongodb/models/WhatsAppSettings.ts` - Model definition
+- `app/[locale]/dashboard/admin/settings/page.tsx` - Frontend state
 
-### API Routes - Notifications
-- [x] Create `app/api/notifications/whatsapp/route.ts` - WhatsApp notifications endpoint
+### 2. WhatsApp Service Integration
+- [ ] Verify WhatsApp Business API credentials
+- [ ] Test webhook endpoint configuration
+- [ ] Add webhook verification in development
+- [ ] Create mock service for testing without real WhatsApp
 
-### Admin Dashboard
-- [x] Create `app/[locale]/dashboard/admin/whatsapp-otp/page.tsx` - Admin test interface
+### 3. OTP System Testing
+- [ ] Test OTP send endpoint
+- [ ] Test OTP verify endpoint
+- [ ] Add rate limiting for OTP requests
+- [ ] Create OTP UI component for users
+- [ ] Add phone number verification flow
 
-### Integration
-- [x] Update `lib/services/notifications.ts` - Add WhatsApp notification methods
-- [ ] Update `app/api/register/route.ts` - Optional phone number collection
+### 4. Notification System
+- [ ] Test notification delivery
+- [ ] Add notification templates
+- [ ] Create notification history page
+- [ ] Add user preference management
 
-### Configuration
-- [x] Create `.env.example` - WhatsApp API environment variables
+## Testing Checklist
 
-### Documentation
-- [x] Create `docs/WHATSAPP_OTP_SETUP.md` - Setup and testing guide
+### API Endpoints
+- [ ] `GET /api/admin/whatsapp-settings` - Returns correct settings
+- [ ] `PUT /api/admin/whatsapp-settings` - Saves settings correctly
+- [ ] `POST /api/whatsapp/otp/send` - Sends OTP successfully
+- [ ] `POST /api/whatsapp/otp/verify` - Verifies OTP correctly
+- [ ] `POST /api/whatsapp/webhook` - Handles incoming messages
+- [ ] `GET /api/notifications/whatsapp` - Returns service status
 
----
+### Frontend Components
+- [ ] Settings page loads without errors
+- [ ] Toggle switches show correct state
+- [ ] Auto-save works for toggles
+- [ ] Manual save works for other settings
+- [ ] Visual feedback shows save status
 
-## Progress Tracking
+### Database
+- [ ] WhatsAppSettings document exists
+- [ ] All fields are stored correctly
+- [ ] Document updates persist after refresh
 
-**Current Status:** Implementation complete, ready for testing
+## Environment Variables Required
+```env
+# WhatsApp Business API
+WHATSAPP_API_VERSION=v18.0
+WHATSAPP_PHONE_NUMBER_ID=your_phone_number_id
+WHATSAPP_BUSINESS_ACCOUNT_ID=your_business_account_id
+WHATSAPP_ACCESS_TOKEN=your_access_token
+WHATSAPP_WEBHOOK_VERIFY_TOKEN=your_webhook_verify_token
+WHATSAPP_WEBHOOK_SECRET=your_webhook_secret
 
-**Completed:** 15/15 tasks
+# Optional: Meta App credentials
+META_APP_ID=your_app_id
+META_APP_SECRET=your_app_secret
+```
 
-### Recent Updates:
-- [x] Added Arabic and German translations for WhatsApp settings UI
-- [x] Updated settings page to use translation keys instead of hardcoded strings
-- [x] Build verified successfully with all routes generated
-
-
-## Summary
-
-This branch implements a complete WhatsApp OTP verification and notification system:
-
-### Features Implemented:
-1. **OTP Verification Flow**
-   - Send 6-digit OTP via WhatsApp
-   - 10-minute expiration
-   - 3 max attempts
-   - 60-second cooldown between requests
-   - SHA-256 hashed storage
-
-2. **WhatsApp Notifications**
-   - Welcome messages
-   - Course enrollment notifications
-   - Live stream starting alerts
-   - Payment approval notifications
-
-3. **Webhook Handling**
-   - Meta webhook verification
-   - Signature validation
-   - Message status tracking
-   - Incoming message processing
-
-4. **Admin Testing Interface**
-   - Service status checker
-   - OTP send/verify testing
-   - Setup instructions
-
-### API Endpoints:
-- `POST /api/whatsapp/otp/send` - Send OTP
-- `POST /api/whatsapp/otp/verify` - Verify OTP
-- `GET/POST /api/whatsapp/webhook` - Webhook handling
-- `GET/POST /api/notifications/whatsapp` - Notifications
-
-### Next Steps:
-1. Set up WhatsApp Business API credentials in `.env`
-2. Create message templates in Meta Business Manager
-3. Configure webhook URL
-4. Test OTP flow via admin dashboard
-5. Integrate with registration flow (optional)
+## Next Steps
+1. Fix the database persistence issue
+2. Add proper error handling
+3. Create test scripts
+4. Add user-facing OTP UI
+5. Test complete flow end-to-end
