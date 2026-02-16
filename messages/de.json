@@ -440,7 +440,70 @@
         "whatsappSettingsSaveFailed": "Fehler beim Speichern der WhatsApp-Einstellungen",
         "confirmReset": "Sind Sie sicher, dass Sie {type}-Zähler zurücksetzen möchten?",
         "countersReset": "Zähler erfolgreich zurückgesetzt",
-        "countersResetFailed": "Zähler konnten nicht zurückgesetzt werden"
+        "countersResetFailed": "Zähler konnten nicht zurückgesetzt werden",
+        "jitsi": {
+          "title": "Jitsi-Einstellungen",
+          "subtitle": "Videokonferenz-Einstellungen konfigurieren",
+          "tabs": {
+            "labels": "Beschriftungen (EN/DE/AR)",
+            "video": "Video",
+            "audio": "Audio",
+            "performance": "Leistung",
+            "ui": "UI & Layout"
+          },
+          "messages": {
+            "saved": "Einstellungen erfolgreich gespeichert!",
+            "saveFailed": "Speichern fehlgeschlagen",
+            "saveError": "Fehler beim Speichern der Einstellungen"
+          },
+          "labels": {
+            "title": "Mehrsprachige Beschriftungen",
+            "english": "🇬🇧 English",
+            "german": "🇩🇪 Deutsch",
+            "arabic": "🇸🇦 العربية",
+            "name": "Name",
+            "description": "Beschreibung"
+          },
+          "video": {
+            "title": "Video-Einstellungen",
+            "resolution": "Auflösung",
+            "resolutions": {
+              "180": "180p (Niedrigste CPU)",
+              "240": "240p",
+              "360": "360p (Empfohlen)",
+              "480": "480p",
+              "720": "720p (HD)",
+              "1080": "1080p (Full HD - Hohe CPU)"
+            },
+            "maxVideoHeight": "Max. Videohöhe",
+            "maxVideoWidth": "Max. Videobreite",
+            "startWithVideoMuted": "Mit stummgeschaltetem Video starten"
+          },
+          "audio": {
+            "title": "Audio-Einstellungen",
+            "startWithAudioMuted": "Mit stummgeschaltetem Audio starten",
+            "enableNoAudioDetection": "Keine-Audio-Erkennung aktivieren",
+            "enableNoisyMicDetection": "Lautes-Mikrofon-Erkennung aktivieren"
+          },
+          "performance": {
+            "title": "Leistungseinstellungen",
+            "disableSimulcast": "Simulcast deaktivieren (spart CPU)",
+            "enableLayerSuspension": "Layer-Suspension aktivieren",
+            "p2pEnabled": "P2P aktivieren (direkte Verbindung für 2 Benutzer)",
+            "analyticsDisabled": "Analysen deaktivieren"
+          },
+          "ui": {
+            "title": "UI & Layout-Einstellungen",
+            "prejoinPageEnabled": "Prejoin-Seite aktivieren",
+            "showJitsiWatermark": "Jitsi-Wasserzeichen anzeigen",
+            "disableVideoBackground": "Video-Hintergrund deaktivieren (spart CPU)",
+            "visibleTiles": "Sichtbare Kacheln",
+            "maxColumns": "Max. Spalten",
+            "filmstripHeight": "Filmstreifen-Höhe (px)",
+            "toolbarButtons": "Symbolleisten-Schaltflächen"
+          },
+          "saveButton": "Jitsi-Einstellungen speichern"
+        }
       },
 
 

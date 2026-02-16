@@ -16,7 +16,9 @@ import {
   BarChart3,
   FileText,
   Activity,
+  Video,
 } from 'lucide-react';
+
 
 interface EmailSettings {
   dailyLimit: number;
@@ -89,7 +91,8 @@ export default function SettingsPage() {
   const [whatsappStats, setWhatsappStats] = useState<WhatsAppStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'email' | 'whatsapp' | 'general'>('email');
+  const [activeTab, setActiveTab] = useState<'email' | 'whatsapp' | 'jitsi' | 'general'>('email');
+
   const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
 
   // Auto-save WhatsApp toggle settings
@@ -375,6 +378,17 @@ export default function SettingsPage() {
         </button>
 
         <button
+          onClick={() => setActiveTab('jitsi')}
+          className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
+            activeTab === 'jitsi'
+              ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+              : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
+          }`}
+        >
+          <Video className="w-4 h-4 inline mr-2" />
+          {t('settings.jitsi.title')}
+        </button>
+        <button
           onClick={() => setActiveTab('general')}
           className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition ${
             activeTab === 'general'
@@ -386,6 +400,7 @@ export default function SettingsPage() {
           {t('settings.generalSettings')}
         </button>
       </div>
+
 
       {activeTab === 'email' && emailSettings && (
         <div className="space-y-6">
@@ -882,6 +897,10 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {activeTab === 'jitsi' && (
+        <JitsiSettingsTab />
+      )}
+
       {activeTab === 'general' && (
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
@@ -892,6 +911,465 @@ export default function SettingsPage() {
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+// Jitsi Settings Tab Component
+function JitsiSettingsTab() {
+  const t = useTranslations('Dashboard.admin.settings.jitsi');
+  const [settings, setSettings] = useState<{
+    _id?: string;
+    resolution: number;
+    maxVideoHeight: number;
+    maxVideoWidth: number;
+    startWithVideoMuted: boolean;
+    startWithAudioMuted: boolean;
+    enableNoAudioDetection: boolean;
+    enableNoisyMicDetection: boolean;
+    disableSimulcast: boolean;
+    enableLayerSuspension: boolean;
+    p2pEnabled: boolean;
+    prejoinPageEnabled: boolean;
+    showJitsiWatermark: boolean;
+    showBrandWatermark: boolean;
+    disableVideoBackground: boolean;
+    numberOfVisibleTiles: number;
+    maxTileViewColumns: number;
+    filmStripMaxHeight: number;
+    analyticsDisabled: boolean;
+    disableDeepLinking: boolean;
+    disableInviteFunctions: boolean;
+    doNotStoreRoom: boolean;
+    toolbarButtons: string[];
+    labels: {
+      en: { name: string; description: string };
+      de: { name: string; description: string };
+      ar: { name: string; description: string };
+    };
+  }>({
+    resolution: 360,
+    maxVideoHeight: 720,
+    maxVideoWidth: 1280,
+    startWithVideoMuted: true,
+    startWithAudioMuted: true,
+    enableNoAudioDetection: true,
+    enableNoisyMicDetection: true,
+    disableSimulcast: false,
+    enableLayerSuspension: true,
+    p2pEnabled: true,
+    prejoinPageEnabled: false,
+    showJitsiWatermark: false,
+    showBrandWatermark: false,
+    disableVideoBackground: true,
+    numberOfVisibleTiles: 4,
+    maxTileViewColumns: 2,
+    filmStripMaxHeight: 90,
+    analyticsDisabled: true,
+    disableDeepLinking: true,
+    disableInviteFunctions: true,
+    doNotStoreRoom: true,
+    toolbarButtons: ['microphone', 'camera', 'desktop', 'fullscreen', 'hangup', 'chat', 'tileview'],
+    labels: {
+      en: { name: 'Default Settings', description: 'Optimized for performance' },
+      de: { name: 'Standardeinstellungen', description: 'Optimiert für Leistung' },
+      ar: { name: 'الإعدادات الافتراضية', description: 'محسّن للأداء' },
+    },
+  });
+
+
+  const [activeSubTab, setActiveSubTab] = useState<'labels' | 'video' | 'audio' | 'performance' | 'ui'>('labels');
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const res = await fetch('/api/jitsi-settings?default=true');
+      const data = await res.json();
+      if (data.success && data.settings) {
+        setSettings(data.settings);
+      }
+    } catch (err) {
+      console.error('Error fetching settings:', err);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    setMessage('');
+    try {
+      const settingsId = '_id' in settings ? settings._id : undefined;
+      const url = settingsId ? `/api/jitsi-settings/${settingsId}` : '/api/jitsi-settings';
+      const method = settingsId ? 'PUT' : 'POST';
+
+      
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      
+      const data = await res.json();
+      if (data.success) {
+        setMessage('Settings saved successfully!');
+        if (data.settings) setSettings(data.settings);
+      } else {
+        setMessage(data.error || 'Failed to save');
+      }
+    } catch (err) {
+      setMessage('Error saving settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleButton = (btn: string) => {
+    setSettings(prev => ({
+      ...prev,
+      toolbarButtons: prev.toolbarButtons.includes(btn)
+        ? prev.toolbarButtons.filter(b => b !== btn)
+        : [...prev.toolbarButtons, btn],
+    }));
+  };
+
+  const availableButtons = [
+    'microphone', 'camera', 'closedcaptions', 'desktop', 'fullscreen',
+    'hangup', 'chat', 'recording', 'livestreaming', 'tileview',
+    'settings', 'videoquality', 'filmstrip', 'invite', 'stats',
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Message */}
+      {message && (
+        <div className={`p-4 rounded-lg ${message.includes('success') ? 'bg-green-50 dark:bg-green-900/20 border border-green-200' : 'bg-red-50 dark:bg-red-900/20 border border-red-200'}`}>
+          <p className={message.includes('success') ? 'text-green-700' : 'text-red-700'}>{message}</p>
+        </div>
+      )}
+
+      {/* Sub Tabs */}
+      <div className="flex space-x-1 bg-gray-100 dark:bg-slate-800 p-1 rounded-lg">
+        {[
+          { id: 'labels', label: t('tabs.labels'), icon: SettingsIcon },
+          { id: 'video', label: t('tabs.video'), icon: Video },
+          { id: 'audio', label: t('tabs.audio'), icon: MessageCircle },
+          { id: 'performance', label: t('tabs.performance'), icon: Activity },
+          { id: 'ui', label: t('tabs.ui'), icon: SettingsIcon },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveSubTab(tab.id as any)}
+            className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition ${
+              activeSubTab === tab.id
+                ? 'bg-white dark:bg-slate-700 text-gray-900 dark:text-white shadow-sm'
+                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900'
+            }`}
+          >
+            <tab.icon className="w-4 h-4 inline mr-1" />
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
+        {/* Labels Tab */}
+        {activeSubTab === 'labels' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('labels.title')}</h3>
+            
+            {(['en', 'de', 'ar'] as const).map((lang) => (
+              <div key={lang} className="p-4 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                <h4 className="font-medium text-gray-900 dark:text-white mb-3">
+                  {lang === 'en' && t('labels.english')}
+                  {lang === 'de' && t('labels.german')}
+                  {lang === 'ar' && t('labels.arabic')}
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labels.name')}</label>
+                    <input
+                      type="text"
+                      value={settings.labels[lang].name}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        labels: { 
+                          ...prev.labels, 
+                          [lang]: { 
+                            ...prev.labels[lang], 
+                            name: e.target.value 
+                          } 
+                        }
+                      }))}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('labels.description')}</label>
+                    <textarea
+                      value={settings.labels[lang].description}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        labels: { 
+                          ...prev.labels, 
+                          [lang]: { 
+                            ...prev.labels[lang], 
+                            description: e.target.value 
+                          } 
+                        }
+                      }))}
+                      rows={2}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+
+          </div>
+        )}
+
+        {/* Video Tab */}
+        {activeSubTab === 'video' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('video.title')}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('video.resolution')}</label>
+                <select
+                  value={settings.resolution}
+                  onChange={(e) => setSettings({ ...settings, resolution: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                >
+                  <option value={180}>{t('video.resolutions.180')}</option>
+                  <option value={240}>{t('video.resolutions.240')}</option>
+                  <option value={360}>{t('video.resolutions.360')}</option>
+                  <option value={480}>{t('video.resolutions.480')}</option>
+                  <option value={720}>{t('video.resolutions.720')}</option>
+                  <option value={1080}>{t('video.resolutions.1080')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('video.maxVideoHeight')}</label>
+                <input
+                  type="number"
+                  value={settings.maxVideoHeight}
+                  onChange={(e) => setSettings({ ...settings, maxVideoHeight: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('video.maxVideoWidth')}</label>
+                <input
+                  type="number"
+                  value={settings.maxVideoWidth}
+                  onChange={(e) => setSettings({ ...settings, maxVideoWidth: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.startWithVideoMuted}
+                  onChange={(e) => setSettings({ ...settings, startWithVideoMuted: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('video.startWithVideoMuted')}</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Audio Tab */}
+        {activeSubTab === 'audio' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('audio.title')}</h3>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.startWithAudioMuted}
+                  onChange={(e) => setSettings({ ...settings, startWithAudioMuted: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('audio.startWithAudioMuted')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enableNoAudioDetection}
+                  onChange={(e) => setSettings({ ...settings, enableNoAudioDetection: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('audio.enableNoAudioDetection')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enableNoisyMicDetection}
+                  onChange={(e) => setSettings({ ...settings, enableNoisyMicDetection: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('audio.enableNoisyMicDetection')}</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Performance Tab */}
+        {activeSubTab === 'performance' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('performance.title')}</h3>
+            <div className="space-y-4">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.disableSimulcast}
+                  onChange={(e) => setSettings({ ...settings, disableSimulcast: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('performance.disableSimulcast')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.enableLayerSuspension}
+                  onChange={(e) => setSettings({ ...settings, enableLayerSuspension: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('performance.enableLayerSuspension')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.p2pEnabled}
+                  onChange={(e) => setSettings({ ...settings, p2pEnabled: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('performance.p2pEnabled')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.analyticsDisabled}
+                  onChange={(e) => setSettings({ ...settings, analyticsDisabled: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('performance.analyticsDisabled')}</label>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* UI Tab */}
+        {activeSubTab === 'ui' && (
+          <div className="space-y-6">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">{t('ui.title')}</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.prejoinPageEnabled}
+                  onChange={(e) => setSettings({ ...settings, prejoinPageEnabled: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('ui.prejoinPageEnabled')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.showJitsiWatermark}
+                  onChange={(e) => setSettings({ ...settings, showJitsiWatermark: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('ui.showJitsiWatermark')}</label>
+              </div>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={settings.disableVideoBackground}
+                  onChange={(e) => setSettings({ ...settings, disableVideoBackground: e.target.checked })}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+                <label className="ml-2 text-sm text-gray-700 dark:text-gray-300">{t('ui.disableVideoBackground')}</label>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('ui.visibleTiles')}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={25}
+                  value={settings.numberOfVisibleTiles}
+                  onChange={(e) => setSettings({ ...settings, numberOfVisibleTiles: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('ui.maxColumns')}</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={5}
+                  value={settings.maxTileViewColumns}
+                  onChange={(e) => setSettings({ ...settings, maxTileViewColumns: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('ui.filmstripHeight')}</label>
+                <input
+                  type="number"
+                  min={50}
+                  max={200}
+                  value={settings.filmStripMaxHeight}
+                  onChange={(e) => setSettings({ ...settings, filmStripMaxHeight: parseInt(e.target.value) })}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-white"
+                />
+              </div>
+            </div>
+
+            <div>
+              <h4 className="font-medium text-gray-900 dark:text-white mb-3">{t('ui.toolbarButtons')}</h4>
+              <div className="flex flex-wrap gap-2">
+                {availableButtons.map((btn) => (
+                  <button
+                    key={btn}
+                    onClick={() => toggleButton(btn)}
+                    className={`px-3 py-1 rounded-full text-sm transition ${
+                      settings.toolbarButtons.includes(btn)
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-200 dark:bg-slate-700 text-gray-700 dark:text-gray-300'
+                    }`}
+                  >
+                    {btn}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Save Button */}
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:opacity-50"
+          >
+            {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+            {t('saveButton')}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

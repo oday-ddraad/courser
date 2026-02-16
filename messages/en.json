@@ -440,7 +440,70 @@
         "whatsappSettingsSaveFailed": "Failed to save WhatsApp settings",
         "confirmReset": "Are you sure you want to reset {type} counters?",
         "countersReset": "Counters reset successfully",
-        "countersResetFailed": "Failed to reset counters"
+        "countersResetFailed": "Failed to reset counters",
+        "jitsi": {
+          "title": "Jitsi Settings",
+          "subtitle": "Configure video conferencing settings",
+          "tabs": {
+            "labels": "Labels (EN/DE/AR)",
+            "video": "Video",
+            "audio": "Audio",
+            "performance": "Performance",
+            "ui": "UI & Layout"
+          },
+          "messages": {
+            "saved": "Settings saved successfully!",
+            "saveFailed": "Failed to save",
+            "saveError": "Error saving settings"
+          },
+          "labels": {
+            "title": "Multilingual Labels",
+            "english": "🇬🇧 English",
+            "german": "🇩🇪 Deutsch",
+            "arabic": "🇸🇦 العربية",
+            "name": "Name",
+            "description": "Description"
+          },
+          "video": {
+            "title": "Video Settings",
+            "resolution": "Resolution",
+            "resolutions": {
+              "180": "180p (Lowest CPU)",
+              "240": "240p",
+              "360": "360p (Recommended)",
+              "480": "480p",
+              "720": "720p (HD)",
+              "1080": "1080p (Full HD - High CPU)"
+            },
+            "maxVideoHeight": "Max Video Height",
+            "maxVideoWidth": "Max Video Width",
+            "startWithVideoMuted": "Start with video muted"
+          },
+          "audio": {
+            "title": "Audio Settings",
+            "startWithAudioMuted": "Start with audio muted",
+            "enableNoAudioDetection": "Enable no-audio detection",
+            "enableNoisyMicDetection": "Enable noisy mic detection"
+          },
+          "performance": {
+            "title": "Performance Settings",
+            "disableSimulcast": "Disable simulcast (saves CPU)",
+            "enableLayerSuspension": "Enable layer suspension",
+            "p2pEnabled": "Enable P2P (direct connection for 2 users)",
+            "analyticsDisabled": "Disable analytics"
+          },
+          "ui": {
+            "title": "UI & Layout Settings",
+            "prejoinPageEnabled": "Enable prejoin page",
+            "showJitsiWatermark": "Show Jitsi watermark",
+            "disableVideoBackground": "Disable video background (saves CPU)",
+            "visibleTiles": "Visible Tiles",
+            "maxColumns": "Max Columns",
+            "filmstripHeight": "Filmstrip Height (px)",
+            "toolbarButtons": "Toolbar Buttons"
+          },
+          "saveButton": "Save Jitsi Settings"
+        }
       },
 
 

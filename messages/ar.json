@@ -440,7 +440,70 @@
         "whatsappSettingsSaveFailed": "فشل في حفظ إعدادات واتساب",
         "confirmReset": "هل أنت متأكد من إعادة تعيين عدادات {type}؟",
         "countersReset": "تم إعادة تعيين العدادات بنجاح",
-        "countersResetFailed": "فشل في إعادة تعيين العدادات"
+        "countersResetFailed": "فشل في إعادة تعيين العدادات",
+        "jitsi": {
+          "title": "إعدادات Jitsi",
+          "subtitle": "تكوين إعدادات مؤتمرات الفيديو",
+          "tabs": {
+            "labels": "التسميات (EN/DE/AR)",
+            "video": "الفيديو",
+            "audio": "الصوت",
+            "performance": "الأداء",
+            "ui": "الواجهة والتخطيط"
+          },
+          "messages": {
+            "saved": "تم حفظ الإعدادات بنجاح!",
+            "saveFailed": "فشل الحفظ",
+            "saveError": "خطأ في حفظ الإعدادات"
+          },
+          "labels": {
+            "title": "التسميات متعددة اللغات",
+            "english": "🇬🇧 English",
+            "german": "🇩🇪 Deutsch",
+            "arabic": "🇸🇦 العربية",
+            "name": "الاسم",
+            "description": "الوصف"
+          },
+          "video": {
+            "title": "إعدادات الفيديو",
+            "resolution": "الدقة",
+            "resolutions": {
+              "180": "180p (أقل استهلاك للمعالج)",
+              "240": "240p",
+              "360": "360p (موصى به)",
+              "480": "480p",
+              "720": "720p (HD)",
+              "1080": "1080p (Full HD - استهلاك عالي للمعالج)"
+            },
+            "maxVideoHeight": "أقصى ارتفاع للفيديو",
+            "maxVideoWidth": "أقصى عرض للفيديو",
+            "startWithVideoMuted": "البدء مع كتم الفيديو"
+          },
+          "audio": {
+            "title": "إعدادات الصوت",
+            "startWithAudioMuted": "البدء مع كتم الصوت",
+            "enableNoAudioDetection": "تفعيل اكتشاف عدم وجود صوت",
+            "enableNoisyMicDetection": "تفعيل اكتشاف الميكروفون الصاخب"
+          },
+          "performance": {
+            "title": "إعدادات الأداء",
+            "disableSimulcast": "تعطيل البث المتزامن (يوفر المعالج)",
+            "enableLayerSuspension": "تفعيل تعليق الطبقات",
+            "p2pEnabled": "تفعيل P2P (اتصال مباشر لمستخدمين)",
+            "analyticsDisabled": "تعطيل التحليلات"
+          },
+          "ui": {
+            "title": "إعدادات الواجهة والتخطيط",
+            "prejoinPageEnabled": "تفعيل صفحة ما قبل الانضمام",
+            "showJitsiWatermark": "إظهار علامة Jitsi المائية",
+            "disableVideoBackground": "تعطيل خلفية الفيديو (يوفر المعالج)",
+            "visibleTiles": "البلاطات المرئية",
+            "maxColumns": "الحد الأقصى للأعمدة",
+            "filmstripHeight": "ارتفاع شريط الأفلام (بكسل)",
+            "toolbarButtons": "أزرار شريط الأدوات"
+          },
+          "saveButton": "حفظ إعدادات Jitsi"
+        }
       },
 
 
