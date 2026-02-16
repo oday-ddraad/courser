@@ -6,13 +6,16 @@ export interface IUser extends Document {
   name: string;
   role: 'admin' | 'instructor' | 'user';
   locale: 'en' | 'de' | 'ar';
-  country: string; // ISO 3166-1 alpha-2 country code (e.g., 'US', 'DE', 'SA', 'SY')
-  phoneNumber?: string; // E.164 format (e.g., +1234567890)
-  phoneVerified?: Date;
+  country: string;
+  phoneNumber?: string;
+  phoneVerified?: Date | null;
   whatsappNotificationsEnabled: boolean;
   avatar?: string;
-  emailVerified?: Date;
+  emailVerified?: Date | boolean | null;
+
   isActive: boolean;
+  jaasUserId?: string;
+  jaasTokenGeneratedAt?: Date;
   instructorProfile?: {
     bio: {
       en: string;
@@ -42,7 +45,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Password is required'],
       minlength: [6, 'Password must be at least 6 characters'],
-      select: false, // Don't return password by default
+      select: false,
     },
     name: {
       type: String,
@@ -53,6 +56,7 @@ const UserSchema = new Schema<IUser>(
       type: String,
       enum: ['admin', 'instructor', 'user'],
       default: 'user',
+      index: true,
     },
     locale: {
       type: String,
@@ -63,15 +67,17 @@ const UserSchema = new Schema<IUser>(
       type: String,
       required: [true, 'Country is required'],
       uppercase: true,
+      trim: true,
       minlength: 2,
       maxlength: 2,
+      index: true,
     },
     phoneNumber: {
       type: String,
       unique: true,
-      sparse: true, // Allow null/undefined values
+      sparse: true,
       trim: true,
-      match: [/^\+[1-9]\d{1,14}$/, 'Please provide a valid phone number in E.164 format (e.g., +1234567890)'],
+      match: [/^\+[1-9]\d{1,14}$/, 'Please provide a valid phone number in E.164 format'],
     },
     phoneVerified: {
       type: Date,
@@ -86,12 +92,23 @@ const UserSchema = new Schema<IUser>(
       default: '',
     },
     emailVerified: {
-      type: Date,
+      type: Schema.Types.Mixed,
       default: null,
     },
+
     isActive: {
       type: Boolean,
       default: true,
+      index: true,
+    },
+    jaasUserId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    jaasTokenGeneratedAt: {
+      type: Date,
     },
     instructorProfile: {
       bio: {
@@ -119,11 +136,13 @@ const UserSchema = new Schema<IUser>(
       },
     },
   },
+
   {
     timestamps: true,
   }
-);
 
+
+);
 // Indexes for performance
 // Note: email already has unique: true in schema definition
 UserSchema.index({ role: 1 });

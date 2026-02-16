@@ -17,8 +17,10 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
-  X
+  X,
+  Video
 } from 'lucide-react';
+
 
 interface NavItem {
   href: string;
@@ -82,8 +84,13 @@ export default function AdminSidebar() {
       label: t('settings'),
       icon: <Settings className="w-5 h-5" />,
     },
-
+    {
+      href: `/${locale}/dashboard/admin/jaas-test`,
+      label: 'JaaS Test',
+      icon: <Video className="w-5 h-5" />,
+    },
   ];
+
 
   const isActive = (href: string) => {
     if (href === `/${locale}/dashboard/admin`) {

@@ -4,6 +4,8 @@ import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { hasPermission } from '@/lib/auth/permissions';
 import { useTranslations } from 'next-intl';
+import LiveSessionNotification from '@/components/LiveSessionNotification';
+
 
 export default function UserDashboard() {
   const { data: session, status } = useSession();
@@ -19,7 +21,11 @@ export default function UserDashboard() {
 
   return (
     <div className="p-6">
+      {/* Live Session Notification - shows when instructor starts a meeting */}
+      <LiveSessionNotification />
+      
       <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
+
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* User-specific widgets */}
