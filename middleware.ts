@@ -2,6 +2,7 @@ import createMiddleware from 'next-intl/middleware';
 import { routing } from './i18n/routing';
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse, NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 const i18nMiddleware = createMiddleware(routing);
 
@@ -16,7 +17,7 @@ const authMiddleware = withAuth(
         const { pathname } = req.nextUrl;
 
         // 1. Identify public segments
-        const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login'];
+        const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email'];
         
         // Remove the locale prefix (e.g., /en/login -> /login) to check against publicPaths
         const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
@@ -30,19 +31,39 @@ const authMiddleware = withAuth(
           return true;
         }
 
-        // 3. Require token for everything else (dashboard, etc.)
-        return !!token;
+        // 3. Require token for protected routes
+        if (!token) {
+          return false;
+        }
+
+        // 4. Check if profile is completed
+        // Token will have profileCompleted flag from JWT callback
+        if (!token.profileCompleted) {
+          // Allow access to profile completion and verification pages
+          if (pathWithoutLocale.startsWith('/complete-profile') || 
+              pathWithoutLocale.startsWith('/verify-email')) {
+            return true;
+          }
+          // User is authenticated but profile is incomplete
+          // Return false to trigger redirect, we'll handle it in main middleware
+          return false;
+        }
+
+        // 5. User is authenticated and profile is complete
+        return true;
+
       },
     },
     pages: {
       // If unauthorized, the user is sent here. 
-      // Note: We handle the locale redirect in the main middleware function below.
       signIn: '/login', 
     },
   }
 );
 
-export default function middleware(req: NextRequest, event: any) {
+
+export default async function middleware(req: NextRequest, event: any) {
+
   const { pathname } = req.nextUrl;
 
   // 1. Exclude internal/static files
@@ -56,7 +77,7 @@ export default function middleware(req: NextRequest, event: any) {
   }
 
   // 2. Check if it's a public route that needs i18n but NO auth
-  const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login'];
+  const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email'];
   const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
   const isPublic = publicPaths.some(path => pathWithoutLocale.startsWith(path)) || pathWithoutLocale === '/';
 
@@ -64,9 +85,27 @@ export default function middleware(req: NextRequest, event: any) {
     return i18nMiddleware(req);
   }
 
-  // 3. For protected routes, run authMiddleware
+  // 3. For protected routes, first check if user is authenticated and profile is complete
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
+  
+  // If user is authenticated but profile is incomplete, redirect to complete-profile
+  if (token && !token.profileCompleted) {
+    // Extract locale from pathname
+    const localeMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
+    const locale = localeMatch ? localeMatch[1] : 'en';
+    
+    // Redirect to complete-profile
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}/complete-profile`;
+    return NextResponse.redirect(url);
+  }
+
+  // 4. Run authMiddleware for other cases
   // @ts-ignore
-  return authMiddleware(req, event);
+  const response = await authMiddleware(req, event);
+  
+  return response;
+
 }
 
 export const config = {

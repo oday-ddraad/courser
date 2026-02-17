@@ -53,19 +53,28 @@ declare module "next-auth" {
     user: {
       id: string;
       role: UserRole;
+      profileCompleted: boolean;
+      provider: 'credentials' | 'google';
+      avatar?: string;
     } & DefaultSession["user"];
   }
 
   interface User {
     id: string;
     role: UserRole;
+    profileCompleted: boolean;
+    provider: 'credentials' | 'google';
+    avatar?: string;
   }
 }
+
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string;
     role: UserRole;
+    profileCompleted: boolean;
+    provider: 'credentials' | 'google';
     version?: number; // For global revocation
   }
 }

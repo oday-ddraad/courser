@@ -4,14 +4,44 @@ export interface IUser extends Document {
   email: string;
   password: string;
   name: string;
+  firstName?: string;
+  lastName?: string;
   role: 'admin' | 'instructor' | 'user';
   locale: 'en' | 'de' | 'ar';
   country: string;
   phoneNumber?: string;
   phoneVerified?: Date | null;
   whatsappNotificationsEnabled: boolean;
+  whatsappConsent: boolean;
+  whatsappConsentAt?: Date | null;
   avatar?: string;
-  emailVerified?: Date | boolean | null;
+  emailVerified?: Date | null;
+  emailVerificationToken?: string | null;
+  emailVerificationExpires?: Date | null;
+
+  // Profile completion tracking
+  profileCompleted: boolean;
+  profileCompletedAt?: Date | null;
+
+  // Address
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
+
+  // Documents
+  documents?: {
+    name: string;
+    fileUrl: string;
+    fileType: string;
+    uploadedAt: Date;
+  }[];
+
+  // OAuth
+  provider: 'credentials' | 'google';
+  googleId?: string;
 
   isActive: boolean;
   jaasUserId?: string;
@@ -31,6 +61,7 @@ export interface IUser extends Document {
   updatedAt: Date;
 }
 
+
 const UserSchema = new Schema<IUser>(
   {
     email: {
@@ -43,15 +74,27 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: function(this: IUser) {
+        return this.provider === 'credentials';
+      },
       minlength: [6, 'Password must be at least 6 characters'],
       select: false,
     },
+
     name: {
       type: String,
       required: [true, 'Name is required'],
       trim: true,
     },
+    firstName: {
+      type: String,
+      trim: true,
+    },
+    lastName: {
+      type: String,
+      trim: true,
+    },
+
     role: {
       type: String,
       enum: ['admin', 'instructor', 'user'],
@@ -87,6 +130,14 @@ const UserSchema = new Schema<IUser>(
       type: Boolean,
       default: true,
     },
+    whatsappConsent: {
+      type: Boolean,
+      default: false,
+    },
+    whatsappConsentAt: {
+      type: Date,
+      default: null,
+    },
     avatar: {
       type: String,
       default: '',
@@ -96,7 +147,55 @@ const UserSchema = new Schema<IUser>(
       default: null,
     },
 
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+    },
+
+    // Profile completion tracking
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+    profileCompletedAt: {
+      type: Date,
+      default: null,
+    },
+
+    // Address
+    address: {
+      street: { type: String, trim: true },
+      city: { type: String, trim: true },
+      state: { type: String, trim: true },
+      zipCode: { type: String, trim: true },
+    },
+
+    // Documents
+    documents: [{
+      name: { type: String, required: true },
+      fileUrl: { type: String, required: true },
+      fileType: { type: String, required: true },
+      uploadedAt: { type: Date, default: Date.now },
+    }],
+
+    // OAuth
+    provider: {
+      type: String,
+      enum: ['credentials', 'google'],
+      default: 'credentials',
+    },
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true,
+    },
+
     isActive: {
+
       type: Boolean,
       default: true,
       index: true,
@@ -148,6 +247,10 @@ const UserSchema = new Schema<IUser>(
 UserSchema.index({ role: 1 });
 UserSchema.index({ country: 1 });
 UserSchema.index({ isActive: 1 });
+UserSchema.index({ profileCompleted: 1 });
+UserSchema.index({ provider: 1 });
+UserSchema.index({ googleId: 1 });
+
 
 // Only include instructorProfile if role is instructor
 // Using async function to avoid TypeScript callback typing issues

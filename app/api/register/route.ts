@@ -23,6 +23,8 @@ export async function POST(req: Request) {
       locale,  // Store the user's current language preference
       role: 'user', // Default role from your UserRole type
       isActive: true,
+      profileCompleted: false, // New users need to complete profile
+      provider: 'credentials',
     });
 
     return NextResponse.json({ message: "User registered" }, { status: 201 });
