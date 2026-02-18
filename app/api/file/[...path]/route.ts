@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import { UPLOAD_CONFIG } from '@/lib/upload/config';
-import { promises as fs } from 'fs';
-import path from 'path';
 import connectDB from '@/lib/mongodb/connection';
+import Upload from '@/lib/mongodb/models/Upload';
 import User from '@/lib/mongodb/models/User';
+import mongoose from 'mongoose';
 
-// GET /api/file/documents/[userId]/[filename]
+// GET /api/file/[uploadId]
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -24,81 +23,76 @@ export async function GET(
 
     const { path: pathSegments } = await params;
     
-    // Validate path structure: documents/[userId]/[filename]
-    if (pathSegments.length !== 3 || pathSegments[0] !== 'documents') {
+    // Validate path structure: [uploadId]
+    if (pathSegments.length !== 1) {
       return NextResponse.json(
-        { success: false, error: 'Invalid path' },
+        { success: false, error: 'Invalid path. Expected: /api/file/[uploadId]' },
         { status: 400 }
       );
     }
 
-    const [, fileOwnerId, filename] = pathSegments;
+    const [uploadId] = pathSegments;
     const requestingUserId = session.user.id;
     const userRole = session.user.role;
 
-    // Authorization check: user can access their own files, or admin can access any
-    if (fileOwnerId !== requestingUserId && userRole !== 'admin') {
+    // Validate uploadId format
+    if (!mongoose.Types.ObjectId.isValid(uploadId)) {
       return NextResponse.json(
-        { success: false, error: 'Forbidden' },
-        { status: 403 }
+        { success: false, error: 'Invalid upload ID' },
+        { status: 400 }
       );
     }
 
-    // Verify file exists in user's document list
+    // Connect to database
     await connectDB();
-    const user = await User.findById(fileOwnerId).select('documents');
+
+    // Find upload in database
+    const upload = await Upload.findById(uploadId);
     
-    if (!user) {
-      return NextResponse.json(
-        { success: false, error: 'User not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if file is in user's documents
-    const fileExists = user.documents?.some(
-      (doc: any) => doc.fileUrl === `/api/file/documents/${fileOwnerId}/${filename}`
-    );
-
-    if (!fileExists && userRole !== 'admin') {
+    if (!upload) {
       return NextResponse.json(
         { success: false, error: 'File not found' },
         { status: 404 }
       );
     }
 
-    // Construct file path
-    const filePath = path.join(UPLOAD_CONFIG.uploadDir, 'documents', fileOwnerId, filename);
-
-    // Check if file exists on disk
-    try {
-      await fs.access(filePath);
-    } catch {
+    // Authorization check: user can access their own files, or admin can access any
+    if (upload.userId.toString() !== requestingUserId && userRole !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'File not found on disk' },
-        { status: 404 }
+        { success: false, error: 'Forbidden' },
+        { status: 403 }
       );
     }
 
-    // Read file
-    const fileBuffer = await fs.readFile(filePath);
+    // Verify file is in user's documents (extra security check)
+    const user = await User.findById(requestingUserId).select('documents');
+    const hasDocument = user?.documents?.some(
+      (doc: any) => doc.uploadId.toString() === uploadId
+    );
+
+    if (!hasDocument && userRole !== 'admin') {
+      return NextResponse.json(
+        { success: false, error: 'File not associated with user' },
+        { status: 403 }
+      );
+    }
 
     // Determine content type
-    const ext = path.extname(filename).toLowerCase();
     const contentTypeMap: Record<string, string> = {
-      '.pdf': 'application/pdf',
-      '.jpg': 'image/jpeg',
-      '.jpeg': 'image/jpeg',
-      '.png': 'image/png',
-      '.webp': 'image/webp',
+      'application/pdf': 'application/pdf',
+      'image/jpeg': 'image/jpeg',
+      'image/jpg': 'image/jpeg',
+      'image/png': 'image/png',
+      'image/webp': 'image/webp',
     };
-    const contentType = contentTypeMap[ext] || 'application/octet-stream';
+    const contentType = contentTypeMap[upload.mimeType] || 'application/octet-stream';
 
     // Return file with appropriate headers
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(upload.fileData, {
       headers: {
         'Content-Type': contentType,
-        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Disposition': `inline; filename="${upload.originalName}"`,
+        'Content-Length': upload.size.toString(),
         'Cache-Control': 'private, max-age=3600',
       },
     });

@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useRouter, usePathname } from '@/i18n/routing'; // Use localized routing
 import { useSelectedLayoutSegment } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { useTranslations } from 'next-intl';
 import { useSession, signOut } from 'next-auth/react'; // Add NextAuth hooks
 import NotificationBell from './notifications/NotificationBell';
-import { User, ChevronDown, LogOut, LayoutDashboard, UserCircle } from 'lucide-react';
+import { User, ChevronDown, LogOut, LayoutDashboard, UserCircle, Mail, RefreshCw, X } from 'lucide-react';
+
+
 
 
 const Navbar = ({ locale }: { locale: string }) => {
@@ -15,14 +17,41 @@ const Navbar = ({ locale }: { locale: string }) => {
   const { data: session, status } = useSession(); // Access user session
   const [isOpen, setIsOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [showEmailInfo, setShowEmailInfo] = useState(false);
+  const [resendingEmail, setResendingEmail] = useState(false);
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   
   const pathname = usePathname();
   const router = useRouter();
   const segment = useSelectedLayoutSegment();
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => setMounted(true), []);
+
+  // Close menus when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileMenuRef.current && !mobileMenuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    if (isOpen || userMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isOpen, userMenuOpen]);
+
+  // Close mobile menu when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
 
   // Use the router.replace to switch languages while keeping the current path
   const switchLanguage = (newLocale: string) => {
@@ -37,8 +66,83 @@ const Navbar = ({ locale }: { locale: string }) => {
     return 'U';
   };
 
+  // Check if email is not verified
+  const showEmailVerificationWarning = status === "authenticated" && !session?.user?.emailVerified;
+
+  const handleResendEmail = async () => {
+    setResendingEmail(true);
+    try {
+      const response = await fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: session?.user?.email, locale }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        setShowEmailInfo(true);
+      } else {
+        console.error('Failed to resend email:', data.error);
+      }
+    } catch (error) {
+      console.error('Failed to resend email:', error);
+    } finally {
+      setResendingEmail(false);
+    }
+  };
+
+
   return (
-    <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-slate-800 transition-all duration-300">
+    <>
+      {/* Email Verification Warning Banner */}
+      {showEmailVerificationWarning && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800 px-4 py-2">
+          <div className="max-w-screen-xl mx-auto flex flex-col sm:flex-row items-center justify-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+            <div className="flex items-center gap-2">
+              <Mail className="w-4 h-4 flex-shrink-0" />
+              <span>{t('emailNotVerified') || 'Your email is not verified.'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowEmailInfo(!showEmailInfo)}
+                className="font-semibold underline hover:text-amber-900 dark:hover:text-amber-100"
+              >
+                {t('verifyNow') || 'Verify now'}
+              </button>
+              <span>{t('toEnroll') || 'to enroll in courses.'}</span>
+              <button
+                onClick={handleResendEmail}
+                disabled={resendingEmail}
+                className="flex items-center gap-1 px-2 py-1 text-xs bg-amber-100 dark:bg-amber-800/50 hover:bg-amber-200 dark:hover:bg-amber-700/50 rounded transition-colors disabled:opacity-50"
+                title={t('resendEmail') || 'Resend verification email'}
+              >
+                <RefreshCw className={`w-3 h-3 ${resendingEmail ? 'animate-spin' : ''}`} />
+                {resendingEmail ? t('sending') || 'Sending...' : t('resend') || 'Resend'}
+              </button>
+            </div>
+          </div>
+          
+          {/* Email Info Dropdown */}
+          {showEmailInfo && (
+            <div className="max-w-screen-xl mx-auto mt-2 px-4">
+              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-amber-200 dark:border-amber-700 p-4 max-w-md mx-auto relative">
+                <button
+                  onClick={() => setShowEmailInfo(false)}
+                  className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+                <p className="text-sm text-gray-700 dark:text-gray-300 text-center">
+                  {t('emailWillArrive') || 'A verification email will arrive in your mailbox shortly. Please check your inbox and spam folder.'}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      
+      <nav className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200 dark:border-slate-800 transition-all duration-300">
+
       <div className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4">
         
         {/* LOGO */}
@@ -171,11 +275,12 @@ const Navbar = ({ locale }: { locale: string }) => {
 
 
         {/* NAVIGATION LINKS */}
-        <div className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1 z-[80] relative`}>
+        <div ref={mobileMenuRef} className={`${isOpen ? 'block' : 'hidden'} w-full md:flex md:w-auto md:order-1 z-[80] relative`}>
           <ul className="flex flex-col p-4 md:p-0 mt-4 border rounded-lg md:flex-row md:space-x-8 rtl:space-x-reverse md:mt-0 md:border-0 dark:bg-slate-900 md:dark:bg-transparent bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-lg">
-            <NavLink href="/courses" label={t('courses')} active={segment === 'courses'} />
-            <NavLink href="/#prices" label={t('prices')} active={segment === 'prices'} />
-            <NavLink href="/#contact" label={t('contact')} active={segment === 'contact'} />
+            <NavLink href="/courses" label={t('courses')} active={segment === 'courses'} onClick={() => setIsOpen(false)} />
+            <NavLink href="/#prices" label={t('prices')} active={segment === 'prices'} onClick={() => setIsOpen(false)} />
+            <NavLink href="/#contact" label={t('contact')} active={segment === 'contact'} onClick={() => setIsOpen(false)} />
+
 
             
             {/* Mobile-only Auth Buttons */}
@@ -203,39 +308,43 @@ const Navbar = ({ locale }: { locale: string }) => {
                        </p>
                      </div>
                    </div>
-                   <Link href="/profile" className="w-full py-2 text-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg flex items-center justify-center gap-2">
+                   <Link href="/profile" onClick={() => setIsOpen(false)} className="w-full py-2 text-center text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg flex items-center justify-center gap-2">
                      <UserCircle className="w-4 h-4" />
-                     View Profile
+                     {t('viewProfile') || 'View Profile'}
                    </Link>
-                   <Link href="/dashboard" className="w-full py-2 text-center bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2">
+                   <Link href="/dashboard" onClick={() => setIsOpen(false)} className="w-full py-2 text-center bg-blue-600 text-white rounded-lg flex items-center justify-center gap-2">
                      <LayoutDashboard className="w-4 h-4" />
                      {t('dashboard')}
                    </Link>
-                   <button onClick={() => signOut()} className="w-full py-2 bg-red-500 text-white rounded-lg flex items-center justify-center gap-2">
+                   <button onClick={() => { setIsOpen(false); signOut(); }} className="w-full py-2 bg-red-500 text-white rounded-lg flex items-center justify-center gap-2">
                      <LogOut className="w-4 h-4" />
                      {t('logout')}
                    </button>
                  </>
                ) : (
                  <>
-                   <Link href="/login" className="w-full py-2 text-center text-gray-700 dark:text-gray-200">{t('login')}</Link>
-                   <Link href="/register" className="w-full py-2 text-center bg-blue-600 text-white rounded-lg">{t('signup')}</Link>
+                   <Link href="/login" onClick={() => setIsOpen(false)} className="w-full py-2 text-center text-gray-700 dark:text-gray-200">{t('login')}</Link>
+                   <Link href="/register" onClick={() => setIsOpen(false)} className="w-full py-2 text-center bg-blue-600 text-white rounded-lg">{t('signup')}</Link>
                  </>
                )}
             </li>
+
 
           </ul>
         </div>
 
       </div>
     </nav>
+    </>
   );
 };
 
-const NavLink = ({ href, label, active }: { href: string; label: string, active: boolean }) => (
+
+const NavLink = ({ href, label, active, onClick }: { href: string; label: string, active: boolean, onClick?: () => void }) => (
   <li className="relative group">
     <Link 
       href={href} 
+      onClick={onClick}
       className={`block py-2 px-1 text-sm font-medium transition-colors duration-300 ${
         active 
         ? "text-blue-600 dark:text-blue-400" 
@@ -249,5 +358,6 @@ const NavLink = ({ href, label, active }: { href: string; label: string, active:
     </Link>
   </li>
 );
+
 
 export default Navbar;

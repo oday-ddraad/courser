@@ -5,10 +5,40 @@ import User from '@/lib/mongodb/models/User';
 import emailService from '@/lib/services/email';
 import { generateVerificationEmail } from '@/lib/email/templates/verify-email';
 
+// Helper function to generate random token
+function generateToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+
 // POST /api/auth/verify-email - Send verification email
+
+
 export async function POST(req: NextRequest) {
   try {
-    const { email, locale = 'en' } = await req.json();
+    // Parse request body with error handling
+    let body;
+    let rawBody;
+    try {
+      // Clone request to read raw text for debugging
+      const clonedReq = req.clone();
+      rawBody = await clonedReq.text();
+      console.log('Raw request body:', rawBody);
+      
+      body = JSON.parse(rawBody);
+      console.log('Parsed body:', body);
+    } catch (parseError) {
+      console.error('Failed to parse request body:', parseError);
+      console.error('Raw body was:', rawBody);
+      return NextResponse.json(
+        { success: false, error: 'Invalid request body' },
+        { status: 400 }
+      );
+    }
+
+    const { email, locale = 'en' } = body || {};
+    console.log('Extracted email:', email, 'locale:', locale);
+
 
     if (!email) {
       return NextResponse.json(
@@ -37,7 +67,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Generate verification token
-    const token = randomBytes(32).toString('hex');
+    const token = generateToken();
+
+
     const expires = new Date();
     expires.setHours(expires.getHours() + 24); // 24 hours expiry
 

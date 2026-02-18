@@ -7,8 +7,17 @@
     "login": "Login",
     "signup": "Sign Up",
     "dashboard": "Dashboard",
-    "logout": "Logout"
+    "logout": "Logout",
+    "viewProfile": "View Profile",
+    "emailNotVerified": "Your email is not verified.",
+    "verifyNow": "Verify now",
+    "toEnroll": "to enroll in courses.",
+    "resendEmail": "Resend verification email",
+    "resend": "Resend",
+    "sending": "Sending...",
+    "emailWillArrive": "A verification email will arrive in your mailbox shortly. Please check your inbox and spam folder."
   },
+
   "Articles": {
     "Hero": {
       "title": "Master Languages Today",
@@ -127,8 +136,16 @@
       "error": "Verification failed",
       "invalidToken": "Invalid or expired verification link",
       "requestNew": "Please request a new verification email from the profile completion page.",
-      "goToProfile": "Go to Profile Completion"
+      "goToProfile": "Go to Profile Completion",
+      "emailVerifiedSuccess": "Email Verified!",
+      "emailVerifiedSuccessDesc": "Your email has been successfully verified.",
+      "emailVerifiedSuccessMessage": "Your email has been successfully verified. You can now enroll in courses and access all features.",
+      "emailConfirmed": "Email confirmed successfully",
+      "browseCourses": "Browse Courses",
+      "goToDashboard": "Go to Dashboard",
+      "thankYou": "Thank you for verifying your email!"
     },
+
     "profile": {
       "title": "My Profile",
       "subtitle": "View and manage your profile information",

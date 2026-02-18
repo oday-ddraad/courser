@@ -31,13 +31,15 @@ export interface IUser extends Document {
     zipCode?: string;
   };
 
-  // Documents
+  // Documents - references to Upload collection
   documents?: {
+    fileUrl: any;
     name: string;
-    fileUrl: string;
+    uploadId: mongoose.Types.ObjectId;
     fileType: string;
     uploadedAt: Date;
   }[];
+
 
   // OAuth
   provider: 'credentials' | 'google';
@@ -174,13 +176,14 @@ const UserSchema = new Schema<IUser>(
       zipCode: { type: String, trim: true },
     },
 
-    // Documents
+    // Documents - references to Upload collection
     documents: [{
       name: { type: String, required: true },
-      fileUrl: { type: String, required: true },
+      uploadId: { type: Schema.Types.ObjectId, ref: 'Upload', required: true },
       fileType: { type: String, required: true },
       uploadedAt: { type: Date, default: Date.now },
     }],
+
 
     // OAuth
     provider: {

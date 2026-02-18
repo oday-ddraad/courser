@@ -2,16 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import { 
-  ensureUserDir, 
   generateFilename, 
   validateFileType, 
-  UPLOAD_CONFIG,
-  getFileUrl 
+  UPLOAD_CONFIG 
 } from '@/lib/upload/config';
-import { writeFile } from 'fs/promises';
-import path from 'path';
 import connectDB from '@/lib/mongodb/connection';
 import User from '@/lib/mongodb/models/User';
+import Upload from '@/lib/mongodb/models/Upload';
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,28 +52,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate secure filename
-    const filename = generateFilename(file.name);
-    
-    // Ensure user directory exists
-    const userDir = await ensureUserDir(userId);
-    const filePath = path.join(userDir, filename);
+    // Connect to database
+    await connectDB();
 
-    // Convert file to buffer and save
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    await writeFile(filePath, buffer);
 
-    // Get file URL for database
-    const fileUrl = getFileUrl(userId, filename);
+    // Create upload document in MongoDB
+    const upload = await Upload.create({
+      userId: userId,
+      filename: generateFilename(file.name),
+      originalName: file.name,
+      mimeType: file.type,
+      fileData: buffer,
+      size: file.size,
+      documentName: documentName,
+    });
 
-    // Update user document in database
-    await connectDB();
+    // Update user document with reference to upload
     await User.findByIdAndUpdate(userId, {
       $push: {
         documents: {
           name: documentName,
-          fileUrl: fileUrl,
+          uploadId: upload._id,
           fileType: file.type,
           uploadedAt: new Date(),
         },
@@ -87,10 +87,12 @@ export async function POST(req: NextRequest) {
       message: 'File uploaded successfully',
       file: {
         name: documentName,
-        fileUrl: fileUrl,
+        uploadId: upload._id.toString(),
         fileType: file.type,
+        size: file.size,
       },
     });
+
 
   } catch (error: any) {
     console.error('Upload error:', error);

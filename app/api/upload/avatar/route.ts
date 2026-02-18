@@ -64,16 +64,33 @@ export async function POST(req: NextRequest) {
     // Delete old avatar if exists
     if (currentUser?.avatar) {
       try {
-        const oldAvatarPath = currentUser.avatar.replace('/api/file/', 'uploads/');
-        const fullOldPath = path.join(process.cwd(), oldAvatarPath);
-        if (existsSync(fullOldPath)) {
-          await unlink(fullOldPath);
+        // Handle both old format (/api/file/...) and new format (/api/avatar/...)
+        let oldAvatarPath: string;
+        if (currentUser.avatar.startsWith('/api/avatar/')) {
+          // New format: /api/avatar/[userId]/[filename]
+          oldAvatarPath = currentUser.avatar.replace('/api/avatar/', 'uploads/documents/');
+        } else if (currentUser.avatar.startsWith('/api/file/')) {
+          // Old format: /api/file/documents/[userId]/[filename]
+          oldAvatarPath = currentUser.avatar.replace('/api/file/', 'uploads/');
+        } else {
+          // Unknown format, skip deletion
+          console.log('Unknown avatar URL format:', currentUser.avatar);
+          oldAvatarPath = '';
+        }
+        
+        if (oldAvatarPath) {
+          const fullOldPath = path.join(process.cwd(), oldAvatarPath);
+          if (existsSync(fullOldPath)) {
+            await unlink(fullOldPath);
+            console.log('Deleted old avatar:', fullOldPath);
+          }
         }
       } catch (error) {
         console.error('Error deleting old avatar:', error);
         // Continue with upload even if delete fails
       }
     }
+
 
     // Generate secure filename
     const filename = generateFilename(file.name);
@@ -87,8 +104,9 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
     await writeFile(filePath, buffer);
 
-    // Get file URL for database
-    const avatarUrl = getFileUrl(userId, filename);
+    // Get file URL for database - use new avatar API route
+    const avatarUrl = `/api/avatar/${userId}/${filename}`;
+
 
     // Update user avatar in database
     await User.findByIdAndUpdate(userId, {

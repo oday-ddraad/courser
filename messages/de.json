@@ -7,8 +7,17 @@
     "login": "Anmelden",
     "signup": "Registrieren",
     "dashboard": "Dashboard",
-    "logout": "Abmelden"
+    "logout": "Abmelden",
+    "viewProfile": "Profil anzeigen",
+    "emailNotVerified": "Ihre E-Mail ist nicht verifiziert.",
+    "verifyNow": "Jetzt verifizieren",
+    "toEnroll": "um sich in Kurse einzuschreiben.",
+    "resendEmail": "Verifizierungs-E-Mail erneut senden",
+    "resend": "Erneut senden",
+    "sending": "Wird gesendet...",
+    "emailWillArrive": "Eine Verifizierungs-E-Mail wird in Kürze in Ihrem Postfach eintreffen. Bitte überprüfen Sie Ihren Posteingang und Spam-Ordner."
   },
+
   "Articles": {
     "Hero": {
       "title": "Beherrschen Sie Sprachen Heute",
@@ -127,8 +136,16 @@
       "error": "Verifizierung fehlgeschlagen",
       "invalidToken": "Ungültiger oder abgelaufener Verifizierungslink",
       "requestNew": "Bitte fordern Sie eine neue Verifizierungs-E-Mail von der Profilvervollständigungsseite an.",
-      "goToProfile": "Zur Profilvervollständigung"
+      "goToProfile": "Zur Profilvervollständigung",
+      "emailVerifiedSuccess": "E-Mail verifiziert!",
+      "emailVerifiedSuccessDesc": "Ihre E-Mail wurde erfolgreich verifiziert.",
+      "emailVerifiedSuccessMessage": "Ihre E-Mail wurde erfolgreich verifiziert. Sie können sich jetzt in Kurse einschreiben und auf alle Funktionen zugreifen.",
+      "emailConfirmed": "E-Mail erfolgreich bestätigt",
+      "browseCourses": "Kurse durchsuchen",
+      "goToDashboard": "Zum Dashboard",
+      "thankYou": "Vielen Dank für die Verifizierung Ihrer E-Mail!"
     },
+
     "profile": {
       "title": "Mein Profil",
       "subtitle": "Profilinformationen anzeigen und verwalten",

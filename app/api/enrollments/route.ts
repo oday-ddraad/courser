@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
-import { Enrollment, Course } from '@/lib/mongodb/models';
+import { Enrollment, Course, User } from '@/lib/mongodb/models';
 import { UserRole } from '@/types/database';
 
 // GET /api/enrollments - Get user's enrollments
@@ -70,7 +70,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// GET /api/enrollments/instructor - Get enrollments for instructor's courses (instructor only)
+// POST /api/enrollments - Create new enrollment (for students) or get instructor enrollments
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
@@ -83,15 +83,73 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check authorization (instructor or admin)
     const userRole = session.user.role as UserRole;
-    if (!['instructor', 'admin'].includes(userRole)) {
+    
+    // Handle instructor/admin requests (get enrollments for their courses)
+    if (['instructor', 'admin'].includes(userRole)) {
+      return await handleInstructorEnrollments(request, session);
+    }
+    
+    // Handle student requests (create enrollment)
+    await connectDB();
+    
+    // Check if user's email is verified
+    const user = await User.findById(session.user.id).select('emailVerified');
+    if (!user?.emailVerified) {
       return NextResponse.json(
-        { success: false, error: 'Forbidden - Insufficient permissions' },
+        { success: false, error: 'Please verify your email before enrolling in courses' },
         { status: 403 }
       );
     }
     
+    const body = await request.json();
+    const { courseId } = body;
+    
+    if (!courseId) {
+      return NextResponse.json(
+        { success: false, error: 'Course ID is required' },
+        { status: 400 }
+      );
+    }
+    
+    // Check if already enrolled
+    const existingEnrollment = await Enrollment.findOne({
+      userId: session.user.id,
+      courseId: courseId,
+    });
+    
+    if (existingEnrollment) {
+      return NextResponse.json(
+        { success: false, error: 'Already enrolled in this course' },
+        { status: 400 }
+      );
+    }
+    
+    // Create enrollment
+    const enrollment = await Enrollment.create({
+      userId: session.user.id,
+      courseId: courseId,
+      status: 'pending',
+      enrolledAt: new Date(),
+    });
+    
+    return NextResponse.json({
+      success: true,
+      data: enrollment,
+      message: 'Enrollment created successfully',
+    }, { status: 201 });
+  } catch (error) {
+    console.error('Error in enrollment POST:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to process enrollment request' },
+      { status: 500 }
+    );
+  }
+}
+
+// Helper function to handle instructor enrollments
+async function handleInstructorEnrollments(request: NextRequest, session: any) {
+  try {
     await connectDB();
     
     const body = await request.json();
@@ -105,7 +163,7 @@ export async function POST(request: NextRequest) {
     }
     
     // Verify course ownership (instructors can only view their own course enrollments)
-    if (userRole === 'instructor') {
+    if (session.user.role === 'instructor') {
       const course = await Course.findById(courseId);
       if (!course || course.instructorId.toString() !== session.user.id) {
         return NextResponse.json(

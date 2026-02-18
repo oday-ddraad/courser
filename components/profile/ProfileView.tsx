@@ -49,11 +49,13 @@ interface UserData {
   documents: Array<{
     _id: string;
     name: string;
-    fileUrl: string;
+    uploadId: string;
     fileType: string;
     uploadedAt: string;
   }>;
+  password?: string;
   provider: string;
+
   emailVerified: boolean;
   profileCompleted: boolean;
 }
@@ -104,8 +106,20 @@ export default function ProfileView({ locale }: { locale: string }) {
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwordErrors, setPasswordErrors] = useState<string[]>([]);
 
+  // Set password state (for Google users without password)
+  const [showSetPasswordSection, setShowSetPasswordSection] = useState(false);
+  const [googlePasswordData, setGooglePasswordData] = useState({
+    newPassword: '',
+    confirmPassword: '',
+  });
+  const [showSetPasswords, setShowSetPasswords] = useState({
+    new: false,
+    confirm: false,
+  });
+  const [settingPassword, setSettingPassword] = useState(false);
 
   const [formData, setFormData] = useState({
+
     country: '',
     phoneNumber: '',
     address: {
@@ -359,6 +373,55 @@ export default function ProfileView({ locale }: { locale: string }) {
     }
   };
 
+  // Handle set password for Google users
+  const handleSetPassword = async () => {
+    if (!googlePasswordData.newPassword) {
+      toast.error('Please enter a password');
+      return;
+    }
+    if (googlePasswordData.newPassword !== googlePasswordData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    const strengthErrors = validatePasswordStrength(googlePasswordData.newPassword);
+    if (strengthErrors.length > 0) {
+      setPasswordErrors(strengthErrors);
+      return;
+    }
+
+    setSettingPassword(true);
+    setPasswordErrors([]);
+
+    try {
+      const response = await fetch('/api/users/password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          password: googlePasswordData.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success('Password set successfully! You can now login with email and password.');
+        setGooglePasswordData({ newPassword: '', confirmPassword: '' });
+        setShowSetPasswordSection(false);
+        // Refresh user data to update provider status
+        await fetchProfile();
+      } else {
+        toast.error(data.error || 'Failed to set password');
+      }
+    } catch (error) {
+      toast.error('Failed to set password');
+    } finally {
+      setSettingPassword(false);
+    }
+  };
+
+
+
 
   if (loading) {
     return (
@@ -531,10 +594,10 @@ export default function ProfileView({ locale }: { locale: string }) {
                     value={formData.country}
                     onChange={(e) => handleCountryChange(e.target.value)}
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                   >
-
                     <option value="">Select Country</option>
+
                     <option value="US">United States</option>
                     <option value="DE">Germany</option>
                     <option value="GB">United Kingdom</option>
@@ -558,10 +621,11 @@ export default function ProfileView({ locale }: { locale: string }) {
                       setFormData((prev) => ({ ...prev, phoneNumber: e.target.value }))
                     }
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                     placeholder="+1234567890"
                   />
                 </div>
+
 
               </div>
 
@@ -578,7 +642,7 @@ export default function ProfileView({ locale }: { locale: string }) {
                       }))
                     }
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                   />
                 </div>
                 <div>
@@ -593,9 +657,10 @@ export default function ProfileView({ locale }: { locale: string }) {
                       }))
                     }
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                   />
                 </div>
+
 
               </div>
 
@@ -612,7 +677,7 @@ export default function ProfileView({ locale }: { locale: string }) {
                       }))
                     }
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                   />
                 </div>
                 <div>
@@ -627,9 +692,10 @@ export default function ProfileView({ locale }: { locale: string }) {
                       }))
                     }
                     disabled={!editing}
-                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-600 dark:disabled:bg-slate-700 dark:disabled:text-gray-400"
+                    className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 disabled:bg-gray-100 disabled:text-gray-900 dark:disabled:bg-slate-800 dark:disabled:text-gray-200"
                   />
                 </div>
+
 
               </div>
             </div>
@@ -656,6 +722,143 @@ export default function ProfileView({ locale }: { locale: string }) {
             </label>
           </div>
 
+          {/* Set Password Section - Only for Google users without password */}
+          {userData.provider === 'google' && !userData.password && (
+            <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Lock className="w-5 h-5 text-green-600" />
+                  Set Password
+                </h3>
+                <button
+                  onClick={() => setShowSetPasswordSection(!showSetPasswordSection)}
+                  className="text-sm text-green-600 hover:text-green-700 font-medium"
+                >
+                  {showSetPasswordSection ? 'Cancel' : 'Set Password'}
+                </button>
+              </div>
+
+              {showSetPasswordSection && (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    Set a password to enable email/password login in addition to Google sign-in.
+                  </p>
+
+                  {/* New Password */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">New Password</label>
+                    <div className="relative">
+                      <input
+                        type={showSetPasswords.new ? 'text' : 'password'}
+                        value={googlePasswordData.newPassword}
+                        onChange={(e) => {
+                          setGooglePasswordData((prev) => ({ ...prev, newPassword: e.target.value }));
+                          setPasswordErrors(validatePasswordStrength(e.target.value));
+                        }}
+                        className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 pr-10"
+                        placeholder="Enter new password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowSetPasswords((prev) => ({ ...prev, new: !prev.new }))
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showSetPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {/* Password Strength Requirements */}
+                    <div className="mt-2 space-y-1">
+                      <p className="text-xs text-gray-500 font-medium">Password must contain:</p>
+                      <ul className="text-xs space-y-1">
+                        <li className={googlePasswordData.newPassword.length >= 8 ? 'text-green-600' : 'text-gray-500'}>
+                          ✓ At least 8 characters
+                        </li>
+                        <li className={/[A-Z]/.test(googlePasswordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                          ✓ One uppercase letter
+                        </li>
+                        <li className={/[a-z]/.test(googlePasswordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                          ✓ One lowercase letter
+                        </li>
+                        <li className={/\d/.test(googlePasswordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                          ✓ One number
+                        </li>
+                        <li className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(googlePasswordData.newPassword) ? 'text-green-600' : 'text-gray-500'}>
+                          ✓ One special character
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Confirm Password */}
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Confirm Password</label>
+                    <div className="relative">
+                      <input
+                        type={showSetPasswords.confirm ? 'text' : 'password'}
+                        value={googlePasswordData.confirmPassword}
+                        onChange={(e) =>
+                          setGooglePasswordData((prev) => ({ ...prev, confirmPassword: e.target.value }))
+                        }
+                        className="w-full p-3 rounded-lg border dark:bg-slate-800 dark:border-slate-700 pr-10"
+                        placeholder="Confirm password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setShowSetPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))
+                        }
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                      >
+                        {showSetPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    {googlePasswordData.confirmPassword && googlePasswordData.newPassword !== googlePasswordData.confirmPassword && (
+                      <p className="text-xs text-red-600 mt-1">Passwords do not match</p>
+                    )}
+                  </div>
+
+
+                  {/* Error Messages */}
+                  {passwordErrors.length > 0 && (
+                    <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-600 font-medium mb-1">Please fix the following:</p>
+                      <ul className="text-sm text-red-600 list-disc list-inside">
+                        {passwordErrors.map((error, index) => (
+                          <li key={index}>{error}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Submit Button */}
+                  <button
+                    onClick={handleSetPassword}
+                    disabled={
+                      settingPassword ||
+                      !googlePasswordData.newPassword ||
+                      !googlePasswordData.confirmPassword ||
+                      googlePasswordData.newPassword !== googlePasswordData.confirmPassword ||
+                      passwordErrors.length > 0
+                    }
+                    className="w-full sm:w-auto px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+
+                    {settingPassword ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Setting Password...
+                      </>
+                    ) : (
+                      'Set Password'
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Password Change Section */}
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
@@ -670,6 +873,7 @@ export default function ProfileView({ locale }: { locale: string }) {
                 {showPasswordSection ? 'Cancel' : 'Change Password'}
               </button>
             </div>
+
 
             {showPasswordSection && (
               <div className="space-y-4">
@@ -838,7 +1042,7 @@ export default function ProfileView({ locale }: { locale: string }) {
                     </div>
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <a
-                        href={doc.fileUrl}
+                        href={`/api/file/${doc.uploadId}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
@@ -846,6 +1050,7 @@ export default function ProfileView({ locale }: { locale: string }) {
                       >
                         <Download className="w-4 h-4" />
                       </a>
+
                       <button
                         onClick={() => handleDeleteDocument(doc._id)}
                         className="p-2 text-red-600 hover:bg-red-50 rounded-lg"

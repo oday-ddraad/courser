@@ -56,6 +56,7 @@ declare module "next-auth" {
       profileCompleted: boolean;
       provider: 'credentials' | 'google';
       avatar?: string;
+      emailVerified: Date | null;
     } & DefaultSession["user"];
   }
 
@@ -65,6 +66,7 @@ declare module "next-auth" {
     profileCompleted: boolean;
     provider: 'credentials' | 'google';
     avatar?: string;
+    emailVerified: Date | null;
   }
 }
 
@@ -75,6 +77,7 @@ declare module "next-auth/jwt" {
     role: UserRole;
     profileCompleted: boolean;
     provider: 'credentials' | 'google';
+    emailVerified: Date | null;
     version?: number; // For global revocation
   }
 }

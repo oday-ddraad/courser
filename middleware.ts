@@ -4,10 +4,11 @@ import { withAuth } from 'next-auth/middleware';
 import { NextResponse, NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 
+
+
 const i18nMiddleware = createMiddleware(routing);
 
 const authMiddleware = withAuth(
-  // This runs AFTER the authorized callback returns true
   function onSuccess(req) {
     return i18nMiddleware(req);
   },
@@ -17,7 +18,7 @@ const authMiddleware = withAuth(
         const { pathname } = req.nextUrl;
 
         // 1. Identify public segments
-        const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email'];
+        const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email', '/signup'];
         
         // Remove the locale prefix (e.g., /en/login -> /login) to check against publicPaths
         const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
@@ -33,38 +34,40 @@ const authMiddleware = withAuth(
 
         // 3. Require token for protected routes
         if (!token) {
+          console.log('[middleware] No token, denying access to:', pathname);
           return false;
         }
 
         // 4. Check if profile is completed
-        // Token will have profileCompleted flag from JWT callback
+        console.log('[middleware] Token profileCompleted:', token.profileCompleted);
+        
         if (!token.profileCompleted) {
           // Allow access to profile completion and verification pages
           if (pathWithoutLocale.startsWith('/complete-profile') || 
               pathWithoutLocale.startsWith('/verify-email')) {
+            console.log('[middleware] Allowing access to profile completion page');
             return true;
           }
-          // User is authenticated but profile is incomplete
-          // Return false to trigger redirect, we'll handle it in main middleware
+          console.log('[middleware] Profile incomplete, denying access to:', pathname);
           return false;
         }
 
         // 5. User is authenticated and profile is complete
+        console.log('[middleware] Access granted to:', pathname);
         return true;
 
       },
     },
     pages: {
-      // If unauthorized, the user is sent here. 
       signIn: '/login', 
     },
   }
 );
 
-
 export default async function middleware(req: NextRequest, event: any) {
-
   const { pathname } = req.nextUrl;
+
+  console.log('[middleware] Processing:', pathname);
 
   // 1. Exclude internal/static files
   if (
@@ -77,19 +80,28 @@ export default async function middleware(req: NextRequest, event: any) {
   }
 
   // 2. Check if it's a public route that needs i18n but NO auth
-  const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email'];
+  const publicPaths = ['/signin', '/register', '/forbidden', '/courses', '/login', '/complete-profile', '/verify-email', '/signup'];
   const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}(\/|$)/, '/');
   const isPublic = publicPaths.some(path => pathWithoutLocale.startsWith(path)) || pathWithoutLocale === '/';
 
   if (isPublic) {
+    console.log('[middleware] Public path, allowing:', pathname);
     return i18nMiddleware(req);
   }
 
-  // 3. For protected routes, first check if user is authenticated and profile is complete
+  // 3. For protected routes, check if user is authenticated and profile is complete
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   
+  console.log('[middleware] Token for protected route:', token ? {
+    id: token.id,
+    profileCompleted: token.profileCompleted,
+    provider: token.provider
+  } : 'null');
+
   // If user is authenticated but profile is incomplete, redirect to complete-profile
   if (token && !token.profileCompleted) {
+    console.log('[middleware] Profile incomplete, redirecting to complete-profile');
+    
     // Extract locale from pathname
     const localeMatch = pathname.match(/^\/([a-z]{2})(\/|$)/);
     const locale = localeMatch ? localeMatch[1] : 'en';
@@ -101,14 +113,13 @@ export default async function middleware(req: NextRequest, event: any) {
   }
 
   // 4. Run authMiddleware for other cases
+
   // @ts-ignore
   const response = await authMiddleware(req, event);
   
   return response;
-
 }
 
 export const config = {
-  // Catch-all but ignore static files
   matcher: ['/((?!api|_next|.*\\..*).*)']
 };

@@ -36,11 +36,10 @@ export async function GET(req: NextRequest) {
     user.emailVerificationExpires = null;
     await user.save();
 
-    return NextResponse.json({
-      success: true,
-      message: 'Email verified successfully',
-      email: user.email,
-    });
+    // Redirect to success page
+    const locale = 'en'; // Default locale, could be extracted from user preferences
+    return NextResponse.redirect(new URL(`/${locale}/verify-email/success`, req.url));
+
 
   } catch (error: any) {
     console.error('Email verification error:', error);

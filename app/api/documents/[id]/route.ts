@@ -3,9 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import User from '@/lib/mongodb/models/User';
-import { unlink } from 'fs/promises';
-import path from 'path';
-import { existsSync } from 'fs';
+import Upload from '@/lib/mongodb/models/Upload';
+
 
 // DELETE - Remove a document
 export async function DELETE(
@@ -48,18 +47,13 @@ export async function DELETE(
       );
     }
 
-    // Delete file from storage
-    if (document.fileUrl) {
+    // Delete file from Upload collection
+    if (document.uploadId) {
       try {
-        const filePath = document.fileUrl.replace('/api/file/', 'uploads/');
-        const fullPath = path.join(process.cwd(), filePath);
-        
-        if (existsSync(fullPath)) {
-          await unlink(fullPath);
-        }
+        await Upload.findByIdAndDelete(document.uploadId);
       } catch (error) {
-        console.error('Error deleting file from storage:', error);
-        // Continue with database update even if file delete fails
+        console.error('Error deleting file from database:', error);
+        // Continue with user document update even if upload delete fails
       }
     }
 
@@ -69,6 +63,7 @@ export async function DELETE(
         documents: { _id: documentId },
       },
     });
+
 
     return NextResponse.json({
       success: true,
