@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { Inter, Cairo } from "next/font/google";
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import Navbar from "@/components/Navbar"; 
 import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/providers/AuthProvider";
@@ -53,6 +54,7 @@ export default async function LocaleLayout({
           </NextIntlClientProvider>
         </AuthProvider>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );
