@@ -66,8 +66,9 @@ const Navbar = ({ locale }: { locale: string }) => {
     return 'U';
   };
 
-  // Check if email is not verified
-  const showEmailVerificationWarning = status === "authenticated" && !session?.user?.emailVerified;
+  // Check if email is not verified (but not for Google users since Google already verifies emails)
+  const showEmailVerificationWarning = status === "authenticated" && !session?.user?.emailVerified && session?.user?.provider !== 'google';
+
 
   const handleResendEmail = async () => {
     setResendingEmail(true);
