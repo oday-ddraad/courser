@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/providers/AuthProvider";
 import EmailTemplateInit from "@/components/providers/EmailTemplateInit";
 import AdminLayoutWrapper from "./AdminLayoutWrapper";
+import { Analytics } from '@vercel/analytics/next';
 import "../globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -51,6 +52,7 @@ export default async function LocaleLayout({
             </ThemeProvider>
           </NextIntlClientProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
