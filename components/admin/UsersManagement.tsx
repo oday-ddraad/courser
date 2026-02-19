@@ -31,11 +31,33 @@ interface User {
   _id: string;
   name: string;
   email: string;
+  firstName?: string;
+  lastName?: string;
   role: 'admin' | 'instructor' | 'user';
   locale: 'en' | 'de' | 'ar';
   country: string;
+  phoneNumber?: string;
+  phoneVerified?: string | null;
+  whatsappConsent?: boolean;
+  whatsappConsentAt?: string | null;
   avatar?: string;
   isActive: boolean;
+  emailVerified?: string | null;
+  profileCompleted?: boolean;
+  profileCompletedAt?: string | null;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    zipCode?: string;
+  };
+  documents?: {
+    _id: string;
+    name: string;
+    uploadId: string;
+    fileType: string;
+    uploadedAt: string;
+  }[];
   createdAt: string;
   updatedAt: string;
   instructorProfile?: {
@@ -46,6 +68,8 @@ interface User {
     totalCourses: number;
   };
 }
+
+
 
 interface UsersManagementProps {
   initialUsers: User[];

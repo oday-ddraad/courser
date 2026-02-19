@@ -41,7 +41,9 @@ export default function CreateUserPage() {
     locale: 'en',
     country: 'US',
     isActive: true,
+    emailVerified: false,
   });
+
 
   if (status === 'loading') {
     return <div className="p-6">Loading...</div>;
@@ -83,7 +85,9 @@ export default function CreateUserPage() {
           locale: formData.locale,
           country: formData.country,
           isActive: formData.isActive,
+          emailVerified: formData.emailVerified,
         }),
+
       });
 
       const data = await response.json();
@@ -299,6 +303,27 @@ export default function CreateUserPage() {
                 {t('activeAccountHelp')}
               </p>
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('emailVerification')}
+              </label>
+              <div className="flex items-center mt-2">
+                <input
+                  type="checkbox"
+                  id="emailVerified"
+                  checked={formData.emailVerified}
+                  onChange={(e) => setFormData({ ...formData, emailVerified: e.target.checked })}
+                  className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                />
+                <label htmlFor="emailVerified" className="ml-2 text-sm text-gray-700 dark:text-gray-300">
+                  {t('emailVerified')}
+                </label>
+              </div>
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {t('emailVerifiedHelp')}
+              </p>
+            </div>
+
           </div>
         </div>
 

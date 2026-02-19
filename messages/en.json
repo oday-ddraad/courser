@@ -869,7 +869,34 @@
       "localization": "Localization",
       "language": "Language",
       "createError": "Failed to create user",
-      "userCreated": "User created successfully"
+      "userCreated": "User created successfully",
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "displayName": "Display Name",
+      "contactInfo": "Contact Information",
+      "phoneNumber": "Phone Number",
+      "phoneVerified": "Phone Verified",
+      "verified": "Verified",
+      "notVerified": "Not Verified",
+      "whatsappConsent": "WhatsApp Consent",
+      "consented": "Consented",
+      "notConsented": "Not Consented",
+      "consentDate": "Consent Date",
+      "address": "Address",
+      "street": "Street",
+      "city": "City",
+      "state": "State",
+      "zipCode": "ZIP Code",
+      "emailVerified": "Email Verified",
+      "emailVerification": "Email Verification",
+      "emailVerifiedHelp": "Mark email as verified (skips verification process)",
+      "profileCompleted": "Profile Completed",
+      "profileIncomplete": "Profile Incomplete",
+      "completedAt": "Completed At",
+      "notProvided": "Not provided",
+      "documents": "Documents",
+      "download": "Download"
     }
+
   }
 }

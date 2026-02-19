@@ -3,6 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { User, Enrollment, Course } from '@/lib/mongodb/models';
+import bcrypt from 'bcryptjs';
+
 
 
 // GET /api/users - Get all users with pagination and filters
@@ -94,7 +96,8 @@ export async function POST(request: NextRequest) {
     await connectDB();
 
     const body = await request.json();
-    const { email, password, name, role, locale, country } = body;
+    const { email, password, name, role, locale, country, emailVerified } = body;
+
 
     // Check if user already exists
     const existingUser = await User.findOne({ email });
@@ -105,15 +108,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Hash the password before storing
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     const user = await User.create({
       email,
-      password,
+      password: hashedPassword,
       name,
       role: role || 'user',
       locale: locale || 'en',
       country: country || 'US',
       isActive: true,
+      emailVerified: emailVerified ? new Date() : null,
     });
+
 
     // Convert to object and remove password
     const userResponse = user.toObject();

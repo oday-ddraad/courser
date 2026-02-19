@@ -876,7 +876,34 @@
       "localization": "Lokalisierung",
       "language": "Sprache",
       "createError": "Benutzer konnte nicht erstellt werden",
-      "userCreated": "Benutzer erfolgreich erstellt"
+      "userCreated": "Benutzer erfolgreich erstellt",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "displayName": "Anzeigename",
+      "contactInfo": "Kontaktinformationen",
+      "phoneNumber": "Telefonnummer",
+      "phoneVerified": "Telefon verifiziert",
+      "verified": "Verifiziert",
+      "notVerified": "Nicht verifiziert",
+      "whatsappConsent": "WhatsApp-Zustimmung",
+      "consented": "Zugestimmt",
+      "notConsented": "Nicht zugestimmt",
+      "consentDate": "Zustimmungsdatum",
+      "address": "Adresse",
+      "street": "Straße",
+      "city": "Stadt",
+      "state": "Bundesland",
+      "zipCode": "PLZ",
+      "emailVerified": "E-Mail verifiziert",
+      "emailVerification": "E-Mail-Verifizierung",
+      "emailVerifiedHelp": "E-Mail als verifiziert markieren (überspringt Verifizierungsprozess)",
+      "profileCompleted": "Profil vervollständigt",
+      "profileIncomplete": "Profil unvollständig",
+      "completedAt": "Vervollständigt am",
+      "notProvided": "Nicht angegeben",
+      "documents": "Dokumente",
+      "download": "Herunterladen"
     }
+
   }
 }

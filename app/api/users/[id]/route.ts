@@ -85,7 +85,21 @@ export async function PUT(
     await connectDB();
 
     const body = await request.json();
-    const { name, email, role, locale, country, isActive } = body;
+    const { 
+      name, 
+      email, 
+      firstName,
+      lastName,
+      role, 
+      locale, 
+      country, 
+      phoneNumber,
+      whatsappConsent,
+      isActive,
+      emailVerified,
+      address
+    } = body;
+
 
     // Check if user exists
     const user = await User.findById(id);
@@ -110,10 +124,26 @@ export async function PUT(
     // Update fields
     if (name) user.name = name;
     if (email) user.email = email;
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
     if (role) user.role = role;
     if (locale) user.locale = locale;
     if (country) user.country = country;
+    if (phoneNumber !== undefined) user.phoneNumber = phoneNumber;
+    if (whatsappConsent !== undefined) user.whatsappConsent = whatsappConsent;
     if (isActive !== undefined) user.isActive = isActive;
+    if (emailVerified !== undefined) {
+      user.emailVerified = emailVerified ? new Date() : null;
+    }
+    if (address) {
+      user.address = {
+        street: address.street || user.address?.street,
+        city: address.city || user.address?.city,
+        state: address.state || user.address?.state,
+        zipCode: address.zipCode || user.address?.zipCode,
+      };
+    }
+
 
     // Handle instructor profile
     if (role === 'instructor' && !user.instructorProfile) {

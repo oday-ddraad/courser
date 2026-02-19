@@ -31,12 +31,30 @@ export default async function AdminUsersPage() {
 
   const totalCount = await User.countDocuments();
 
-  const serializedUsers = users.map(user => ({
-    ...user,
-    _id: user._id.toString(),
-    createdAt: user.createdAt?.toISOString(),
-    updatedAt: user.updatedAt?.toISOString(),
-  }));
+  const serializedUsers = users.map(user => {
+    // Serialize documents array if it exists
+    const serializedDocuments = user.documents?.map((doc: any, index: number) => ({
+      name: doc.name,
+      uploadId: doc.uploadId?.toString(),
+      fileType: doc.fileType,
+      uploadedAt: doc.uploadedAt?.toISOString?.() || null,
+      _id: doc._id?.toString() || `doc-${index}`,
+    }));
+
+    return {
+      ...user,
+      _id: user._id.toString(),
+      createdAt: user.createdAt?.toISOString(),
+      updatedAt: user.updatedAt?.toISOString(),
+      phoneVerified: user.phoneVerified?.toISOString?.() || null,
+      whatsappConsentAt: user.whatsappConsentAt?.toISOString?.() || null,
+      profileCompletedAt: user.profileCompletedAt?.toISOString?.() || null,
+      emailVerified: user.emailVerified?.toISOString?.() || null,
+      documents: serializedDocuments,
+    };
+  });
+
+
 
   return (
     <UsersManagement 
