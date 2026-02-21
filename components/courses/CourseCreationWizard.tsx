@@ -978,12 +978,17 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
           {currentStep < 4 ? (
             <button
               type="button"
-              onClick={nextStep}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                nextStep();
+              }}
               className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
             >
               {locale === 'ar' ? 'التالي' : 'Next'}
             </button>
           ) : (
+
             <button
               type="submit"
               disabled={isSubmitting}
