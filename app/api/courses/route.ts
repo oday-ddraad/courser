@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Course, User } from '@/lib/mongodb/models';
 import { UserRole } from '@/types/database';
+import { Types } from 'mongoose';
+
 
 // Helper function to apply multilingual fallback
 function applyMultilingualFallback(data: any) {
@@ -235,7 +237,37 @@ export async function POST(request: NextRequest) {
     const isPublished = isAdmin;
     const publishedAt = isAdmin ? new Date() : null;
     
-    // Create course
+    // Create default GROUP A
+    const defaultGroup = {
+      _id: new Types.ObjectId(),
+      name: {
+        en: 'GROUP A',
+        de: 'GRUPPE A',
+        ar: 'المجموعة أ',
+      },
+      description: {
+        en: 'Default group for all enrolled students',
+        de: 'Standardgruppe für alle eingeschriebenen Studenten',
+        ar: 'المجموعة الافتراضية لجميع الطلاب المسجلين',
+      },
+      lessonIds: [],
+      order: 1,
+      maxStudents: 100,
+      studentIds: [],
+      instructorId: session.user.id,
+      schedule: [],
+      notificationSettings: {
+        enabled: true,
+        earlyMorningEnabled: true,
+        earlyMorningTime: '08:00',
+        oneHourEnabled: true,
+        notificationTypes: ['email', 'in_app'],
+        alertType: body.courseType === 'live' ? 'live_lesson' : 'recorded_lesson',
+      },
+      createdAt: new Date(),
+    };
+    
+    // Create course with default group
     const course = await Course.create({
       ...body,
       instructorId: session.user.id,
@@ -247,7 +279,9 @@ export async function POST(request: NextRequest) {
       priceSetAt,
       isPublished,
       publishedAt,
+      groups: [defaultGroup],
     });
+
 
     
     // Update instructor's course count
