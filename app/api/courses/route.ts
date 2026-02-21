@@ -231,6 +231,10 @@ export async function POST(request: NextRequest) {
     const priceSetBy = isAdmin && body.price ? session.user.id : null;
     const priceSetAt = isAdmin && body.price ? new Date() : null;
     
+    // Admin courses are published immediately, instructor courses need approval first
+    const isPublished = isAdmin;
+    const publishedAt = isAdmin ? new Date() : null;
+    
     // Create course
     const course = await Course.create({
       ...body,
@@ -241,8 +245,10 @@ export async function POST(request: NextRequest) {
       price,
       priceSetBy,
       priceSetAt,
-      isPublished: false, // Never publish immediately, requires price setting
+      isPublished,
+      publishedAt,
     });
+
     
     // Update instructor's course count
     await User.findByIdAndUpdate(session.user.id, {
