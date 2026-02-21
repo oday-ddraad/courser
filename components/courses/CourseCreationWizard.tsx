@@ -50,7 +50,11 @@ interface FormData {
   courseType: 'live' | 'uploaded';
   thumbnail: string;
   lessons: LessonData[];
+  price: number;
+  currency: 'SYP' | 'USD';
+  priceSypNew: number; // New SYP (without last two zeros)
 }
+
 
 export default function CourseCreationWizard({ locale, userRole }: CourseCreationWizardProps) {
   const router = useRouter();
@@ -63,7 +67,6 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const [loadingCategories, setLoadingCategories] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
-
     slug: '',
     title: { en: '', de: '', ar: '' },
     description: { en: '', de: '', ar: '' },
@@ -73,7 +76,11 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
     courseType: 'uploaded',
     thumbnail: '',
     lessons: [],
+    price: 0,
+    currency: 'SYP',
+    priceSypNew: 0,
   });
+
 
   const languages = [
     { code: 'en', name: 'English', nameAr: 'الإنجليزية' },
@@ -391,7 +398,10 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
         courseType: formData.courseType,
         thumbnail: formData.thumbnail,
         lessons: processedLessons,
+        price: formData.price,
+        currency: formData.currency,
       };
+
 
       const response = await fetch('/api/courses', {
         method: 'POST',
@@ -583,9 +593,96 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             />
           </div>
         </div>
+
+        {/* Price Section */}
+        <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            {locale === 'ar' ? 'السعر' : 'Course Price'}
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Currency Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {locale === 'ar' ? 'العملة' : 'Currency'} *
+              </label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData(prev => ({ ...prev, currency: e.target.value as 'SYP' | 'USD' }))}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="SYP">{locale === 'ar' ? 'ليرة سورية (جديدة)' : 'SYP (New)'}</option>
+                <option value="USD">{locale === 'ar' ? 'دولار أمريكي' : 'USD'}</option>
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                {locale === 'ar' ? 'العملة الرئيسية: ليرة سورية (جديدة)' : 'Main currency: SYP (New)'}
+              </p>
+            </div>
+
+            {/* Price Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {formData.currency === 'SYP' 
+                  ? (locale === 'ar' ? 'السعر (ليرة سورية جديدة)' : 'Price (SYP New)')
+                  : (locale === 'ar' ? 'السعر (دولار)' : 'Price (USD)')
+                } *
+              </label>
+              <input
+                type="number"
+                min="0"
+                step={formData.currency === 'SYP' ? '1' : '0.01'}
+                value={formData.currency === 'SYP' ? formData.priceSypNew : formData.price}
+                onChange={(e) => {
+                  const value = parseFloat(e.target.value) || 0;
+                  if (formData.currency === 'SYP') {
+                    // New SYP: store as entered (without last two zeros)
+                    setFormData(prev => ({ 
+                      ...prev, 
+                      priceSypNew: value,
+                      price: value * 100 // Convert to old SYP for storage
+                    }));
+                  } else {
+                    setFormData(prev => ({ ...prev, price: value }));
+                  }
+                }}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder="0"
+              />
+              {formData.currency === 'SYP' && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {locale === 'ar' 
+                    ? `السعر القديم: ${formData.price} ل.س (مع صفرين إضافيين)`
+                    : `Old SYP: ${formData.price} (with two extra zeros)`
+                  }
+                </p>
+              )}
+            </div>
+
+            {/* Price Display */}
+            <div className="flex items-end">
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 w-full">
+                <p className="text-sm text-blue-900 dark:text-blue-300 font-medium">
+                  {locale === 'ar' ? 'السعر النهائي:' : 'Final Price:'}
+                </p>
+                <p className="text-lg font-bold text-blue-700 dark:text-blue-400">
+                  {formData.currency === 'SYP' 
+                    ? `${formData.priceSypNew.toLocaleString()} ${locale === 'ar' ? 'ل.س (جديدة)' : 'SYP (New)'}`
+                    : `$${formData.price.toFixed(2)}`
+                  }
+                </p>
+                {formData.currency === 'SYP' && (
+                  <p className="text-xs text-blue-600 dark:text-blue-500">
+                    = {formData.price.toLocaleString()} {locale === 'ar' ? 'ل.س قديمة' : 'old SYP'}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
+
 
   const renderStep2 = () => (
     <div className="space-y-6">
@@ -877,7 +974,25 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             </h3>
             <p className="text-gray-700 dark:text-gray-300">{formData.lessons.length}</p>
           </div>
+
+          <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
+              {locale === 'ar' ? 'السعر' : 'Price'}
+            </h3>
+            <p className="text-gray-700 dark:text-gray-300">
+              {formData.currency === 'SYP' 
+                ? `${formData.priceSypNew.toLocaleString()} ${locale === 'ar' ? 'ل.س (جديدة)' : 'SYP (New)'}`
+                : `$${formData.price.toFixed(2)} USD`
+              }
+            </p>
+            {formData.currency === 'SYP' && (
+              <p className="text-sm text-gray-500">
+                {formData.price.toLocaleString()} {locale === 'ar' ? 'ل.س قديمة' : 'old SYP'}
+              </p>
+            )}
+          </div>
         </div>
+
 
         {/* Approval Notice */}
         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl p-4 mb-6">
