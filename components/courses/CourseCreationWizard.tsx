@@ -32,6 +32,7 @@ interface LessonData {
   title: MultilingualContent;
   description: MultilingualContent;
   youtubeUrl: string;
+  duration: number; // in minutes
   googleDriveLinks: {
     name: MultilingualContent;
     url: string;
@@ -39,6 +40,7 @@ interface LessonData {
   }[];
   isPublished: boolean;
 }
+
 
 interface FormData {
   slug: string;
@@ -153,6 +155,7 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
       title: { en: '', de: '', ar: '' },
       description: { en: '', de: '', ar: '' },
       youtubeUrl: '',
+      duration: 0,
       googleDriveLinks: [],
       isPublished: false,
     };
@@ -161,6 +164,7 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
       lessons: [...prev.lessons, newLesson]
     }));
   };
+
 
   const updateLesson = (lessonId: string, field: keyof LessonData, value: any) => {
     setFormData(prev => ({
@@ -376,8 +380,9 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
           content: { en: '', de: '', ar: '' },
           youtubeVideoId,
           videoUrl: lesson.youtubeUrl,
-          duration: 0,
+          duration: lesson.duration || 0,
           isLiveStream: formData.courseType === 'live',
+
           googleDriveLinks: lesson.googleDriveLinks.map(link => ({
             name: {
               en: link.name.en || link.name.ar || link.name.de || 'Material',
@@ -891,6 +896,28 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
                       : 'Will use youtube-nocookie.com for privacy'}
                   </p>
                 </div>
+
+                {/* Lesson Duration */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    {locale === 'ar' ? 'مدة الدرس (بالدقائق)' : 'Lesson Duration (minutes)'}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={lesson.duration}
+                    onChange={(e) => updateLesson(lesson.id, 'duration', parseInt(e.target.value) || 0)}
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    placeholder="0"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {locale === 'ar' 
+                      ? 'أدخل مدة الفيديو بالدقائق (مثال: 45)' 
+                      : 'Enter video duration in minutes (e.g., 45)'}
+                  </p>
+                </div>
+
 
                 {/* Google Drive Links */}
                 <div className="mb-4">
