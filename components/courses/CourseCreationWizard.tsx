@@ -1,9 +1,20 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { CourseLevel } from '@/types/database';
+
+interface Category {
+  _id: string;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  slug: string;
+}
+
 
 interface CourseCreationWizardProps {
   locale: string;
@@ -48,8 +59,11 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [activeLangTab, setActiveLangTab] = useState<'en' | 'de' | 'ar'>('en');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
   
   const [formData, setFormData] = useState<FormData>({
+
     slug: '',
     title: { en: '', de: '', ar: '' },
     description: { en: '', de: '', ar: '' },
@@ -67,7 +81,26 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
     { code: 'ar', name: 'العربية', nameAr: 'العربية' },
   ] as const;
 
+  // Fetch categories on mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/courses/categories');
+        const data = await response.json();
+        if (data.success) {
+          setCategories(data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      } finally {
+        setLoadingCategories(false);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const steps = [
+
     { number: 1, title: 'Basic Info', titleAr: 'المعلومات الأساسية' },
     { number: 2, title: 'Course Type', titleAr: 'نوع الدورة' },
     { number: 3, title: 'Lessons', titleAr: 'الدروس' },
@@ -495,14 +528,30 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               {locale === 'ar' ? 'الفئة' : 'Category'} *
             </label>
-            <input
-              type="text"
-              value={formData.category}
-              onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder={locale === 'ar' ? 'مثال: اللغة الإنجليزية' : 'e.g., English Language'}
-            />
+            {loadingCategories ? (
+              <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500">
+                {locale === 'ar' ? 'جاري تحميل الفئات...' : 'Loading categories...'}
+              </div>
+            ) : categories.length === 0 ? (
+              <div className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-500">
+                {locale === 'ar' ? 'لا توجد فئات متاحة' : 'No categories available'}
+              </div>
+            ) : (
+              <select
+                value={formData.category}
+                onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              >
+                <option value="">{locale === 'ar' ? 'اختر فئة' : 'Select a category'}</option>
+                {categories.map((cat) => (
+                  <option key={cat._id} value={cat.slug}>
+                    {cat.name[locale as keyof typeof cat.name] || cat.name.en}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
+
 
           {/* Level */}
           <div>
