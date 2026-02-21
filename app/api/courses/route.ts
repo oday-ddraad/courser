@@ -65,10 +65,10 @@ export async function GET(request: NextRequest) {
     } else if (isInstructor && !isAdmin) {
       // Instructors see their own courses (any status) + published approved courses
       if (myCourses === 'true') {
-        query.instructorId = session.user.id;
+        query.instructorId = session?.user.id;
       } else {
         query.$or = [
-          { instructorId: session.user.id },
+          { instructorId: session?.user.id },
           { isPublished: true, approvalStatus: 'approved' }
         ];
       }
@@ -153,13 +153,14 @@ export async function GET(request: NextRequest) {
         hasPrevPage,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching courses:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch courses' },
       { status: 500 }
     );
   }
+
 }
 
 
@@ -252,11 +253,12 @@ export async function POST(request: NextRequest) {
       { success: true, data: course },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating course:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create course' },
       { status: 500 }
     );
   }
+
 }

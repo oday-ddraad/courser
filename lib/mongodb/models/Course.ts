@@ -600,43 +600,9 @@ CourseSchema.index({ tags: 'text' });
 CourseSchema.index({ isPublished: 1, category: 1, level: 1 });
 CourseSchema.index({ isPublished: 1, rating: -1, enrollmentCount: -1 });
 
-// Pre-save hook to create default GROUP A
-CourseSchema.pre('save', async function(next) {
-  const course = this as ICourse;
-  
-  // Create default GROUP A if no groups exist
-  if (course.isNew && (!course.groups || course.groups.length === 0)) {
-    course.groups = [{
-      name: {
-        en: 'GROUP A',
-        de: 'GRUPPE A',
-        ar: 'المجموعة أ',
-      },
-      description: {
-        en: 'Default group for all enrolled students',
-        de: 'Standardgruppe für alle eingeschriebenen Studenten',
-        ar: 'المجموعة الافتراضية لجميع الطلاب المسجلين',
-      },
-      lessonIds: [],
-      order: 1,
-      maxStudents: 100,
-      studentIds: [],
-      instructorId: course.instructorId,
-      schedule: [],
-      notificationSettings: {
-        enabled: true,
-        earlyMorningEnabled: true,
-        earlyMorningTime: '08:00',
-        oneHourEnabled: true,
-        notificationTypes: ['email', 'in_app'],
-        alertType: course.courseType === 'live' ? 'live_lesson' : 'recorded_lesson',
-      },
-      createdAt: new Date(),
-    } as IGroup];
-  }
-  
-  next();
-});
+
+
+
 
 // Method to calculate average rating
 CourseSchema.methods.calculateRating = function() {
@@ -658,15 +624,26 @@ CourseSchema.statics.findWithGroups = function(courseId: string) {
 // Method to add lesson to course
 CourseSchema.methods.addLesson = function(lessonData: Partial<ILesson>) {
   const course = this as ICourse;
-  const newLesson = {
-    ...lessonData,
+  const newLesson: ILesson = {
+    _id: new Types.ObjectId(),
     order: course.lessons.length + 1,
+    title: lessonData.title || { en: '', de: '', ar: '' },
+    description: lessonData.description || { en: '', de: '', ar: '' },
+    content: lessonData.content || { en: '', de: '', ar: '' },
+    duration: lessonData.duration || 0,
+    isLiveStream: lessonData.isLiveStream || false,
+    resources: lessonData.resources || [],
+    googleDriveLinks: lessonData.googleDriveLinks || [],
+    isPreview: lessonData.isPreview || false,
+    isPublished: lessonData.isPublished || false,
     createdAt: new Date(),
-  } as ILesson;
+    ...lessonData,
+  };
   
   course.lessons.push(newLesson);
   return newLesson;
 };
+
 
 // Method to publish lesson (for progressive release)
 CourseSchema.methods.publishLesson = function(lessonId: Types.ObjectId) {

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 
 interface Course {
+  rejectionReason: string;
   _id: string;
   slug: string;
   title: {

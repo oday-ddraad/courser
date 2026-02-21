@@ -50,13 +50,14 @@ export async function GET(
       success: true,
       data: course.groups,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching groups:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch groups' },
       { status: 500 }
     );
   }
+
 }
 
 // POST /api/courses/[id]/groups - Create a new group
@@ -128,7 +129,8 @@ export async function POST(
       order: course.groups.length + 1,
       maxStudents: body.maxStudents || 20,
       studentIds: [],
-      instructorId: session.user.id,
+      instructorId: new Types.ObjectId(session.user.id),
+
       schedule: body.schedule || [],
       notificationSettings: {
         enabled: body.notificationSettings?.enabled ?? true,
@@ -136,8 +138,9 @@ export async function POST(
         earlyMorningTime: body.notificationSettings?.earlyMorningTime || '08:00',
         oneHourEnabled: body.notificationSettings?.oneHourEnabled ?? true,
         notificationTypes: body.notificationSettings?.notificationTypes || ['email', 'in_app'],
-        alertType: 'live_lesson',
+        alertType: 'live_lesson' as const,
       },
+
       createdAt: new Date(),
     };
 
@@ -148,11 +151,12 @@ export async function POST(
       success: true,
       data: newGroup,
     }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating group:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create group' },
       { status: 500 }
     );
   }
+
 }
