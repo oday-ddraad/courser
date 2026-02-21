@@ -10,6 +10,19 @@ export interface IReview {
 }
 
 
+// Google Drive Material subdocument interface
+export interface IGoogleDriveLink {
+  _id?: Types.ObjectId;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  url: string;
+  type: 'folder' | 'file' | 'document' | 'spreadsheet' | 'presentation';
+  createdAt: Date;
+}
+
 // Lesson subdocument interface
 export interface ILesson {
   _id: Types.ObjectId;
@@ -30,6 +43,7 @@ export interface ILesson {
     ar: string;
   };
   videoUrl?: string;
+  youtubeVideoId?: string; // For privacy-focused YouTube embedding
   duration: number; // in minutes
   isLiveStream: boolean;
   scheduledDateTime?: Date;
@@ -39,9 +53,12 @@ export interface ILesson {
     url: string;
     name: string;
   }[];
+  googleDriveLinks: IGoogleDriveLink[];
   isPreview: boolean;
+  isPublished: boolean; // For progressive lesson release in uploaded courses
   createdAt: Date;
 }
+
 
 // Material subdocument interface
 export interface IMaterial {
@@ -131,9 +148,24 @@ export interface ICourse extends Document {
   lessons: ILesson[];
   materials: IMaterial[];
   groups: IGroup[];
+  
+  // Course type and approval workflow
+  courseType: 'live' | 'uploaded';
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvedBy?: Types.ObjectId;
+  approvalDate?: Date;
+  submittedForApprovalAt?: Date;
+  rejectionReason?: string;
+  
+  // Price setting workflow
+  priceSetBy?: Types.ObjectId;
+  priceSetAt?: Date;
+  
+  // Publishing
   isPublished: boolean;
   isLiveStream: boolean;
   publishedAt?: Date;
+  
   enrollmentCount: number;
   rating: number;
   reviews: IReview[];
@@ -141,6 +173,7 @@ export interface ICourse extends Document {
   updatedAt: Date;
   calculateRating(): number;
 }
+
 
 
 // Review Schema
@@ -167,6 +200,28 @@ const ReviewSchema = new Schema<IReview>({
   },
 });
 
+// Google Drive Link Schema
+const GoogleDriveLinkSchema = new Schema<IGoogleDriveLink>({
+  name: {
+    en: { type: String, required: true },
+    de: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  url: {
+    type: String,
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ['folder', 'file', 'document', 'spreadsheet', 'presentation'],
+    default: 'file',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 // Lesson Schema
 const LessonSchema = new Schema<ILesson>({
   order: {
@@ -175,8 +230,8 @@ const LessonSchema = new Schema<ILesson>({
   },
   title: {
     en: { type: String, required: true },
-    de: { type: String, required: true },
-    ar: { type: String, required: true },
+    de: { type: String, default: '' },
+    ar: { type: String, default: '' },
   },
   description: {
     en: { type: String, default: '' },
@@ -189,6 +244,10 @@ const LessonSchema = new Schema<ILesson>({
     ar: { type: String, default: '' },
   },
   videoUrl: {
+    type: String,
+    default: null,
+  },
+  youtubeVideoId: {
     type: String,
     default: null,
   },
@@ -223,7 +282,12 @@ const LessonSchema = new Schema<ILesson>({
       required: true,
     },
   }],
+  googleDriveLinks: [GoogleDriveLinkSchema],
   isPreview: {
+    type: Boolean,
+    default: false,
+  },
+  isPublished: {
     type: Boolean,
     default: false,
   },
@@ -232,6 +296,7 @@ const LessonSchema = new Schema<ILesson>({
     default: Date.now,
   },
 });
+
 
 // Material Schema
 const MaterialSchema = new Schema<IMaterial>({
@@ -393,13 +458,13 @@ const CourseSchema = new Schema<ICourse>(
     },
     title: {
       en: { type: String, required: true },
-      de: { type: String, required: true },
-      ar: { type: String, required: true },
+      de: { type: String, default: '' },
+      ar: { type: String, default: '' },
     },
     description: {
       en: { type: String, required: true },
-      de: { type: String, required: true },
-      ar: { type: String, required: true },
+      de: { type: String, default: '' },
+      ar: { type: String, default: '' },
     },
     content: {
       en: { type: String, default: '' },
@@ -412,7 +477,7 @@ const CourseSchema = new Schema<ICourse>(
     },
     price: {
       type: Number,
-      required: true,
+      default: 0,
       min: 0,
     },
     currency: {
@@ -424,7 +489,7 @@ const CourseSchema = new Schema<ICourse>(
     level: {
       type: String,
       enum: ['beginner', 'intermediate', 'advanced'],
-      required: true,
+      default: 'beginner',
     },
     duration: {
       type: Number,
@@ -441,6 +506,48 @@ const CourseSchema = new Schema<ICourse>(
     lessons: [LessonSchema],
     materials: [MaterialSchema],
     groups: [GroupSchema],
+    
+    // Course type and approval workflow
+    courseType: {
+      type: String,
+      enum: ['live', 'uploaded'],
+      default: 'uploaded',
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    approvalDate: {
+      type: Date,
+      default: null,
+    },
+    submittedForApprovalAt: {
+      type: Date,
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
+    
+    // Price setting workflow
+    priceSetBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    priceSetAt: {
+      type: Date,
+      default: null,
+    },
+    
+    // Publishing
     isPublished: {
       type: Boolean,
       default: false,
@@ -470,6 +577,7 @@ const CourseSchema = new Schema<ICourse>(
   }
 );
 
+
 // Indexes for performance and search
 // Note: slug already has unique: true in schema definition, so no need for explicit index
 CourseSchema.index({ instructorId: 1 });
@@ -492,6 +600,44 @@ CourseSchema.index({ tags: 'text' });
 CourseSchema.index({ isPublished: 1, category: 1, level: 1 });
 CourseSchema.index({ isPublished: 1, rating: -1, enrollmentCount: -1 });
 
+// Pre-save hook to create default GROUP A
+CourseSchema.pre('save', async function(next) {
+  const course = this as ICourse;
+  
+  // Create default GROUP A if no groups exist
+  if (course.isNew && (!course.groups || course.groups.length === 0)) {
+    course.groups = [{
+      name: {
+        en: 'GROUP A',
+        de: 'GRUPPE A',
+        ar: 'المجموعة أ',
+      },
+      description: {
+        en: 'Default group for all enrolled students',
+        de: 'Standardgruppe für alle eingeschriebenen Studenten',
+        ar: 'المجموعة الافتراضية لجميع الطلاب المسجلين',
+      },
+      lessonIds: [],
+      order: 1,
+      maxStudents: 100,
+      studentIds: [],
+      instructorId: course.instructorId,
+      schedule: [],
+      notificationSettings: {
+        enabled: true,
+        earlyMorningEnabled: true,
+        earlyMorningTime: '08:00',
+        oneHourEnabled: true,
+        notificationTypes: ['email', 'in_app'],
+        alertType: course.courseType === 'live' ? 'live_lesson' : 'recorded_lesson',
+      },
+      createdAt: new Date(),
+    } as IGroup];
+  }
+  
+  next();
+});
+
 // Method to calculate average rating
 CourseSchema.methods.calculateRating = function() {
   const course = this as ICourse;
@@ -503,6 +649,35 @@ CourseSchema.methods.calculateRating = function() {
   }
   return course.rating;
 };
+
+// Static method to get course with populated groups
+CourseSchema.statics.findWithGroups = function(courseId: string) {
+  return this.findById(courseId).populate('groups.studentIds', 'name email');
+};
+
+// Method to add lesson to course
+CourseSchema.methods.addLesson = function(lessonData: Partial<ILesson>) {
+  const course = this as ICourse;
+  const newLesson = {
+    ...lessonData,
+    order: course.lessons.length + 1,
+    createdAt: new Date(),
+  } as ILesson;
+  
+  course.lessons.push(newLesson);
+  return newLesson;
+};
+
+// Method to publish lesson (for progressive release)
+CourseSchema.methods.publishLesson = function(lessonId: Types.ObjectId) {
+  const course = this as ICourse;
+  const lesson = course.lessons.find(l => l._id.toString() === lessonId.toString());
+  if (lesson) {
+    lesson.isPublished = true;
+  }
+  return lesson;
+};
+
 
 
 
