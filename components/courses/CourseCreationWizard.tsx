@@ -15,11 +15,22 @@ interface Category {
   slug: string;
 }
 
+interface Instructor {
+  _id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  instructorProfile?: {
+    specialization?: string;
+  };
+}
+
 
 interface CourseCreationWizardProps {
   locale: string;
   userRole: 'admin' | 'instructor';
 }
+
 
 interface MultilingualContent {
   en: string;
@@ -56,7 +67,9 @@ interface FormData {
   currency: 'SYP' | 'USD';
   priceSypNew: number; // New SYP (without last two zeros)
   duration: number; // in hours
+  instructorIds: string[]; // For admin to select instructors
 }
+
 
 
 
@@ -69,8 +82,11 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const [activeLangTab, setActiveLangTab] = useState<'en' | 'de' | 'ar'>('en');
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [loadingInstructors, setLoadingInstructors] = useState(false);
   
   const [formData, setFormData] = useState<FormData>({
+
     slug: '',
     title: { en: '', de: '', ar: '' },
     description: { en: '', de: '', ar: '' },
@@ -84,7 +100,9 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
     currency: 'SYP',
     priceSypNew: 0,
     duration: 0,
+    instructorIds: [],
   });
+
 
 
 
@@ -111,6 +129,29 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
     };
     fetchCategories();
   }, []);
+
+  // Fetch instructors for admin users
+  useEffect(() => {
+    if (userRole === 'admin') {
+      const fetchInstructors = async () => {
+        setLoadingInstructors(true);
+        try {
+          const response = await fetch('/api/courses/instructors?all=true');
+          const data = await response.json();
+          if (data.success) {
+            setInstructors(data.data);
+          }
+        } catch (error) {
+          console.error('Error fetching instructors:', error);
+        } finally {
+          setLoadingInstructors(false);
+        }
+      };
+      fetchInstructors();
+    }
+  }, [userRole]);
+
+
 
   const steps = [
 
@@ -380,10 +421,10 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
           content: { en: '', de: '', ar: '' },
           youtubeVideoId,
           videoUrl: lesson.youtubeUrl,
-          duration: lesson.duration || 0,
-          isLiveStream: formData.courseType === 'live',
+        duration: lesson.duration || 0,
+        isLiveStream: formData.courseType === 'live',
+        googleDriveLinks: lesson.googleDriveLinks.map(link => ({
 
-          googleDriveLinks: lesson.googleDriveLinks.map(link => ({
             name: {
               en: link.name.en || link.name.ar || link.name.de || 'Material',
               de: link.name.de || link.name.en || link.name.ar || 'Material',
@@ -397,7 +438,7 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
         };
       });
 
-      const courseData = {
+      const courseData: any = {
         slug: formData.slug,
         title,
         description,
@@ -411,6 +452,12 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
         currency: formData.currency,
         duration: formData.duration,
       };
+
+      // Add instructorIds for admin users
+      if (userRole === 'admin' && formData.instructorIds.length > 0) {
+        courseData.instructorIds = formData.instructorIds;
+      }
+
 
 
 
@@ -623,6 +670,111 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             </p>
           </div>
         </div>
+
+        {/* Instructor Selection - Admin Only */}
+        {userRole === 'admin' && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              {locale === 'ar' ? 'المدربون' : 'Instructors'}
+            </h3>
+            
+            {loadingInstructors ? (
+              <div className="text-gray-500 dark:text-gray-400">
+                {locale === 'ar' ? 'جاري تحميل المدربين...' : 'Loading instructors...'}
+              </div>
+            ) : instructors.length === 0 ? (
+              <div className="text-gray-500 dark:text-gray-400">
+                {locale === 'ar' ? 'لا يوجد مدربون متاحون' : 'No instructors available'}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {locale === 'ar' 
+                    ? 'اختر مدربًا واحدًا أو أكثر (إذا لم تختر، ستكون أنت المدرب افتراضيًا)' 
+                    : 'Select one or more instructors (if none selected, you will be the default instructor)'}
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                  {instructors.map((instructor) => (
+                    <label 
+                      key={instructor._id} 
+                      className={`
+                        flex items-center p-3 border rounded-lg cursor-pointer transition-all
+                        ${formData.instructorIds.includes(instructor._id)
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }
+                      `}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.instructorIds.includes(instructor._id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              instructorIds: [...prev.instructorIds, instructor._id]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              instructorIds: prev.instructorIds.filter(id => id !== instructor._id)
+                            }));
+                          }
+                        }}
+                        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500 mr-3"
+                      />
+                      <div className="flex items-center gap-3 flex-1">
+                        {instructor.avatar ? (
+                          <img 
+                            src={instructor.avatar} 
+                            alt={instructor.name}
+                            className="w-10 h-10 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                            <span className="text-gray-500 dark:text-gray-400 text-sm">
+                              {instructor.name.charAt(0).toUpperCase()}
+                            </span>
+                          </div>
+                        )}
+                        <div>
+                          <p className="font-medium text-gray-900 dark:text-white text-sm">
+                            {instructor.name}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                            {instructor.instructorProfile?.specialization || instructor.email}
+                          </p>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+                {formData.instructorIds.length > 0 && (
+                  <p className="text-sm text-blue-600 dark:text-blue-400 mt-2">
+                    {locale === 'ar' 
+                      ? `تم اختيار ${formData.instructorIds.length} مدرب${formData.instructorIds.length > 1 ? 'ين' : ''}`
+                      : `${formData.instructorIds.length} instructor${formData.instructorIds.length > 1 ? 's' : ''} selected`
+                    }
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Instructor Info - Instructor Only */}
+        {userRole === 'instructor' && (
+          <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <p className="text-sm text-blue-800 dark:text-blue-300">
+                {locale === 'ar' 
+                  ? 'أنت سيتم تسجيلك كمدرب لهذه الدورة تلقائيًا.'
+                  : 'You will be automatically registered as the instructor for this course.'}
+              </p>
+            </div>
+          </div>
+        )}
+
 
 
         {/* Price Section */}

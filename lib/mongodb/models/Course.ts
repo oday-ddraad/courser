@@ -122,7 +122,8 @@ export interface IGroupNotificationSettings {
 
 export interface ICourse extends Document {
   slug: string;
-  instructorId: Types.ObjectId;
+  instructorIds: Types.ObjectId[];
+
   title: {
     en: string;
     de: string;
@@ -451,11 +452,12 @@ const CourseSchema = new Schema<ICourse>(
       lowercase: true,
       trim: true,
     },
-    instructorId: {
+    instructorIds: [{
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-    },
+    }],
+
     title: {
       en: { type: String, required: true },
       de: { type: String, default: '' },

@@ -67,14 +67,15 @@ export async function GET(request: NextRequest) {
     } else if (isInstructor && !isAdmin) {
       // Instructors see their own courses (any status) + published approved courses
       if (myCourses === 'true') {
-        query.instructorId = session?.user.id;
+        query.instructorIds = { $in: [session?.user.id] };
       } else {
         query.$or = [
-          { instructorId: session?.user.id },
+          { instructorIds: { $in: [session?.user.id] } },
           { isPublished: true, approvalStatus: 'approved' }
         ];
       }
     }
+
     // Admins can see all courses with optional filters
     
     // Filter by status
@@ -128,8 +129,9 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
     
     const courses = await Course.find(query)
-      .populate('instructorId', 'name avatar instructorProfile')
+      .populate('instructorIds', 'name avatar instructorProfile')
       .populate('approvedBy', 'name')
+
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -237,6 +239,17 @@ export async function POST(request: NextRequest) {
     const isPublished = isAdmin;
     const publishedAt = isAdmin ? new Date() : null;
     
+    // Determine instructor IDs
+    // For instructors: they are the default instructor
+    // For admins: they can select one or more instructors from the body
+    let instructorIds: string[];
+    if (isAdmin && body.instructorIds && Array.isArray(body.instructorIds) && body.instructorIds.length > 0) {
+      instructorIds = body.instructorIds;
+    } else {
+      // Default to current user (instructor creating the course)
+      instructorIds = [session.user.id];
+    }
+    
     // Create default GROUP A
     const defaultGroup = {
       _id: new Types.ObjectId(),
@@ -254,7 +267,7 @@ export async function POST(request: NextRequest) {
       order: 1,
       maxStudents: 100,
       studentIds: [],
-      instructorId: session.user.id,
+      instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
       schedule: [],
       notificationSettings: {
         enabled: true,
@@ -270,7 +283,7 @@ export async function POST(request: NextRequest) {
     // Create course with default group
     const course = await Course.create({
       ...body,
-      instructorId: session.user.id,
+      instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
       approvalStatus,
       approvedBy,
       approvalDate,
@@ -284,10 +297,13 @@ export async function POST(request: NextRequest) {
 
 
     
-    // Update instructor's course count
-    await User.findByIdAndUpdate(session.user.id, {
-      $inc: { 'instructorProfile.totalCourses': 1 },
-    });
+    // Update instructor's course count for all instructors
+    for (const instructorId of instructorIds) {
+      await User.findByIdAndUpdate(instructorId, {
+        $inc: { 'instructorProfile.totalCourses': 1 },
+      });
+    }
+
     
     return NextResponse.json(
       { success: true, data: course },
