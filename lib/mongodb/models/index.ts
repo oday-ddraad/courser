@@ -16,6 +16,9 @@ export { default as EmailSettings, type IEmailSettings } from './EmailSettings';
 export { default as OTP, type IOTP } from './OTP';
 export { default as WhatsAppSettings, type IWhatsAppSettings } from './WhatsAppSettings';
 
+// Jitsi/JaaS meeting model
+export { default as Meeting, type IMeeting } from './Meeting';
+
 // Add other models here as we create them:
 // export { default as Payment, IPayment } from './Payment';
 // etc.

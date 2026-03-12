@@ -20,13 +20,15 @@ import Link from 'next/link';
 
 interface Group {
   _id: string;
-  name: string;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
   maxStudents: number;
-  students: Array<{
-    _id: string;
-    name: string;
-    email: string;
-  }>;
+  studentIds: string[];
+
+  instructorId?: string;
   instructor?: {
     _id: string;
     name: string;
@@ -50,6 +52,7 @@ interface Group {
   };
 }
 
+
 interface Course {
   _id: string;
   title: {
@@ -67,7 +70,15 @@ interface User {
   role: string;
 }
 
+interface ScheduleFormData {
+  dayOfWeek: string;
+  time: string;
+  lessonType: 'live' | 'recorded';
+  isActive: boolean;
+}
+
 export default function CourseGroupsPage() {
+
   const { data: session, status } = useSession();
   const t = useTranslations('Dashboard.admin.groups');
   const params = useParams();
@@ -89,24 +100,28 @@ export default function CourseGroupsPage() {
 
   // Form state
   const [formData, setFormData] = useState({
-    name: '',
+    name: {
+      en: '',
+      de: '',
+      ar: '',
+    },
     maxStudents: 20,
     instructor: '',
-    schedules: [] as Array<{
-      dayOfWeek: string;
-      time: string;
-      lessonType: 'live' | 'recorded';
-      isActive: boolean;
-    }>,
+    schedules: [] as ScheduleFormData[],
+
+
     notificationSettings: {
       enabled: true,
       earlyMorningEnabled: true,
       earlyMorningTime: '08:00',
       oneHourEnabled: true,
-      notificationTypes: ['email', 'in_app'] as ('email' | 'in_app')[],
-      alertType: 'live_lesson' as 'live_lesson' | 'recorded_lesson',
+      notificationTypes: ['email', 'in_app'],
+      alertType: 'live_lesson',
     },
+
+
   });
+
 
   useEffect(() => {
     if (status !== 'loading' && session && hasPermission(session.user.role, 'course.manage')) {
@@ -190,12 +205,18 @@ export default function CourseGroupsPage() {
           lessonType: s.lessonType,
           isActive: s.isActive,
         })),
+
+
         notificationSettings: group.notificationSettings,
       });
     } else {
       setEditingGroup(null);
       setFormData({
-        name: '',
+        name: {
+          en: '',
+          de: '',
+          ar: '',
+        },
         maxStudents: 20,
         instructor: '',
         schedules: [],
@@ -211,6 +232,7 @@ export default function CourseGroupsPage() {
     }
     setIsModalOpen(true);
   };
+
 
 
   const handleCloseModal = () => {
@@ -274,9 +296,10 @@ export default function CourseGroupsPage() {
 
   const handleOpenAssignModal = (group: Group) => {
     setSelectedGroupForAssign(group);
-    setSelectedStudents(group.students.map(s => s._id));
+    setSelectedStudents(group.studentIds || []);
     setIsAssignModalOpen(true);
   };
+
 
   const handleAssignStudents = async () => {
     if (!selectedGroupForAssign) return;
@@ -357,14 +380,16 @@ export default function CourseGroupsPage() {
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Assigned to Groups</p>
           <p className="text-2xl font-bold text-blue-600">
-            {groups.reduce((acc, group) => acc + group.students.length, 0)}
+            {groups.reduce((acc, group) => acc + (group.studentIds?.length || 0), 0)}
           </p>
+
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-4">
           <p className="text-sm text-gray-500 dark:text-gray-400">Unassigned</p>
           <p className="text-2xl font-bold text-orange-600">
-            {enrollments.length - groups.reduce((acc, group) => acc + group.students.length, 0)}
+            {enrollments.length - groups.reduce((acc, group) => acc + (group.studentIds?.length || 0), 0)}
           </p>
+
         </div>
       </div>
 
@@ -385,12 +410,14 @@ export default function CourseGroupsPage() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {group.name}
+                    {group.name.en}
                   </h3>
+
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {group.students.length} / {group.maxStudents} {t('students')}
+                    {(group.studentIds?.length || 0)} / {group.maxStudents} {t('students')}
                   </p>
                 </div>
+
                 <div className="flex space-x-1">
                   <button
                     onClick={() => handleOpenModal(group)}
@@ -413,9 +440,10 @@ export default function CourseGroupsPage() {
               <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2 mb-4">
                 <div 
                   className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ width: `${(group.students.length / group.maxStudents) * 100}%` }}
+                  style={{ width: `${((group.studentIds?.length || 0) / group.maxStudents) * 100}%` }}
                 />
               </div>
+
 
               {/* Schedule */}
               {group.schedule && group.schedule.length > 0 && (
@@ -453,24 +481,19 @@ export default function CourseGroupsPage() {
                     {t('manage')}
                   </button>
                 </div>
-                {group.students.length === 0 ? (
+                {(group.studentIds?.length || 0) === 0 ? (
                   <p className="text-sm text-gray-500 dark:text-gray-400 italic">
                     {t('noStudents')}
                   </p>
                 ) : (
                   <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {group.students.map((student) => (
-                      <div 
-                        key={student._id}
-                        className="text-sm text-gray-600 dark:text-gray-400 flex items-center"
-                      >
-                        <Users className="w-3 h-3 mr-2 text-gray-400" />
-                        {student.name || student.email}
-                      </div>
-                    ))}
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {(group.studentIds?.length || 0)} students assigned
+                    </p>
                   </div>
                 )}
               </div>
+
             </div>
           ))
         )}
@@ -495,20 +518,46 @@ export default function CourseGroupsPage() {
             
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Basic Info Section */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    {t('groupName')} *
+                    {t('groupName')} (English) *
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.name.en}
+                    onChange={(e) => setFormData({ ...formData, name: { ...formData.name, en: e.target.value } })}
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
                     placeholder="e.g., Group A - Morning Session"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('groupName')} (German)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.name.de}
+                    onChange={(e) => setFormData({ ...formData, name: { ...formData.name, de: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                    placeholder="z.B., Gruppe A - Morgensession"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    {t('groupName')} (Arabic)
+                  </label>
+                  <input
+                    type="text"
+                    dir="rtl"
+                    value={formData.name.ar}
+                    onChange={(e) => setFormData({ ...formData, name: { ...formData.name, ar: e.target.value } })}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                    placeholder="مثال: المجموعة أ - الجلسة الصباحية"
+                  />
+                </div>
+
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -831,8 +880,10 @@ export default function CourseGroupsPage() {
                   {t('assignStudents')}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {selectedGroupForAssign.name} ({selectedStudents.length} / {selectedGroupForAssign.maxStudents} {t('students')})
+                  {selectedGroupForAssign.name.en} ({selectedStudents.length} / {selectedGroupForAssign.maxStudents} {t('students')})
                 </p>
+
+
               </div>
               <button
                 onClick={() => setIsAssignModalOpen(false)}
@@ -884,11 +935,12 @@ export default function CourseGroupsPage() {
                   if (studentFilter === 'assigned') return selectedStudents.includes(user._id);
                   if (studentFilter === 'unassigned') {
                     // Check if user is in any group
-                    const isInAnyGroup = groups.some(g => g.students.some(s => s._id === user._id));
+                    const isInAnyGroup = groups.some(g => g.studentIds?.includes(user._id));
                     return !isInAnyGroup;
                   }
                   return true;
                 }).map((user) => {
+
 
                   const isSelected = selectedStudents.includes(user._id);
                   const isFull = selectedStudents.length >= selectedGroupForAssign.maxStudents && !isSelected;

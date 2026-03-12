@@ -38,9 +38,9 @@ export async function GET(request: NextRequest) {
     const enrollments = await Enrollment.find(query)
       .populate({
         path: 'courseId',
-        select: 'slug title description thumbnail instructorId level duration price',
+        select: 'slug title description thumbnail instructorIds level duration price',
         populate: {
-          path: 'instructorId',
+          path: 'instructorIds',
           select: 'name avatar',
         },
       })
@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
       .skip(skip)
       .limit(limit)
       .lean();
+
     
     const totalCount = await Enrollment.countDocuments(query);
     
@@ -165,13 +166,17 @@ async function handleInstructorEnrollments(request: NextRequest, session: any) {
     // Verify course ownership (instructors can only view their own course enrollments)
     if (session.user.role === 'instructor') {
       const course = await Course.findById(courseId);
-      if (!course || course.instructorId.toString() !== session.user.id) {
+      const isInstructor = course?.instructorIds.some(
+        (id: any) => id.toString() === session.user.id
+      );
+      if (!course || !isInstructor) {
         return NextResponse.json(
           { success: false, error: 'Course not found or access denied' },
           { status: 403 }
         );
       }
     }
+
     
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');

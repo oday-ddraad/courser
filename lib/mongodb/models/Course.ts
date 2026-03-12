@@ -9,6 +9,18 @@ export interface IReview {
   createdAt: Date;
 }
 
+// Google Drive Material subdocument interface
+export interface IGoogleDriveLink {
+  _id?: Types.ObjectId;
+  name: {
+    en: string;
+    de: string;
+    ar: string;
+  };
+  url: string;
+  type: 'folder' | 'file' | 'document' | 'spreadsheet' | 'presentation';
+  createdAt: Date;
+}
 
 // Lesson subdocument interface
 export interface ILesson {
@@ -30,16 +42,25 @@ export interface ILesson {
     ar: string;
   };
   videoUrl?: string;
-  duration: number; // in minutes
+  youtubeVideoId?: string;
+  duration: number;
   isLiveStream: boolean;
   scheduledDateTime?: Date;
+  scheduleTimezone?: string;
+  reminderMinutesBefore?: number;
   jitsiRoomName?: string;
+  liveMeetingId?: string;
+  liveStatus?: 'scheduled' | 'live' | 'ended';
+  liveStartedAt?: Date;
+  liveStartedBy?: Types.ObjectId;
   resources: {
     type: 'pdf' | 'video' | 'link';
     url: string;
     name: string;
   }[];
+  googleDriveLinks: IGoogleDriveLink[];
   isPreview: boolean;
+  isPublished: boolean;
   createdAt: Date;
 }
 
@@ -59,6 +80,27 @@ export interface IMaterial {
   createdAt: Date;
 }
 
+// Group Schedule subdocument interface
+export interface IGroupSchedule {
+  _id: Types.ObjectId;
+  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
+  time: string;
+  lessonType: 'live' | 'recorded';
+  lessonId?: Types.ObjectId;
+  isActive: boolean;
+  createdAt: Date;
+}
+
+// Group Notification Settings subdocument interface
+export interface IGroupNotificationSettings {
+  enabled: boolean;
+  earlyMorningEnabled: boolean;
+  earlyMorningTime: string;
+  oneHourEnabled: boolean;
+  notificationTypes: ('email' | 'in_app')[];
+  alertType: 'live_lesson' | 'recorded_lesson';
+}
+
 // Group subdocument interface
 export interface IGroup {
   _id: Types.ObjectId;
@@ -76,36 +118,15 @@ export interface IGroup {
   order: number;
   maxStudents: number;
   studentIds: Types.ObjectId[];
-  instructorId?: Types.ObjectId;
+  instructorIds: Types.ObjectId[];
   schedule: IGroupSchedule[];
   notificationSettings: IGroupNotificationSettings;
   createdAt: Date;
 }
 
-// Group Schedule subdocument interface
-export interface IGroupSchedule {
-  _id: Types.ObjectId;
-  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
-  time: string; // HH:MM format
-  lessonType: 'live' | 'recorded';
-  lessonId?: Types.ObjectId;
-  isActive: boolean;
-  createdAt: Date;
-}
-
-// Group Notification Settings subdocument interface
-export interface IGroupNotificationSettings {
-  enabled: boolean;
-  earlyMorningEnabled: boolean;
-  earlyMorningTime: string; // HH:MM format
-  oneHourEnabled: boolean;
-  notificationTypes: ('email' | 'in_app')[];
-  alertType: 'live_lesson' | 'recorded_lesson';
-}
-
 export interface ICourse extends Document {
   slug: string;
-  instructorId: Types.ObjectId;
+  instructorIds: Types.ObjectId[];
   title: {
     en: string;
     de: string;
@@ -125,12 +146,20 @@ export interface ICourse extends Document {
   price: number;
   currency: string;
   level: 'beginner' | 'intermediate' | 'advanced';
-  duration: number; // total hours
+  duration: number;
   category: string;
   tags: string[];
   lessons: ILesson[];
   materials: IMaterial[];
   groups: IGroup[];
+  courseType: 'live' | 'uploaded';
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  approvedBy?: Types.ObjectId;
+  approvalDate?: Date;
+  submittedForApprovalAt?: Date;
+  rejectionReason?: string;
+  priceSetBy?: Types.ObjectId;
+  priceSetAt?: Date;
   isPublished: boolean;
   isLiveStream: boolean;
   publishedAt?: Date;
@@ -141,7 +170,6 @@ export interface ICourse extends Document {
   updatedAt: Date;
   calculateRating(): number;
 }
-
 
 // Review Schema
 const ReviewSchema = new Schema<IReview>({
@@ -167,6 +195,28 @@ const ReviewSchema = new Schema<IReview>({
   },
 });
 
+// Google Drive Link Schema
+const GoogleDriveLinkSchema = new Schema<IGoogleDriveLink>({
+  name: {
+    en: { type: String, required: true },
+    de: { type: String, required: true },
+    ar: { type: String, required: true },
+  },
+  url: {
+    type: String,
+    required: true,
+  },
+  type: {
+    type: String,
+    enum: ['folder', 'file', 'document', 'spreadsheet', 'presentation'],
+    default: 'file',
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now,
+  },
+});
+
 // Lesson Schema
 const LessonSchema = new Schema<ILesson>({
   order: {
@@ -175,8 +225,8 @@ const LessonSchema = new Schema<ILesson>({
   },
   title: {
     en: { type: String, required: true },
-    de: { type: String, required: true },
-    ar: { type: String, required: true },
+    de: { type: String, default: '' },
+    ar: { type: String, default: '' },
   },
   description: {
     en: { type: String, default: '' },
@@ -192,6 +242,10 @@ const LessonSchema = new Schema<ILesson>({
     type: String,
     default: null,
   },
+  youtubeVideoId: {
+    type: String,
+    default: null,
+  },
   duration: {
     type: Number,
     default: 0,
@@ -204,8 +258,34 @@ const LessonSchema = new Schema<ILesson>({
     type: Date,
     default: null,
   },
+  scheduleTimezone: {
+    type: String,
+    default: 'UTC',
+  },
+  reminderMinutesBefore: {
+    type: Number,
+    default: 30,
+  },
   jitsiRoomName: {
     type: String,
+    default: null,
+  },
+  liveMeetingId: {
+    type: String,
+    default: null,
+  },
+  liveStatus: {
+    type: String,
+    enum: ['scheduled', 'live', 'ended'],
+    default: null,
+  },
+  liveStartedAt: {
+    type: Date,
+    default: null,
+  },
+  liveStartedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User',
     default: null,
   },
   resources: [{
@@ -223,7 +303,12 @@ const LessonSchema = new Schema<ILesson>({
       required: true,
     },
   }],
+  googleDriveLinks: [GoogleDriveLinkSchema],
   isPreview: {
+    type: Boolean,
+    default: false,
+  },
+  isPublished: {
     type: Boolean,
     default: false,
   },
@@ -278,7 +363,7 @@ const GroupScheduleSchema = new Schema<IGroupSchedule>({
   time: {
     type: String,
     required: true,
-    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, // HH:MM format
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
   },
   lessonType: {
     type: String,
@@ -313,7 +398,7 @@ const GroupNotificationSettingsSchema = new Schema<IGroupNotificationSettings>({
   earlyMorningTime: {
     type: String,
     default: '08:00',
-    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, // HH:MM format
+    match: /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/,
   },
   oneHourEnabled: {
     type: Boolean,
@@ -360,11 +445,10 @@ const GroupSchema = new Schema<IGroup>({
     type: Schema.Types.ObjectId,
     ref: 'User',
   }],
-  instructorId: {
+  instructorIds: [{
     type: Schema.Types.ObjectId,
     ref: 'User',
-    default: null,
-  },
+  }],
   schedule: [GroupScheduleSchema],
   notificationSettings: {
     type: GroupNotificationSettingsSchema,
@@ -386,20 +470,20 @@ const CourseSchema = new Schema<ICourse>(
       lowercase: true,
       trim: true,
     },
-    instructorId: {
+    instructorIds: [{
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true,
-    },
+    }],
     title: {
       en: { type: String, required: true },
-      de: { type: String, required: true },
-      ar: { type: String, required: true },
+      de: { type: String, default: '' },
+      ar: { type: String, default: '' },
     },
     description: {
       en: { type: String, required: true },
-      de: { type: String, required: true },
-      ar: { type: String, required: true },
+      de: { type: String, default: '' },
+      ar: { type: String, default: '' },
     },
     content: {
       en: { type: String, default: '' },
@@ -412,7 +496,7 @@ const CourseSchema = new Schema<ICourse>(
     },
     price: {
       type: Number,
-      required: true,
+      default: 0,
       min: 0,
     },
     currency: {
@@ -420,11 +504,10 @@ const CourseSchema = new Schema<ICourse>(
       enum: ['USD', 'EUR', 'SYP'],
       default: 'USD',
     },
-
     level: {
       type: String,
       enum: ['beginner', 'intermediate', 'advanced'],
-      required: true,
+      default: 'beginner',
     },
     duration: {
       type: Number,
@@ -441,6 +524,42 @@ const CourseSchema = new Schema<ICourse>(
     lessons: [LessonSchema],
     materials: [MaterialSchema],
     groups: [GroupSchema],
+    courseType: {
+      type: String,
+      enum: ['live', 'uploaded'],
+      default: 'uploaded',
+    },
+    approvalStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      default: 'pending',
+    },
+    approvedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    approvalDate: {
+      type: Date,
+      default: null,
+    },
+    submittedForApprovalAt: {
+      type: Date,
+      default: null,
+    },
+    rejectionReason: {
+      type: String,
+      default: '',
+    },
+    priceSetBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      default: null,
+    },
+    priceSetAt: {
+      type: Date,
+      default: null,
+    },
     isPublished: {
       type: Boolean,
       default: false,
@@ -470,10 +589,8 @@ const CourseSchema = new Schema<ICourse>(
   }
 );
 
-// Indexes for performance and search
-// Note: slug already has unique: true in schema definition, so no need for explicit index
-CourseSchema.index({ instructorId: 1 });
-
+// Indexes
+CourseSchema.index({ instructorIds: 1 });
 CourseSchema.index({ isPublished: 1 });
 CourseSchema.index({ category: 1 });
 CourseSchema.index({ level: 1 });
@@ -481,14 +598,10 @@ CourseSchema.index({ price: 1 });
 CourseSchema.index({ rating: -1 });
 CourseSchema.index({ enrollmentCount: -1 });
 CourseSchema.index({ createdAt: -1 });
-
-// Text indexes for multi-language search
 CourseSchema.index({ 'title.en': 'text', 'title.de': 'text', 'title.ar': 'text' });
 CourseSchema.index({ 'description.en': 'text', 'description.de': 'text', 'description.ar': 'text' });
 CourseSchema.index({ 'content.en': 'text', 'content.de': 'text', 'content.ar': 'text' });
 CourseSchema.index({ tags: 'text' });
-
-// Compound indexes for common queries
 CourseSchema.index({ isPublished: 1, category: 1, level: 1 });
 CourseSchema.index({ isPublished: 1, rating: -1, enrollmentCount: -1 });
 
@@ -504,8 +617,43 @@ CourseSchema.methods.calculateRating = function() {
   return course.rating;
 };
 
+// Static method to get course with populated groups
+CourseSchema.statics.findWithGroups = function(courseId: string) {
+  return this.findById(courseId).populate('groups.studentIds', 'name email');
+};
 
+// Method to add lesson to course
+CourseSchema.methods.addLesson = function(lessonData: Partial<ILesson>) {
+  const course = this as ICourse;
+  const newLesson: ILesson = {
+    _id: new Types.ObjectId(),
+    order: course.lessons.length + 1,
+    title: lessonData.title || { en: '', de: '', ar: '' },
+    description: lessonData.description || { en: '', de: '', ar: '' },
+    content: lessonData.content || { en: '', de: '', ar: '' },
+    duration: lessonData.duration || 0,
+    isLiveStream: lessonData.isLiveStream || false,
+    resources: lessonData.resources || [],
+    googleDriveLinks: lessonData.googleDriveLinks || [],
+    isPreview: lessonData.isPreview || false,
+    isPublished: lessonData.isPublished || false,
+    createdAt: new Date(),
+    ...lessonData,
+  };
+  
+  course.lessons.push(newLesson);
+  return newLesson;
+};
 
+// Method to publish lesson
+CourseSchema.methods.publishLesson = function(lessonId: Types.ObjectId) {
+  const course = this as ICourse;
+  const lesson = course.lessons.find(l => l._id.toString() === lessonId.toString());
+  if (lesson) {
+    lesson.isPublished = true;
+  }
+  return lesson;
+};
 
 const Course: Model<ICourse> =
   mongoose.models.Course || mongoose.model<ICourse>('Course', CourseSchema);

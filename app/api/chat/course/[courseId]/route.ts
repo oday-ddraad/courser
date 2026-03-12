@@ -42,7 +42,9 @@ export async function GET(
       );
     }
     
-    const isInstructor = course.instructorId.toString() === session.user.id;
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
     const isAdmin = session.user.role === 'admin';
     
     if (!isInstructor && !isAdmin) {
@@ -156,7 +158,9 @@ export async function POST(
       );
     }
     
-    const isInstructor = course.instructorId.toString() === session.user.id;
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
     const isAdmin = session.user.role === 'admin';
     
     if (!isInstructor && !isAdmin) {
@@ -189,7 +193,6 @@ export async function POST(
       courseId: new Types.ObjectId(courseId),
       lessonId: lessonId && Types.ObjectId.isValid(lessonId) ? new Types.ObjectId(lessonId) : undefined,
       userId: new Types.ObjectId(session.user.id),
-
       message: message.trim(),
       attachments: attachments || [],
       isInstructorMessage: isInstructor || isAdmin,

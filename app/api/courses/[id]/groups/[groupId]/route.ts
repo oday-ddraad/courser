@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
-import { hasPermission } from '@/lib/auth/permissions';
-import Course from '@/lib/mongodb/models/Course';
-import connectToDatabase from '@/lib/mongodb/connection';
+import connectDB from '@/lib/mongodb/connection';
+import { Course } from '@/lib/mongodb/models';
 import { Types } from 'mongoose';
 
 // PUT /api/courses/[id]/groups/[groupId] - Update a group
@@ -13,22 +12,28 @@ export async function PUT(
 ) {
   try {
     const { id, groupId } = await params;
+    
     const session = await getServerSession(authOptions);
     
-    if (!session || !hasPermission(session.user.role, 'course.manage')) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Only admin and instructor can update groups
+    if (!['admin', 'instructor'].includes(session.user.role)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
         { status: 403 }
       );
     }
 
-    const body = await request.json();
-    const { name, maxStudents, instructor, schedule, notificationSettings } = body;
-
-    await connectToDatabase();
-
+    await connectDB();
+    
     const course = await Course.findById(id);
-
+    
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'Course not found' },
@@ -36,7 +41,20 @@ export async function PUT(
       );
     }
 
-    // Find the group
+    // Check if user is the instructor of this course or admin
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Not your course' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    
+    // Find the group index
     const groupIndex = course.groups.findIndex(
       (g: any) => g._id.toString() === groupId
     );
@@ -49,20 +67,36 @@ export async function PUT(
     }
 
     // Update group fields
-    if (name) {
-      course.groups[groupIndex].name = {
-        en: name,
-        de: name,
-        ar: name,
+    const group = course.groups[groupIndex];
+    
+    if (body.name) {
+      group.name = {
+        en: body.name.en || group.name.en,
+        de: body.name.de || group.name.de || body.name.en,
+        ar: body.name.ar || group.name.ar || body.name.en,
       };
     }
-    if (maxStudents) course.groups[groupIndex].maxStudents = maxStudents;
-    if (instructor !== undefined) course.groups[groupIndex].instructorId = instructor || null;
-    if (schedule) course.groups[groupIndex].schedule = schedule;
-    if (notificationSettings) {
-      course.groups[groupIndex].notificationSettings = {
-        ...course.groups[groupIndex].notificationSettings,
-        ...notificationSettings,
+
+    if (body.description) {
+      group.description = {
+        en: body.description.en || group.description.en,
+        de: body.description.de || group.description.de || group.description.en,
+        ar: body.description.ar || group.description.ar || group.description.en,
+      };
+    }
+
+    if (body.maxStudents !== undefined) {
+      group.maxStudents = body.maxStudents;
+    }
+
+    if (body.schedule) {
+      group.schedule = body.schedule;
+    }
+
+    if (body.notificationSettings) {
+      group.notificationSettings = {
+        ...group.notificationSettings,
+        ...body.notificationSettings,
       };
     }
 
@@ -70,8 +104,7 @@ export async function PUT(
 
     return NextResponse.json({
       success: true,
-      data: course.groups[groupIndex],
-      message: 'Group updated successfully',
+      data: group,
     });
   } catch (error) {
     console.error('Error updating group:', error);
@@ -89,23 +122,52 @@ export async function DELETE(
 ) {
   try {
     const { id, groupId } = await params;
+    
     const session = await getServerSession(authOptions);
     
-    if (!session || !hasPermission(session.user.role, 'course.manage')) {
+    if (!session?.user?.id) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    // Only admin and instructor can delete groups
+    if (!['admin', 'instructor'].includes(session.user.role)) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden' },
         { status: 403 }
       );
     }
 
-    await connectToDatabase();
-
+    await connectDB();
+    
     const course = await Course.findById(id);
-
+    
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'Course not found' },
         { status: 404 }
+      );
+    }
+
+    // Check if user is the instructor of this course or admin
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Not your course' },
+        { status: 403 }
+      );
+    }
+
+    // Prevent deletion of default GROUP A
+    const group = course.groups.find((g: any) => g._id.toString() === groupId);
+    if (group && group.name.en === 'GROUP A') {
+      return NextResponse.json(
+        { success: false, error: 'Cannot delete default GROUP A' },
+        { status: 400 }
       );
     }
 

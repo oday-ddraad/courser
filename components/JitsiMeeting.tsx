@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 
 interface JitsiMeetingProps {
   roomName: string;
@@ -11,9 +11,34 @@ interface JitsiMeetingProps {
   isModerator?: boolean;
   height?: string;
   onMeetingEnd?: () => void;
-  meetingId?: string; // For ending the meeting via API
+  meetingId?: string;
 }
 
+// Jitsi Settings interface
+interface JitsiSettings {
+  resolution: number;
+  maxVideoHeight: number;
+  maxVideoWidth: number;
+  startWithVideoMuted: boolean;
+  startWithAudioMuted: boolean;
+  enableNoAudioDetection: boolean;
+  enableNoisyMicDetection: boolean;
+  disableSimulcast: boolean;
+  enableLayerSuspension: boolean;
+  p2pEnabled: boolean;
+  prejoinPageEnabled: boolean;
+  showJitsiWatermark: boolean;
+  showBrandWatermark: boolean;
+  disableVideoBackground: boolean;
+  numberOfVisibleTiles: number;
+  maxTileViewColumns: number;
+  filmStripMaxHeight: number;
+  analyticsDisabled: boolean;
+  disableDeepLinking: boolean;
+  disableInviteFunctions: boolean;
+  doNotStoreRoom: boolean;
+  toolbarButtons: string[];
+}
 
 declare global {
   interface Window {
@@ -21,7 +46,42 @@ declare global {
   }
 }
 
-export default function JitsiMeeting({
+// Default optimized settings for low CPU/memory usage
+const defaultSettings: JitsiSettings = {
+  resolution: 240,
+  maxVideoHeight: 360,
+  maxVideoWidth: 640,
+  startWithVideoMuted: true,
+  startWithAudioMuted: true,
+  enableNoAudioDetection: true,
+  enableNoisyMicDetection: true,
+  disableSimulcast: true,
+  enableLayerSuspension: true,
+  p2pEnabled: true,
+  prejoinPageEnabled: false,
+  showJitsiWatermark: false,
+  showBrandWatermark: false,
+  disableVideoBackground: true,
+  numberOfVisibleTiles: 2,
+  maxTileViewColumns: 1,
+  filmStripMaxHeight: 60,
+  analyticsDisabled: true,
+  disableDeepLinking: true,
+  disableInviteFunctions: true,
+  doNotStoreRoom: true,
+  toolbarButtons: [
+    'microphone',
+    'camera',
+    'desktop',  // Screen sharing
+    'hangup',
+    'chat',
+    'fullscreen',
+    'tileview',
+  ],
+};
+
+// Memoized component to prevent unnecessary re-renders
+function JitsiMeeting({
   roomName,
   jwt,
   appId,
@@ -34,187 +94,15 @@ export default function JitsiMeeting({
 }: JitsiMeetingProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const apiRef = useRef<any>(null);
+  const scriptRef = useRef<HTMLScriptElement | null>(null);
+  const isInitializedRef = useRef(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string>('Initializing...');
   const [isEnding, setIsEnding] = useState(false);
 
-
-  useEffect(() => {
-    if (!appId) {
-      setError('JaaS appId not provided');
-      setIsLoading(false);
-      return;
-    }
-
-    // Clean room name - remove appId prefix if present
-    let cleanRoom = roomName;
-    if (cleanRoom.includes(`${appId}/`)) {
-      cleanRoom = cleanRoom.split(`${appId}/`)[1];
-    }
-
-    const fullRoomName = `${appId}/${cleanRoom}`;
-    setStatus(`Loading Jitsi for room: ${fullRoomName}`);
-
-    // Load Jitsi script
-    const script = document.createElement('script');
-    script.src = `https://8x8.vc/${appId}/external_api.js`;
-    script.async = true;
-
-    script.onload = () => {
-      if (!containerRef.current || !window.JitsiMeetExternalAPI) {
-        setError('Failed to load Jitsi API');
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const options = {
-          roomName: fullRoomName,
-          jwt: jwt,
-          parentNode: containerRef.current,
-          width: '100%',
-          height: '100%',
-          userInfo: {
-            displayName: userName,
-            email: userEmail,
-          },
-          configOverwrite: {
-            // Performance optimizations
-            prejoinPageEnabled: false, // Skip prejoin to reduce load
-            startWithAudioMuted: true,
-            startWithVideoMuted: true,
-            
-            // Reduce video quality for better performance
-            resolution: 360,
-            constraints: {
-              video: {
-                height: { ideal: 360, max: 720 },
-                width: { ideal: 640, max: 1280 }
-              }
-            },
-            
-            // Disable resource-intensive features
-            disableSimulcast: false,
-            enableLayerSuspension: true,
-            
-            // Optimize audio
-            enableNoAudioDetection: true,
-            enableNoisyMicDetection: true,
-            
-            // Disable unnecessary features
-            disableDeepLinking: true,
-            disableInviteFunctions: true,
-            doNotStoreRoom: true,
-            
-            // P2P for better performance with few participants
-            p2p: {
-              enabled: true,
-              stunServers: [
-                { urls: 'stun:stun.l.google.com:19302' },
-                { urls: 'stun:stun1.l.google.com:19302' }
-              ]
-            },
-            
-            // Reduce analytics overhead
-            analytics: {
-              disabled: true
-            },
-            
-            // Optimize tile view
-            tileView: {
-              numberOfVisibleTiles: 4
-            }
-          },
-          interfaceConfigOverwrite: {
-            // Minimize UI elements for better performance
-            SHOW_JITSI_WATERMARK: false,
-            SHOW_WATERMARK_FOR_GUESTS: false,
-            SHOW_BRAND_WATERMARK: false,
-            SHOW_POWERED_BY: false,
-            
-            // Disable animations
-            DISABLE_VIDEO_BACKGROUND: true,
-            
-            // Optimize toolbar
-            TOOLBAR_BUTTONS: [
-              'microphone',
-              'camera',
-              'desktop',
-              'fullscreen',
-              'hangup',
-              'chat',
-              'tileview'
-            ],
-            
-            // Reduce filmstrip tiles
-            FILM_STRIP_MAX_HEIGHT: 90,
-            TILE_VIEW_MAX_COLUMNS: 2
-          },
-        };
-
-        apiRef.current = new window.JitsiMeetExternalAPI('8x8.vc', options);
-
-        apiRef.current.addEventListener('videoConferenceJoined', () => {
-          setIsLoading(false);
-          setStatus(`Joined as ${isModerator ? 'Moderator' : 'Participant'}`);
-        });
-
-        apiRef.current.addEventListener('videoConferenceLeft', () => {
-          onMeetingEnd?.();
-        });
-
-        apiRef.current.addEventListener('readyToClose', () => {
-          onMeetingEnd?.();
-        });
-
-        // Listen for hangup event to end meeting for moderator
-        apiRef.current.addEventListener('hangup', () => {
-          if (isModerator && meetingId) {
-            endMeeting();
-          }
-        });
-
-
-        apiRef.current.addEventListener('errorOccurred', (err: any) => {
-          const errorMessage = typeof err.error === 'string' ? err.error : 
-                               typeof err.error === 'object' && err.error?.message ? err.error.message :
-                               'Meeting error occurred';
-          setError(errorMessage);
-          setIsLoading(false);
-        });
-
-        // Timeout fallback
-        setTimeout(() => {
-          if (isLoading) {
-            setIsLoading(false);
-          }
-        }, 10000);
-
-      } catch (err: any) {
-        const errorMessage = err?.message || 'Failed to initialize meeting';
-        setError(errorMessage);
-        setIsLoading(false);
-      }
-    };
-
-    script.onerror = () => {
-      setError('Failed to load Jitsi script');
-      setIsLoading(false);
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      apiRef.current?.dispose();
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [roomName, jwt, appId, userName, userEmail, isModerator, onMeetingEnd, meetingId]);
-
-  // Function to end meeting via API
-  const endMeeting = async () => {
+  // Memoized end meeting callback
+  const endMeeting = useCallback(async () => {
     if (!meetingId || !isModerator) return;
     
     setIsEnding(true);
@@ -237,17 +125,364 @@ export default function JitsiMeeting({
     } finally {
       setIsEnding(false);
     }
-  };
+  }, [meetingId, isModerator, onMeetingEnd]);
 
-  // Handle manual end meeting button
-  const handleEndMeeting = () => {
+  // Memoized handle end meeting
+  const handleEndMeeting = useCallback(() => {
     if (confirm('Are you sure you want to end this meeting for all participants?')) {
-      // Execute hangup command in Jitsi
       apiRef.current?.executeCommand('hangup');
       endMeeting();
     }
-  };
+  }, [endMeeting]);
 
+  // Memoized onMeetingEnd callback
+  const handleMeetingEnd = useCallback(() => {
+    onMeetingEnd?.();
+  }, [onMeetingEnd]);
+
+  useEffect(() => {
+    // Prevent double initialization
+    if (isInitializedRef.current) {
+      console.log('JitsiMeeting: Already initialized, skipping');
+      return;
+    }
+
+    if (!appId || !jwt) {
+      console.error('JitsiMeeting: Missing required parameters', { appId: !!appId, jwt: !!jwt });
+      setError(`Missing required parameters: ${!appId ? 'appId ' : ''}${!jwt ? 'jwt' : ''}`);
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate appId format
+    if (!appId.includes('vpaas-magic-cookie')) {
+      console.error('JitsiMeeting: Invalid appId format:', appId);
+      setError(`Invalid JaaS appId format. Expected format: vpaas-magic-cookie-xxx`);
+      setIsLoading(false);
+      return;
+    }
+
+    // Clean room name - remove appId prefix if present
+    let cleanRoom = roomName;
+    if (cleanRoom.includes(`${appId}/`)) {
+      cleanRoom = cleanRoom.split(`${appId}/`)[1];
+    }
+    const fullRoomName = `${appId}/${cleanRoom}`;
+
+    // Wait for container to be available with retry logic
+    let retryCount = 0;
+    const maxRetries = 50; // 5 seconds total (50 * 100ms)
+    
+    const initializeWhenReady = () => {
+      if (!containerRef.current) {
+        retryCount++;
+        if (retryCount < maxRetries) {
+          console.log(`JitsiMeeting: Waiting for container... attempt ${retryCount}/${maxRetries}`);
+          setTimeout(initializeWhenReady, 100);
+          return;
+        }
+        console.error('JitsiMeeting: Container ref not available after max retries');
+        setError('Meeting container not available - please refresh the page');
+        setIsLoading(false);
+        return;
+      }
+      
+      console.log('JitsiMeeting: Container available, starting initialization');
+      startInitialization();
+    };
+
+    // Start the initialization process
+    initializeWhenReady();
+
+    function startInitialization() {
+      if (isInitializedRef.current) {
+        console.log('JitsiMeeting: Already initialized, skipping');
+        return;
+      }
+      
+      isInitializedRef.current = true;
+      console.log('JitsiMeeting: Initializing with appId:', appId);
+      console.log('JitsiMeeting: Full room name:', fullRoomName);
+      setStatus('Loading Jitsi script...');
+
+      const scriptUrl = `https://8x8.vc/${appId}/external_api.js`;
+      console.log('JitsiMeeting: Loading script from:', scriptUrl);
+      
+      // Check if API is already available (script loaded previously)
+      if (window.JitsiMeetExternalAPI) {
+        console.log('JitsiMeeting: API already available, initializing directly');
+        initializeJitsi();
+        return;
+      }
+      
+      // Check if script tag already exists
+      const existingScript = document.querySelector(`script[src="${scriptUrl}"]`) as HTMLScriptElement;
+      
+      if (existingScript) {
+        // Script tag exists but API not loaded yet, wait for it
+        console.log('JitsiMeeting: Script tag exists, waiting for API to load...');
+        let checkCount = 0;
+        const maxChecks = 100; // 10 seconds
+        
+        const checkApiAvailable = setInterval(() => {
+          checkCount++;
+          if (window.JitsiMeetExternalAPI) {
+            clearInterval(checkApiAvailable);
+            console.log('JitsiMeeting: API now available, initializing');
+            initializeJitsi();
+          } else if (checkCount >= maxChecks) {
+            clearInterval(checkApiAvailable);
+            console.error('JitsiMeeting: API failed to load after timeout');
+            setError('Jitsi API failed to load. Please check your JaaS configuration.');
+            setIsLoading(false);
+            isInitializedRef.current = false;
+          }
+        }, 100);
+        
+        return;
+      }
+      
+      // Script doesn't exist, create and load it
+      console.log('JitsiMeeting: Creating new script tag');
+      const script = document.createElement('script');
+      scriptRef.current = script;
+      script.src = scriptUrl;
+      script.async = true;
+      
+      script.onload = () => {
+        console.log('JitsiMeeting: Script loaded, waiting for API initialization...');
+        // Wait for API to be available after script loads
+        let checkCount = 0;
+        const maxChecks = 50; // 5 seconds
+        
+        const checkApiLoaded = setInterval(() => {
+          checkCount++;
+          if (window.JitsiMeetExternalAPI) {
+            clearInterval(checkApiLoaded);
+            console.log('JitsiMeeting: API available after script load');
+            initializeJitsi();
+          } else if (checkCount >= maxChecks) {
+            clearInterval(checkApiLoaded);
+            console.error('JitsiMeeting: API not available after script load');
+            setError('Jitsi API failed to initialize. Please refresh the page.');
+            setIsLoading(false);
+            isInitializedRef.current = false;
+          }
+        }, 100);
+      };
+      
+      script.onerror = (e) => {
+        console.error('JitsiMeeting: Failed to load script', e);
+        setError(`Failed to load Jitsi script from ${scriptUrl}. Please check your JaaS configuration.`);
+        setIsLoading(false);
+        isInitializedRef.current = false;
+      };
+      
+      document.body.appendChild(script);
+    }
+
+    function initializeJitsi() {
+      console.log('JitsiMeeting: Checking JitsiMeetExternalAPI availability');
+      
+      if (!containerRef.current) {
+        console.error('JitsiMeeting: Container ref not available during initialization');
+        setError('Meeting container not available');
+        setIsLoading(false);
+        isInitializedRef.current = false;
+        return;
+      }
+
+      if (!window.JitsiMeetExternalAPI) {
+        console.error('JitsiMeeting: JitsiMeetExternalAPI not available on window');
+        setError('Jitsi API not loaded. The script may have failed to load or the appId may be invalid.');
+        setIsLoading(false);
+        isInitializedRef.current = false;
+        return;
+      }
+
+      console.log('JitsiMeeting: JitsiMeetExternalAPI available, creating meeting');
+
+      try {
+        const options = {
+          roomName: fullRoomName,
+          jwt: jwt,
+          parentNode: containerRef.current,
+          width: '100%',
+          height: '100%',
+          userInfo: {
+            displayName: userName,
+            email: userEmail,
+          },
+          configOverwrite: {
+            // Ultra-low bandwidth mode
+            prejoinPageEnabled: defaultSettings.prejoinPageEnabled,
+            startWithAudioMuted: defaultSettings.startWithAudioMuted,
+            startWithVideoMuted: defaultSettings.startWithVideoMuted,
+            
+            // Very low resolution for minimal CPU usage
+            resolution: defaultSettings.resolution,
+            constraints: {
+              video: {
+                height: { ideal: defaultSettings.resolution, max: defaultSettings.maxVideoHeight },
+                width: { ideal: Math.round(defaultSettings.resolution * 16 / 9), max: defaultSettings.maxVideoWidth }
+              }
+            },
+            
+            // Disable all resource-intensive features
+            disableSimulcast: defaultSettings.disableSimulcast,
+            enableLayerSuspension: defaultSettings.enableLayerSuspension,
+            
+            // Optimize audio
+            enableNoAudioDetection: defaultSettings.enableNoAudioDetection,
+            enableNoisyMicDetection: defaultSettings.enableNoisyMicDetection,
+            
+            // Disable all unnecessary features
+            disableDeepLinking: defaultSettings.disableDeepLinking,
+            disableInviteFunctions: defaultSettings.disableInviteFunctions,
+            doNotStoreRoom: defaultSettings.doNotStoreRoom,
+            disableProfile: true,
+            disableReactions: true,
+            disablePolls: true,
+            disableRaiseHand: true,
+            disableVirtualBackground: true,
+            disableVideoBackground: true,
+            
+            // Enable screen sharing
+            desktopSharingEnabled: true,
+            desktopSharingChromeExtId: null, // Use getDisplayMedia API (modern browsers)
+            desktopSharingChromeDisabled: false,
+            desktopSharingFirefoxExtId: null,
+            desktopSharingFirefoxDisabled: false,
+            desktopSharingSourceDevice: null,
+            desktopSharingSources: ['screen', 'window', 'tab'],
+            disableDesktopSharing: false,
+            
+            // P2P for better performance with few participants
+            p2p: {
+              enabled: defaultSettings.p2pEnabled,
+              stunServers: [
+                { urls: 'stun:stun.l.google.com:19302' }
+              ]
+            },
+            
+            // Disable all analytics
+            analytics: {
+              disabled: defaultSettings.analyticsDisabled
+            },
+            
+            // Minimal tile view
+            tileView: {
+              numberOfVisibleTiles: defaultSettings.numberOfVisibleTiles
+            },
+            
+            // Disable recording and streaming
+            liveStreamingEnabled: false,
+            recordingEnabled: false,
+            
+            // Disable transcription
+            transcribingEnabled: false,
+            
+            // Minimal UI
+            disableChatSmileys: true,
+            disableFocusIndicator: true,
+            disableLocalVideoFlip: true,
+            disableRemoteVideoMenu: true,
+            disableShowMoreStats: true,
+          },
+          interfaceConfigOverwrite: {
+            // Hide all branding
+            SHOW_JITSI_WATERMARK: defaultSettings.showJitsiWatermark,
+            SHOW_WATERMARK_FOR_GUESTS: defaultSettings.showJitsiWatermark,
+            SHOW_BRAND_WATERMARK: defaultSettings.showBrandWatermark,
+            SHOW_POWERED_BY: false,
+            
+            // Disable all animations
+            DISABLE_VIDEO_BACKGROUND: defaultSettings.disableVideoBackground,
+            DISABLE_DOMINANT_SPEAKER_INDICATOR: true,
+            DISABLE_FOCUS_INDICATOR: true,
+            DISABLE_TRANSCRIPTION_SUBTITLES: true,
+            
+            // Minimal toolbar - only essentials
+            TOOLBAR_BUTTONS: defaultSettings.toolbarButtons,
+            
+            // Very small filmstrip
+            FILM_STRIP_MAX_HEIGHT: defaultSettings.filmStripMaxHeight,
+            TILE_VIEW_MAX_COLUMNS: defaultSettings.maxTileViewColumns,
+            
+            // Disable features
+            HIDE_KICK_BUTTON_FOR_GUESTS: true,
+            MOBILE_APP_PROMO: false,
+            PROVIDER_NAME: '',
+          },
+        };
+
+        apiRef.current = new window.JitsiMeetExternalAPI('8x8.vc', options);
+
+        apiRef.current.addEventListener('videoConferenceJoined', () => {
+          setIsLoading(false);
+          setStatus('Connected');
+        });
+
+        apiRef.current.addEventListener('videoConferenceLeft', handleMeetingEnd);
+        apiRef.current.addEventListener('readyToClose', handleMeetingEnd);
+
+        // Listen for hangup event to end meeting for moderator
+        apiRef.current.addEventListener('hangup', () => {
+          if (isModerator && meetingId) {
+            endMeeting();
+          }
+        });
+
+        apiRef.current.addEventListener('errorOccurred', (err: any) => {
+          const errorMessage = typeof err.error === 'string' ? err.error : 
+                               typeof err.error === 'object' && err.error?.message ? err.error.message :
+                               'Meeting error occurred';
+          setError(errorMessage);
+          setIsLoading(false);
+        });
+
+        // Timeout fallback
+        setTimeout(() => {
+          if (isLoading) {
+            setIsLoading(false);
+          }
+        }, 15000);
+
+      } catch (err: any) {
+        const errorMessage = err?.message || 'Failed to initialize meeting';
+        setError(errorMessage);
+        setIsLoading(false);
+        isInitializedRef.current = false;
+      }
+    }
+
+    // Cleanup function
+    return () => {
+      if (apiRef.current) {
+        try {
+          apiRef.current.dispose();
+        } catch (e) {
+          console.error('Error disposing Jitsi API:', e);
+        }
+        apiRef.current = null;
+      }
+      isInitializedRef.current = false;
+    };
+  }, [roomName, jwt, appId, userName, userEmail, isModerator, meetingId, isLoading, handleMeetingEnd, endMeeting]);
+
+  // Prevent rendering if already has error
+  if (error) {
+    return (
+      <div style={{ width: '100%', height, position: 'relative', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
+        <div style={{ textAlign: 'center', padding: '20px' }}>
+          <p>Error: {error}</p>
+          <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '8px 16px' }}>
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: '100%', height, position: 'relative' }}>
@@ -335,3 +570,6 @@ export default function JitsiMeeting({
     </div>
   );
 }
+
+// Export memoized version to prevent re-renders
+export default memo(JitsiMeeting);

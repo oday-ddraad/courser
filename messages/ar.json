@@ -206,6 +206,7 @@
         "advanced": "متقدم",
         "allCategories": "جميع الفئات",
         "allStatuses": "جميع الحالات",
+        "allApprovalStatuses": "جميع حالات الموافقة",
         "published": "منشور",
         "draft": "مسودة",
         "loading": "جاري التحميل...",
@@ -754,9 +755,10 @@
     "noVideoAvailable": "لا يوجد فيديو متاح",
     "liveChat": "الدردشة المباشرة",
     "chatIntegrationPlaceholder": "سيتم تنفيذ تكامل الدردشة هنا",
-    "studentReviews": "تقييمات الطلاب"
+    "studentReviews": "تقييمات الطلاب",
+    "enrollToChat": "سجل للانضمام للدردشة"
   },
-  "notifications": {
+    "notifications": {
     "title": "الإشعارات",
     "notifications": "الإشعارات",
     "noNotifications": "لا توجد إشعارات بعد",
@@ -773,7 +775,45 @@
       "lesson_available": "الدرس متاح",
       "course_completed": "تم إكمال الكورس",
       "admin_message": "رسالة المدير",
-      "instructor_message": "رسالة المحاضر"
+      "instructor_message": "رسالة المحاضر",
+      "live_lesson_reminder": "تذكير الدرس المباشر",
+      "live_lesson_instructor_reminder": "الدرس المباشر سيبدأ قريباً",
+      "live_lesson_started": "بدأ الدرس المباشر",
+      "live_lesson_ended": "انتهى الدرس المباشر"
+    }
+  },
+  "liveLessons": {
+    "schedule": {
+      "title": "جدولة الدرس المباشر",
+      "dateTime": "التاريخ والوقت",
+      "timezone": "المنطقة الزمنية",
+      "reminderMinutes": "التذكير (دقائق قبل)",
+      "validation": {
+        "required": "الجدولة مطلوبة للدروس المباشرة",
+        "pastDate": "لا يمكن الجدولة في الماضي",
+        "invalidDate": "تنسيق التاريخ غير صالح"
+      }
+    },
+    "status": {
+      "scheduled": "مجدول",
+      "live": "مباشر الآن",
+      "ended": "انتهى"
+    },
+    "actions": {
+      "startLive": "بدء البث المباشر",
+      "joinLive": "الانضمام للبث المباشر",
+      "scheduleLesson": "جدولة الدرس"
+    },
+    "student": {
+      "waitingTitle": "الدرس المباشر مجدول",
+      "waitingMessage": "هذا الدرس المباشر مجدول. سيتم إشعارك عند بدئه.",
+      "scheduledFor": "مجدول في",
+      "backToCourse": "العودة للدورة"
+    },
+    "enrollment": {
+      "requiredTitle": "التسجيل مطلوب",
+      "requiredMessage": "يجب عليك التسجيل في هذه الدورة للوصول إلى هذا الدرس.",
+      "enrollNow": "سجل الآن"
     }
   },
   "admin": {

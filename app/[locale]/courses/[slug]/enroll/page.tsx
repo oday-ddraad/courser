@@ -42,8 +42,9 @@ export default async function EnrollPage({ params }: Props) {
   
   // Fetch course
   const course = await Course.findOne({ slug, isPublished: true })
-    .populate('instructorId', 'name')
+    .populate('instructorIds', 'name')
     .lean();
+
   
   if (!course) {
     notFound();
@@ -103,9 +104,10 @@ export default async function EnrollPage({ params }: Props) {
                 
                 <div className="flex items-center justify-between">
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    <span className="block">Instructor: {(course.instructorId as any)?.name}</span>
+                    <span className="block">Instructor: {(course.instructorIds as any[])?.[0]?.name}</span>
                     <span className="block">{course.duration} hours • {course.lessons?.length || 0} lessons</span>
                   </div>
+
                   <div className="text-2xl font-bold text-gray-900 dark:text-white">
                     {course.price === 0 ? t('free') : formatPrice(course.price, course.currency)}
                   </div>

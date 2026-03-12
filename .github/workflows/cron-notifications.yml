@@ -1,0 +1,18 @@
+name: Notification Cron Job
+
+on:
+  schedule:
+    # Run every minute
+    - cron: '* * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  cron:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Notification Cron
+        run: |
+          curl -X GET \
+            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            https://${{ secrets.VERCEL_DOMAIN }}/api/cron/notifications \
+            -v

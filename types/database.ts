@@ -29,7 +29,11 @@ export type NotificationType =
   | 'lesson_available' 
   | 'course_completed' 
   | 'admin_message' 
-  | 'instructor_message';
+  | 'instructor_message'
+  | 'course_approved'
+  | 'course_rejected'
+  | 'course_submitted';
+
 
 // Multi-language content type
 export interface MultiLanguageContent {

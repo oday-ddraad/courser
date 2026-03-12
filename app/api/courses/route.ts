@@ -4,7 +4,30 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Course, User } from '@/lib/mongodb/models';
 import { UserRole } from '@/types/database';
+import { Types } from 'mongoose';
 
+
+// Helper function to apply multilingual fallback
+function applyMultilingualFallback(data: any) {
+  const result = { ...data };
+  
+  // If German is empty, fallback to English or Arabic
+  if (!result.de || result.de.trim() === '') {
+    result.de = result.en || result.ar || '';
+  }
+  
+  // If Arabic is empty, fallback to English or German
+  if (!result.ar || result.ar.trim() === '') {
+    result.ar = result.en || result.de || '';
+  }
+  
+  // If English is empty, fallback to Arabic or German
+  if (!result.en || result.en.trim() === '') {
+    result.en = result.ar || result.de || '';
+  }
+  
+  return result;
+}
 
 // GET /api/courses - List courses with search and filters
 export async function GET(request: NextRequest) {
@@ -27,19 +50,56 @@ export async function GET(request: NextRequest) {
     const sortOrder = searchParams.get('sortOrder') || 'desc';
     const locale = searchParams.get('locale') || 'en';
     const status = searchParams.get('status'); // 'published' or 'draft'
+    const approvalStatus = searchParams.get('approvalStatus'); // 'pending', 'approved', 'rejected'
+    const courseType = searchParams.get('courseType'); // 'live' or 'uploaded'
+    const myCourses = searchParams.get('myCourses'); // 'true' to show only user's courses
     
     // Build query
-    // Admins can see all courses, regular users only see published
-    const isAdmin = session?.user?.role === 'admin' || session?.user?.role === 'instructor';
-    const query: any = isAdmin ? {} : { isPublished: true };
+    const userRole = session?.user?.role as UserRole;
+    const isAdmin = userRole === 'admin';
+    const isInstructor = userRole === 'instructor';
+    const query: any = {};
     
-    // Filter by status for admin
-    if (isAdmin && status === 'published') {
+    // Regular users only see published and approved courses
+    if (!isAdmin && !isInstructor) {
       query.isPublished = true;
-    } else if (isAdmin && status === 'draft') {
-      query.isPublished = false;
+      query.approvalStatus = 'approved';
+    } else if (isInstructor && !isAdmin) {
+      // Instructors see their own courses (any status) + published approved courses
+      if (myCourses === 'true') {
+        query.instructorIds = { $in: [session?.user.id] };
+      } else {
+        query.$or = [
+          { instructorIds: { $in: [session?.user.id] } },
+          { isPublished: true, approvalStatus: 'approved' }
+        ];
+      }
     }
 
+    // Admins can see all courses with optional filters
+    
+    // Filter by status
+    if (status === 'published') {
+      query.isPublished = true;
+    } else if (status === 'draft') {
+      query.isPublished = false;
+    }
+    
+    // Filter by approval status
+    if (approvalStatus && isAdmin) {
+      query.approvalStatus = approvalStatus;
+    }
+    
+    // Filter by course type
+    if (courseType) {
+      query.courseType = courseType;
+    }
+    
+    // Search by slug
+    const slug = searchParams.get('slug');
+    if (slug) {
+      query.slug = slug.toLowerCase();
+    }
     
     // Search by text (all languages)
     if (search) {
@@ -75,7 +135,9 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit;
     
     const courses = await Course.find(query)
-      .populate('instructorId', 'name avatar instructorProfile')
+      .populate('instructorIds', 'name avatar instructorProfile')
+      .populate('approvedBy', 'name')
+
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -101,14 +163,16 @@ export async function GET(request: NextRequest) {
         hasPrevPage,
       },
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error fetching courses:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to fetch courses' },
       { status: 500 }
     );
   }
+
 }
+
 
 // POST /api/courses - Create new course (instructor/admin only)
 export async function POST(request: NextRequest) {
@@ -138,7 +202,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     
     // Validate required fields
-    const requiredFields = ['slug', 'title', 'description', 'price', 'level', 'category'];
+    const requiredFields = ['slug', 'title', 'description', 'category', 'courseType'];
     for (const field of requiredFields) {
       if (!body[field]) {
         return NextResponse.json(
@@ -146,6 +210,13 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
+    }
+    
+    // Apply multilingual fallback for title and description
+    body.title = applyMultilingualFallback(body.title);
+    body.description = applyMultilingualFallback(body.description);
+    if (body.content) {
+      body.content = applyMultilingualFallback(body.content);
     }
     
     // Check if slug is unique
@@ -157,27 +228,121 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Create course
+    // Set approval status based on role
+    // Admins can create approved courses directly
+    // Instructors must submit for approval
+    const isAdmin = userRole === 'admin';
+    const approvalStatus = isAdmin ? 'approved' : 'pending';
+    const approvedBy = isAdmin ? session.user.id : null;
+    const approvalDate = isAdmin ? new Date() : null;
+    
+    // Set price from request body (instructors can set price, but course needs approval)
+    const price = body.price || 0;
+    const priceSetBy = body.price ? session.user.id : null;
+    const priceSetAt = body.price ? new Date() : null;
+    
+    // Admin courses are published immediately, instructor courses need approval first
+    const isPublished = isAdmin;
+    const publishedAt = isAdmin ? new Date() : null;
+    
+    // Determine instructor IDs
+    // For instructors: they are the default instructor
+    // For admins: they can select one or more instructors from the body
+    let instructorIds: string[];
+    if (isAdmin && body.instructorIds && Array.isArray(body.instructorIds) && body.instructorIds.length > 0) {
+      instructorIds = body.instructorIds;
+    } else {
+      // Default to current user (instructor creating the course)
+      instructorIds = [session.user.id];
+    }
+    
+    // Process lessons to ensure schedule data is properly formatted
+    const processedLessons = body.lessons?.map((lesson: any, index: number) => {
+      const processedLesson = {
+        ...lesson,
+        order: lesson.order || index + 1,
+        _id: new Types.ObjectId(),
+      };
+
+      // Handle live lesson schedule data
+      if (body.courseType === 'live' && lesson.scheduledDateTime) {
+        processedLesson.scheduledDateTime = new Date(lesson.scheduledDateTime);
+        processedLesson.scheduleTimezone = lesson.scheduleTimezone || 'UTC';
+        processedLesson.reminderMinutesBefore = lesson.reminderMinutesBefore || 30;
+        
+        // Add to default group's schedule
+        processedLesson.isLiveStream = true;
+      }
+
+      return processedLesson;
+    }) || [];
+
+    // Create default GROUP A (schedule will be added later when lessons are scheduled)
+    const defaultGroup = {
+      _id: new Types.ObjectId(),
+      name: {
+        en: 'GROUP A',
+        de: 'GRUPPE A',
+        ar: 'المجموعة أ',
+      },
+      description: {
+        en: 'Default group for all enrolled students',
+        de: 'Standardgruppe für alle eingeschriebenen Studenten',
+        ar: 'المجموعة الافتراضية لجميع الطلاب المسجلين',
+      },
+      lessonIds: processedLessons.map((lesson: any) => lesson._id),
+      order: 1,
+      maxStudents: 100,
+      studentIds: [],
+      instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
+      schedule: [], // Empty schedule - will be populated when lessons are scheduled
+      notificationSettings: {
+        enabled: true,
+        earlyMorningEnabled: true,
+        earlyMorningTime: '08:00',
+        oneHourEnabled: true,
+        notificationTypes: ['email', 'in_app'],
+        alertType: body.courseType === 'live' ? 'live_lesson' : 'recorded_lesson',
+      },
+      createdAt: new Date(),
+    };
+    
+    // Create course with default group and processed lessons
     const course = await Course.create({
       ...body,
-      instructorId: session.user.id,
-      isPublished: body.isPublished || false,
+      lessons: processedLessons,
+      instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
+      approvalStatus,
+      approvedBy,
+      approvalDate,
+      price,
+      priceSetBy,
+      priceSetAt,
+      isPublished,
+      publishedAt,
+      groups: [defaultGroup],
     });
+
+
     
-    // Update instructor's course count
-    await User.findByIdAndUpdate(session.user.id, {
-      $inc: { 'instructorProfile.totalCourses': 1 },
-    });
+    // Update instructor's course count for all instructors
+    for (const instructorId of instructorIds) {
+      await User.findByIdAndUpdate(instructorId, {
+        $inc: { 'instructorProfile.totalCourses': 1 },
+      });
+    }
+
     
     return NextResponse.json(
       { success: true, data: course },
       { status: 201 }
     );
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating course:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to create course' },
       { status: 500 }
     );
   }
+
 }
