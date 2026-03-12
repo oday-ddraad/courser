@@ -11,7 +11,7 @@ const nextConfig: NextConfig = {
         headers: [
           {
             key: 'Content-Security-Policy',
-            value: "frame-src 'self' https://8x8.vc https://*.8x8.vc;",
+            value: "frame-src 'self' https://8x8.vc https://*.8x8.vc https://www.youtube.com https://youtube.com https://*.youtube.com https://www.youtube-nocookie.com https://youtube-nocookie.com https://*.youtube-nocookie.com;",
           },
         ],
       },

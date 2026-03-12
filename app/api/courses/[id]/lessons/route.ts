@@ -9,9 +9,11 @@ import { notificationService } from '@/lib/services/notifications';
 // GET /api/courses/[id]/lessons - Get all lessons for a course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -23,7 +25,7 @@ export async function GET(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -33,9 +35,12 @@ export async function GET(
     }
 
     // Check authorization
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
     const isAuthorized = 
       session.user.role === 'admin' ||
-      course.instructorId.toString() === session.user.id ||
+      isInstructor ||
       (course.approvalStatus === 'approved' && course.isPublished);
 
     if (!isAuthorized) {
@@ -67,9 +72,11 @@ export async function GET(
 // POST /api/courses/[id]/lessons - Add new lesson
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -89,7 +96,7 @@ export async function POST(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -99,9 +106,21 @@ export async function POST(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
+        { status: 403 }
+      );
+    }
+
+    // Instructors can only add lessons if course is pending or rejected
+    // Once approved, only admin can add lessons
+    if (session.user.role === 'instructor' && course.approvalStatus === 'approved') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Cannot add lessons after course is approved' },
         { status: 403 }
       );
     }

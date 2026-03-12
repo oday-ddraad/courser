@@ -39,9 +39,10 @@ export async function GET(request: NextRequest) {
     
     // Fetch courses with instructor details
     const courses = await Course.find(query)
-      .populate('instructorId', 'name email avatar')
+      .populate('instructorIds', 'name email avatar')
       .sort({ createdAt: -1 })
       .lean();
+
     
     return NextResponse.json({
       success: true,
@@ -99,13 +100,14 @@ export async function PUT(request: NextRequest) {
     }
     
     // Find the course
-    const course = await Course.findById(courseId).populate('instructorId', 'name email');
+    const course = await Course.findById(courseId).populate('instructorIds', 'name email');
     if (!course) {
       return NextResponse.json(
         { success: false, error: 'Course not found' },
         { status: 404 }
       );
     }
+
     
     // Check if course is already approved or rejected
     if (course.approvalStatus !== 'pending') {
@@ -124,19 +126,22 @@ export async function PUT(request: NextRequest) {
       
       await course.save();
       
-      // Send notification to instructor
+      // Send notification to all instructors
       try {
-        await notificationService.createNotification({
-          userId: course.instructorId._id.toString(),
-          type: 'course_approved',
-          title: 'Course Approved',
-          message: `Your course "${course.title.en}" has been approved and is ready for pricing.`,
-          data: { courseId: course._id.toString() },
-          actionUrl: `/dashboard/instructor/courses/${course._id}`,
-        });
+        for (const instructor of course.instructorIds) {
+          await notificationService.createNotification({
+            userId: instructor._id.toString(),
+            type: 'course_approved',
+            title: 'Course Approved',
+            message: `Your course "${course.title.en}" has been approved and is ready for pricing.`,
+            data: { courseId: course._id.toString() },
+            actionUrl: `/dashboard/instructor/courses/${course._id}`,
+          });
+        }
       } catch (notifyError) {
         console.error('Failed to send approval notification:', notifyError);
       }
+
       
       return NextResponse.json({
         success: true,
@@ -159,19 +164,22 @@ export async function PUT(request: NextRequest) {
       
       await course.save();
       
-      // Send notification to instructor
+      // Send notification to all instructors
       try {
-        await notificationService.createNotification({
-          userId: course.instructorId._id.toString(),
-          type: 'course_rejected',
-          title: 'Course Rejected',
-          message: `Your course "${course.title.en}" has been rejected. Reason: ${rejectionReason}`,
-          data: { courseId: course._id.toString(), rejectionReason },
-          actionUrl: `/dashboard/instructor/courses/${course._id}/edit`,
-        });
+        for (const instructor of course.instructorIds) {
+          await notificationService.createNotification({
+            userId: instructor._id.toString(),
+            type: 'course_rejected',
+            title: 'Course Rejected',
+            message: `Your course "${course.title.en}" has been rejected. Reason: ${rejectionReason}`,
+            data: { courseId: course._id.toString(), rejectionReason },
+            actionUrl: `/dashboard/instructor/courses/${course._id}/edit`,
+          });
+        }
       } catch (notifyError) {
         console.error('Failed to send rejection notification:', notifyError);
       }
+
       
       return NextResponse.json({
         success: true,
@@ -231,13 +239,17 @@ export async function POST(request: NextRequest) {
       );
     }
     
-    // Check if user is the instructor of this course
-    if (course.instructorId.toString() !== session.user.id && userRole !== 'admin') {
+    // Check if user is one of the instructors of this course
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
+    if (!isInstructor && userRole !== 'admin') {
       return NextResponse.json(
         { success: false, error: 'Forbidden - You can only submit your own courses' },
         { status: 403 }
       );
     }
+
     
     // Check if course is already submitted or approved
     if (course.approvalStatus === 'pending') {

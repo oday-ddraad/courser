@@ -46,10 +46,7 @@ export default function InstructorDashboard() {
 
       <div className="mt-8">
         <h2 className="text-xl font-semibold mb-4">{t('quickActions')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <a href="/dashboard/instructor/courses/new" className="bg-blue-600 text-white p-4 rounded-lg hover:bg-blue-700 transition">
-            {t('createCourse')}
-          </a>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <a href="/dashboard/instructor/courses" className="bg-green-600 text-white p-4 rounded-lg hover:bg-green-700 transition">
             {t('manageCourses')}
           </a>

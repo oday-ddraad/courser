@@ -214,6 +214,7 @@
         "advanced": "Fortgeschritten",
         "allCategories": "Alle Kategorien",
         "allStatuses": "Alle Status",
+        "allApprovalStatuses": "Alle Genehmigungsstatus",
         "published": "Veröffentlicht",
         "draft": "Entwurf",
         "loading": "Laden...",
@@ -762,9 +763,10 @@
     "noVideoAvailable": "Kein Video verfügbar",
     "liveChat": "Live-Chat",
     "chatIntegrationPlaceholder": "Chat-Integration wird hier implementiert",
-    "studentReviews": "Studentenbewertungen"
+    "studentReviews": "Studentenbewertungen",
+    "enrollToChat": "Melden Sie sich an, um am Chat teilzunehmen"
   },
-  "notifications": {
+    "notifications": {
     "title": "Benachrichtigungen",
     "notifications": "Benachrichtigungen",
     "noNotifications": "Noch keine Benachrichtigungen",
@@ -781,7 +783,45 @@
       "lesson_available": "Lektion verfügbar",
       "course_completed": "Kurs abgeschlossen",
       "admin_message": "Admin-Nachricht",
-      "instructor_message": "Dozenten-Nachricht"
+      "instructor_message": "Dozenten-Nachricht",
+      "live_lesson_reminder": "Live-Lektion Erinnerung",
+      "live_lesson_instructor_reminder": "Live-Lektion beginnt bald",
+      "live_lesson_started": "Live-Lektion gestartet",
+      "live_lesson_ended": "Live-Lektion beendet"
+    }
+  },
+  "liveLessons": {
+    "schedule": {
+      "title": "Live-Lektion planen",
+      "dateTime": "Datum & Uhrzeit",
+      "timezone": "Zeitzone",
+      "reminderMinutes": "Erinnerung (Minuten vorher)",
+      "validation": {
+        "required": "Planung ist für Live-Lektionen erforderlich",
+        "pastDate": "Planung in der Vergangenheit nicht möglich",
+        "invalidDate": "Ungültiges Datumsformat"
+      }
+    },
+    "status": {
+      "scheduled": "Geplant",
+      "live": "JETZT LIVE",
+      "ended": "Beendet"
+    },
+    "actions": {
+      "startLive": "Live starten",
+      "joinLive": "Live beitreten",
+      "scheduleLesson": "Lektion planen"
+    },
+    "student": {
+      "waitingTitle": "Live-Lektion geplant",
+      "waitingMessage": "Diese Live-Lektion ist geplant. Sie werden benachrichtigt, wenn sie beginnt.",
+      "scheduledFor": "Geplant für",
+      "backToCourse": "Zurück zum Kurs"
+    },
+    "enrollment": {
+      "requiredTitle": "Einschreibung erforderlich",
+      "requiredMessage": "Sie müssen sich in diesen Kurs einschreiben, um auf diese Lektion zuzugreifen.",
+      "enrollNow": "Jetzt einschreiben"
     }
   },
   "admin": {

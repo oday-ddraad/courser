@@ -44,12 +44,16 @@ export async function GET(
     }
     
     // Instructors can only view their own course enrollments
-    if (userRole === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
+    if (userRole === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Access denied - Not your course' },
         { status: 403 }
       );
     }
+
     
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');

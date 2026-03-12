@@ -53,8 +53,9 @@ export default async function CoursePage({ params }: Props) {
   
   // Fetch course
   const course = await Course.findOne({ slug })
-    .populate('instructorId', 'name avatar instructorProfile')
+    .populate('instructorIds', 'name avatar instructorProfile')
     .lean();
+
   
   if (!course) {
     notFound();
@@ -92,8 +93,9 @@ export default async function CoursePage({ params }: Props) {
   const completedLessons = enrollment?.progress?.completedLessons?.length || 0;
   const progressPercentage = enrollment?.progress?.completionPercentage || 0;
   
-  // Get instructor info
-  const instructor = course.instructorId as any;
+  // Get instructor info (first instructor in the array)
+  const instructor = course.instructorIds?.[0] as any;
+
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">

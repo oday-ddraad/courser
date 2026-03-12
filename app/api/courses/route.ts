@@ -95,6 +95,12 @@ export async function GET(request: NextRequest) {
       query.courseType = courseType;
     }
     
+    // Search by slug
+    const slug = searchParams.get('slug');
+    if (slug) {
+      query.slug = slug.toLowerCase();
+    }
+    
     // Search by text (all languages)
     if (search) {
       query.$or = [
@@ -230,10 +236,10 @@ export async function POST(request: NextRequest) {
     const approvedBy = isAdmin ? session.user.id : null;
     const approvalDate = isAdmin ? new Date() : null;
     
-    // Set initial price to 0 (price will be set after approval)
-    const price = isAdmin && body.price ? body.price : 0;
-    const priceSetBy = isAdmin && body.price ? session.user.id : null;
-    const priceSetAt = isAdmin && body.price ? new Date() : null;
+    // Set price from request body (instructors can set price, but course needs approval)
+    const price = body.price || 0;
+    const priceSetBy = body.price ? session.user.id : null;
+    const priceSetAt = body.price ? new Date() : null;
     
     // Admin courses are published immediately, instructor courses need approval first
     const isPublished = isAdmin;
@@ -250,7 +256,28 @@ export async function POST(request: NextRequest) {
       instructorIds = [session.user.id];
     }
     
-    // Create default GROUP A
+    // Process lessons to ensure schedule data is properly formatted
+    const processedLessons = body.lessons?.map((lesson: any, index: number) => {
+      const processedLesson = {
+        ...lesson,
+        order: lesson.order || index + 1,
+        _id: new Types.ObjectId(),
+      };
+
+      // Handle live lesson schedule data
+      if (body.courseType === 'live' && lesson.scheduledDateTime) {
+        processedLesson.scheduledDateTime = new Date(lesson.scheduledDateTime);
+        processedLesson.scheduleTimezone = lesson.scheduleTimezone || 'UTC';
+        processedLesson.reminderMinutesBefore = lesson.reminderMinutesBefore || 30;
+        
+        // Add to default group's schedule
+        processedLesson.isLiveStream = true;
+      }
+
+      return processedLesson;
+    }) || [];
+
+    // Create default GROUP A (schedule will be added later when lessons are scheduled)
     const defaultGroup = {
       _id: new Types.ObjectId(),
       name: {
@@ -263,12 +290,12 @@ export async function POST(request: NextRequest) {
         de: 'Standardgruppe für alle eingeschriebenen Studenten',
         ar: 'المجموعة الافتراضية لجميع الطلاب المسجلين',
       },
-      lessonIds: [],
+      lessonIds: processedLessons.map((lesson: any) => lesson._id),
       order: 1,
       maxStudents: 100,
       studentIds: [],
       instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
-      schedule: [],
+      schedule: [], // Empty schedule - will be populated when lessons are scheduled
       notificationSettings: {
         enabled: true,
         earlyMorningEnabled: true,
@@ -280,9 +307,10 @@ export async function POST(request: NextRequest) {
       createdAt: new Date(),
     };
     
-    // Create course with default group
+    // Create course with default group and processed lessons
     const course = await Course.create({
       ...body,
+      lessons: processedLessons,
       instructorIds: instructorIds.map(id => new Types.ObjectId(id)),
       approvalStatus,
       approvedBy,

@@ -8,7 +8,9 @@ import Meeting from '@/lib/mongodb/models/Meeting';
 
 /**
  * POST /api/jaas/meetings
- * Create a new JaaS meeting
+ * Create or join a JaaS meeting
+ * - Instructors/Admins: Create meeting if doesn't exist, or return existing
+ * - Students: Join existing meeting (cannot create)
  */
 export async function POST(request: NextRequest) {
   try {
@@ -29,10 +31,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { courseSlug, lessonId, maxParticipants, expiresInHours = 24 } = body;
+    const { courseSlug, lessonId, jitsiRoomName, maxParticipants, expiresInHours = 24, action = 'auto' } = body;
 
-    if (!courseSlug || !lessonId) {
-      return NextResponse.json({ error: 'Missing courseSlug or lessonId' }, { status: 400 });
+    if (!lessonId) {
+      return NextResponse.json({ error: 'Missing lessonId' }, { status: 400 });
     }
 
     await dbConnect();
@@ -43,9 +45,78 @@ export async function POST(request: NextRequest) {
 
     // Check if user is admin or instructor
     const isModerator = user.role === 'admin' || user.role === 'instructor';
-    if (!isModerator) {
-      return NextResponse.json({ error: 'Only admins and instructors can create meetings' }, { status: 403 });
+    // Use provided jitsiRoomName or generate from courseSlug + lessonId
+    const roomName = jitsiRoomName || (courseSlug ? jaasService.generateRoomName(courseSlug, lessonId) : null);
+    const config = jaasService.getConfig();
+
+    if (!roomName) {
+      return NextResponse.json({ error: 'Missing jitsiRoomName or courseSlug' }, { status: 400 });
     }
+
+    // For students: only allow joining existing meetings
+    if (!isModerator) {
+      // Check if an active meeting exists
+      const existingMeeting = await Meeting.findOne({
+        roomName,
+        status: 'active',
+        isActive: true,
+      });
+
+      if (!existingMeeting) {
+        return NextResponse.json({ 
+          error: 'Meeting not found. The instructor has not started the live lesson yet.',
+          notStarted: true,
+        }, { status: 404 });
+      }
+
+      // Check if meeting has expired
+      if (new Date() > existingMeeting.expiresAt) {
+        return NextResponse.json({ 
+          error: 'Meeting has ended',
+          ended: true,
+          expired: true,
+        }, { status: 410 });
+      }
+
+      // Generate JWT for student (non-moderator)
+      let jwt: string;
+      try {
+        jwt = jaasService.generateJWTToken(
+          user._id.toString(),
+          user.jaasUserId || jaasService.generateJaaSUserId(user._id.toString()),
+          user.name,
+          user.email,
+          false // isModerator = false for students
+        );
+      } catch (error: any) {
+        console.error('JWT generation error for student:', error);
+        return NextResponse.json({ 
+          error: 'Failed to generate access token',
+          details: error.message 
+        }, { status: 500 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        meeting: {
+          id: existingMeeting._id,
+          roomName: existingMeeting.roomName,
+          meetingUrl: existingMeeting.meetingUrl,
+          jwt,
+          appId: config.appId,
+          status: existingMeeting.status,
+          expiresAt: existingMeeting.expiresAt,
+          isModerator: false,
+          courseSlug: existingMeeting.courseSlug,
+          lessonId: existingMeeting.lessonId,
+          createdBy: existingMeeting.createdBy.toString(),
+          createdAt: existingMeeting.createdAt,
+        },
+        message: 'Joined existing meeting',
+      });
+    }
+
+    // For instructors/admins: Create meeting if doesn't exist
 
     let jaasUserId = user.jaasUserId;
     if (!jaasUserId) {
@@ -54,9 +125,7 @@ export async function POST(request: NextRequest) {
       await user.save();
     }
 
-    const roomName = jaasService.generateRoomName(courseSlug, lessonId);
     const meetingUrl = jaasService.getMeetingUrl(roomName);
-    const config = jaasService.getConfig();
     
     // Generate JWT token
     let jwt: string;

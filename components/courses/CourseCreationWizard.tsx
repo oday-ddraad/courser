@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useLocale, useTranslations } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import { CourseLevel } from '@/types/database';
 
 interface Category {
@@ -50,6 +50,11 @@ interface LessonData {
     type: 'folder' | 'file' | 'document' | 'spreadsheet' | 'presentation';
   }[];
   isPublished: boolean;
+  isPreview: boolean;
+  // Live lesson fields
+  scheduledDateTime?: string; // ISO datetime string
+  scheduleTimezone?: string;
+  reminderMinutesBefore?: number;
 }
 
 
@@ -80,6 +85,7 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [activeLangTab, setActiveLangTab] = useState<'en' | 'de' | 'ar'>('en');
+  const [showAdvancedCourseOptions, setShowAdvancedCourseOptions] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
@@ -154,12 +160,40 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
 
 
   const steps = [
-
-    { number: 1, title: 'Basic Info', titleAr: 'المعلومات الأساسية' },
+    { number: 1, title: 'Quick Setup', titleAr: 'الإعداد السريع' },
     { number: 2, title: 'Course Type', titleAr: 'نوع الدورة' },
     { number: 3, title: 'Lessons', titleAr: 'الدروس' },
-    { number: 4, title: 'Review', titleAr: 'مراجعة' },
+    { number: 4, title: 'Review', titleAr: 'المراجعة النهائية' },
   ];
+
+  const stepHints: Record<number, { en: string; ar: string }> = {
+    1: {
+      en: 'Start with minimum required details. You can add advanced options anytime.',
+      ar: 'ابدأ بالحد الأدنى من البيانات المطلوبة. يمكنك إضافة الخيارات المتقدمة في أي وقت.',
+    },
+    2: {
+      en: 'Choose how students will experience this course.',
+      ar: 'اختر كيف سيحصل الطلاب على تجربة هذه الدورة.',
+    },
+    3: {
+      en: 'Add lessons quickly now, refine details later.',
+      ar: 'أضف الدروس بسرعة الآن، ويمكنك تحسين التفاصيل لاحقًا.',
+    },
+    4: {
+      en: 'Confirm and publish your course flow.',
+      ar: 'راجع ثم أنشئ الدورة.',
+    },
+  };
+
+
+  const missingRecommended = useMemo(() => {
+    const items: string[] = [];
+    if (!formData.thumbnail.trim()) items.push(locale === 'ar' ? 'صورة مصغرة' : 'Thumbnail');
+    if (!formData.content.en.trim()) items.push(locale === 'ar' ? 'محتوى تفصيلي' : 'Detailed content');
+    if (formData.lessons.length < 3) items.push(locale === 'ar' ? 'عدد دروس أكبر' : 'More lessons');
+    return items;
+  }, [formData.thumbnail, formData.content.en, formData.lessons.length, locale]);
+
 
   const handleTitleChange = (lang: 'en' | 'de' | 'ar', value: string) => {
     setFormData(prev => ({
@@ -191,14 +225,27 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   };
 
   const addLesson = () => {
+    const nextIndex = formData.lessons.length + 1;
     const newLesson: LessonData = {
       id: Date.now().toString(),
-      title: { en: '', de: '', ar: '' },
+      title: {
+        en: `Lesson ${nextIndex}`,
+        de: '',
+        ar: '',
+      },
       description: { en: '', de: '', ar: '' },
       youtubeUrl: '',
-      duration: 0,
+      duration: formData.courseType === 'live' ? 60 : 20,
       googleDriveLinks: [],
       isPublished: false,
+      isPreview: nextIndex === 1,
+      ...(formData.courseType === 'live'
+        ? {
+            scheduledDateTime: '',
+            scheduleTimezone: 'UTC',
+            reminderMinutesBefore: 30,
+          }
+        : {}),
     };
     setFormData(prev => ({
       ...prev,
@@ -414,17 +461,16 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
 
         const youtubeVideoId = lesson.youtubeUrl ? extractYouTubeVideoId(lesson.youtubeUrl) : null;
 
-        return {
+        const processedLesson: any = {
           order: index + 1,
           title: lessonTitle,
           description: lessonDescription,
           content: { en: '', de: '', ar: '' },
           youtubeVideoId,
           videoUrl: lesson.youtubeUrl,
-        duration: lesson.duration || 0,
-        isLiveStream: formData.courseType === 'live',
-        googleDriveLinks: lesson.googleDriveLinks.map(link => ({
-
+          duration: lesson.duration || 0,
+          isLiveStream: formData.courseType === 'live',
+          googleDriveLinks: lesson.googleDriveLinks.map(link => ({
             name: {
               en: link.name.en || link.name.ar || link.name.de || 'Material',
               de: link.name.de || link.name.en || link.name.ar || 'Material',
@@ -433,9 +479,18 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             url: link.url,
             type: link.type,
           })),
-          isPreview: index === 0, // First lesson is preview
+          isPreview: lesson.isPreview, // Use user-selected preview option
           isPublished: lesson.isPublished,
         };
+
+        // Add live lesson schedule data if it's a live course
+        if (formData.courseType === 'live' && lesson.scheduledDateTime) {
+          processedLesson.scheduledDateTime = lesson.scheduledDateTime;
+          processedLesson.scheduleTimezone = lesson.scheduleTimezone || 'UTC';
+          processedLesson.reminderMinutesBefore = lesson.reminderMinutesBefore || 30;
+        }
+
+        return processedLesson;
       });
 
       const courseData: any = {
@@ -512,10 +567,15 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const renderStep1 = () => (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          {locale === 'ar' ? 'المعلومات الأساسية' : 'Basic Information'}
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+          {locale === 'ar' ? 'الإعداد السريع للدورة' : 'Quick Course Setup'}
         </h2>
-        
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          {locale === 'ar'
+            ? 'أدخل الأساسيات أولًا. الخيارات المتقدمة اختيارية ويمكن إضافتها لاحقًا.'
+            : 'Start with essentials first. Advanced options are optional and can be added later.'}
+        </p>
+
         {renderLanguageTabs()}
 
         {/* Course Title */}
@@ -553,19 +613,41 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
           />
         </div>
 
-        {/* Course Content */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            {locale === 'ar' ? 'محتوى الدورة التفصيلي' : 'Detailed Course Content'} ({activeLangTab})
-          </label>
-          <textarea
-            value={formData.content[activeLangTab]}
-            onChange={(e) => handleContentChange(activeLangTab, e.target.value)}
-            rows={6}
-            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-            placeholder={locale === 'ar' ? 'أدخل المحتوى التفصيلي للدورة' : 'Enter detailed course content'}
-          />
+        <div className="mb-4 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+          <p className="text-sm text-blue-800 dark:text-blue-300">
+            {locale === 'ar'
+              ? 'المطلوب لهذه الخطوة: عنوان (EN)، وصف (EN)، slug، وفئة.'
+              : 'Required in this step: Title (EN), Description (EN), slug, and category.'}
+          </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowAdvancedCourseOptions(!showAdvancedCourseOptions)}
+          className="text-sm font-medium text-blue-600 hover:text-blue-700"
+        >
+          {showAdvancedCourseOptions
+            ? (locale === 'ar' ? 'إخفاء الخيارات المتقدمة' : 'Hide advanced options')
+            : (locale === 'ar' ? 'إظهار الخيارات المتقدمة' : 'Show advanced options')}
+        </button>
+
+        {showAdvancedCourseOptions && (
+          <div className="mt-4">
+            {/* Course Content */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                {locale === 'ar' ? 'محتوى الدورة التفصيلي' : 'Detailed Course Content'} ({activeLangTab})
+              </label>
+              <textarea
+                value={formData.content[activeLangTab]}
+                onChange={(e) => handleContentChange(activeLangTab, e.target.value)}
+                rows={6}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                placeholder={locale === 'ar' ? 'أدخل المحتوى التفصيلي للدورة' : 'Enter detailed course content'}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
@@ -637,19 +719,6 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
             </select>
           </div>
 
-          {/* Thumbnail URL */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              {locale === 'ar' ? 'رابط الصورة المصغرة' : 'Thumbnail URL'}
-            </label>
-            <input
-              type="url"
-              value={formData.thumbnail}
-              onChange={(e) => setFormData(prev => ({ ...prev, thumbnail: e.target.value }))}
-              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              placeholder="https://example.com/image.jpg"
-            />
-          </div>
 
           {/* Duration */}
           <div>
@@ -870,9 +939,14 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-          {locale === 'ar' ? 'نوع الدورة' : 'Course Type'}
-        </h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            {locale === 'ar' ? 'نوع الدورة' : 'Course Type'}
+          </h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            {locale === 'ar'
+              ? 'اختيارك هنا يحدد تجربة الطلاب وطريقة إدارة الدروس.'
+              : 'Your choice here defines student experience and lesson management style.'}
+          </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <label className={`
@@ -1070,6 +1144,70 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
                   </p>
                 </div>
 
+                {/* Live Lesson Schedule - Only for Live Courses */}
+                {formData.courseType === 'live' && (
+                  <div className="mb-4 p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <h4 className="font-semibold text-orange-900 dark:text-orange-300 mb-3">
+                      {locale === 'ar' ? 'جدولة الدرس المباشر' : 'Live Lesson Schedule'}
+                    </h4>
+                    
+                    {/* Scheduled Date/Time */}
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {locale === 'ar' ? 'تاريخ ووقت الدرس' : 'Lesson Date & Time'} *
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={lesson.scheduledDateTime || ''}
+                        onChange={(e) => updateLesson(lesson.id, 'scheduledDateTime', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        {locale === 'ar' 
+                          ? 'اختر التاريخ والوقت المستقبلي للدرس المباشر' 
+                          : 'Select future date and time for the live lesson'}
+                      </p>
+                    </div>
+
+                    {/* Timezone */}
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {locale === 'ar' ? 'المنطقة الزمنية' : 'Timezone'}
+                      </label>
+                      <select
+                        value={lesson.scheduleTimezone || 'UTC'}
+                        onChange={(e) => updateLesson(lesson.id, 'scheduleTimezone', e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value="UTC">UTC</option>
+                        <option value="Europe/Berlin">Europe/Berlin (CET/CEST)</option>
+                        <option value="Europe/Vienna">Europe/Vienna (CET/CEST)</option>
+                        <option value="Asia/Damascus">Asia/Damascus (EET/EEST)</option>
+                        <option value="Asia/Dubai">Asia/Dubai (GST)</option>
+                        <option value="America/New_York">America/New_York (ET)</option>
+                        <option value="America/Los_Angeles">America/Los_Angeles (PT)</option>
+                      </select>
+                    </div>
+
+                    {/* Student Reminder Settings */}
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        {locale === 'ar' ? 'تذكير الطلاب قبل (دقائق)' : 'Student Reminder Before (minutes)'}
+                      </label>
+                      <select
+                        value={lesson.reminderMinutesBefore || 30}
+                        onChange={(e) => updateLesson(lesson.id, 'reminderMinutesBefore', parseInt(e.target.value))}
+                        className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      >
+                        <option value={15}>15 {locale === 'ar' ? 'دقيقة' : 'minutes'}</option>
+                        <option value={30}>30 {locale === 'ar' ? 'دقيقة' : 'minutes'}</option>
+                        <option value={60}>1 {locale === 'ar' ? 'ساعة' : 'hour'}</option>
+                        <option value={120}>2 {locale === 'ar' ? 'ساعة' : 'hours'}</option>
+                        <option value={1440}>1 {locale === 'ar' ? 'يوم' : 'day'}</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
 
                 {/* Google Drive Links */}
                 <div className="mb-4">
@@ -1153,6 +1291,16 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
 
         {/* Course Summary */}
         <div className="space-y-4 mb-6">
+          {missingRecommended.length > 0 && (
+            <div className="rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800 p-3">
+              <p className="text-sm text-amber-800 dark:text-amber-300 font-medium mb-1">
+                {locale === 'ar' ? 'اقتراحات لتحسين جودة الدورة:' : 'Recommended to improve course quality:'}
+              </p>
+              <p className="text-sm text-amber-700 dark:text-amber-400">
+                {missingRecommended.join(' • ')}
+              </p>
+            </div>
+          )}
           <div className="border-b border-gray-200 dark:border-gray-700 pb-4">
             <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
               {locale === 'ar' ? 'عنوان الدورة' : 'Course Title'}
@@ -1281,6 +1429,12 @@ export default function CourseCreationWizard({ locale, userRole }: CourseCreatio
           {error}
         </div>
       )}
+
+      <div className="mb-4 rounded-lg border border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 p-3">
+        <p className="text-sm text-blue-800 dark:text-blue-300">
+          {locale === 'ar' ? stepHints[currentStep].ar : stepHints[currentStep].en}
+        </p>
+      </div>
 
       <form onSubmit={(e) => { e.preventDefault(); if (currentStep === 4) handleSubmit(); }}>
         {currentStep === 1 && renderStep1()}

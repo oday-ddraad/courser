@@ -3,13 +3,16 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Course } from '@/lib/mongodb/models';
+import { Types } from 'mongoose';
 
 // PUT /api/courses/[id]/groups/[groupId] - Update a group
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; groupId: string } }
+  { params }: { params: Promise<{ id: string; groupId: string }> }
 ) {
   try {
+    const { id, groupId } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -29,7 +32,7 @@ export async function PUT(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -39,7 +42,10 @@ export async function PUT(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
         { status: 403 }
@@ -50,7 +56,7 @@ export async function PUT(
     
     // Find the group index
     const groupIndex = course.groups.findIndex(
-      (g: any) => g._id.toString() === params.groupId
+      (g: any) => g._id.toString() === groupId
     );
 
     if (groupIndex === -1) {
@@ -66,8 +72,8 @@ export async function PUT(
     if (body.name) {
       group.name = {
         en: body.name.en || group.name.en,
-        de: body.name.de || body.name.de || body.name.en,
-        ar: body.name.ar || body.name.ar || body.name.en,
+        de: body.name.de || group.name.de || body.name.en,
+        ar: body.name.ar || group.name.ar || body.name.en,
       };
     }
 
@@ -112,9 +118,11 @@ export async function PUT(
 // DELETE /api/courses/[id]/groups/[groupId] - Delete a group
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; groupId: string } }
+  { params }: { params: Promise<{ id: string; groupId: string }> }
 ) {
   try {
+    const { id, groupId } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -134,7 +142,7 @@ export async function DELETE(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -144,7 +152,10 @@ export async function DELETE(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
         { status: 403 }
@@ -152,7 +163,7 @@ export async function DELETE(
     }
 
     // Prevent deletion of default GROUP A
-    const group = course.groups.find((g: any) => g._id.toString() === params.groupId);
+    const group = course.groups.find((g: any) => g._id.toString() === groupId);
     if (group && group.name.en === 'GROUP A') {
       return NextResponse.json(
         { success: false, error: 'Cannot delete default GROUP A' },
@@ -162,7 +173,7 @@ export async function DELETE(
 
     // Remove the group
     course.groups = course.groups.filter(
-      (g: any) => g._id.toString() !== params.groupId
+      (g: any) => g._id.toString() !== groupId
     );
 
     await course.save();

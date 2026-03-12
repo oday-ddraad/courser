@@ -1,46 +1,134 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 interface YouTubePrivacyPlayerProps {
   videoId: string;
   title?: string;
   className?: string;
+  autoplay?: boolean;
+  start?: number;
+  onEnded?: () => void;
 }
 
-export default function YouTubePrivacyPlayer({ videoId, title, className = '' }: YouTubePrivacyPlayerProps) {
-  const [isLoaded, setIsLoaded] = useState(false);
+/**
+ * Privacy-focused YouTube player component
+ * Uses standard YouTube embed with privacy parameters
+ * - Hides related videos (rel=0)
+ * - Minimal branding (modestbranding=1)
+ * - No annotations (iv_load_policy=3)
+ */
+export default function YouTubePrivacyPlayer({ 
+  videoId, 
+  title, 
+  className = '',
+  autoplay = false,
+  start = 0,
+  onEnded
+}: YouTubePrivacyPlayerProps) {
+  const [error, setError] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+
+  // Build embed URL with privacy parameters
+  const buildEmbedUrl = useCallback(() => {
+    if (!videoId) return '';
+    
+    // Use youtube-nocookie.com for privacy (no tracking cookies)
+    const params = new URLSearchParams({
+      rel: '0',              // No related videos
+      controls: '1',         // Show controls
+      disablekb: '0',        // Enable keyboard controls
+      fs: '1',               // Allow fullscreen
+      iv_load_policy: '3',   // Hide video annotations
+      cc_load_policy: '0',   // Don't show closed captions by default
+      playsinline: '1',      // Play inline on mobile
+    });
+
+    if (autoplay) params.set('autoplay', '1');
+    if (start > 0) params.set('start', start.toString());
+
+    return `https://www.youtube-nocookie.com/embed/${videoId}?${params.toString()}`;
+  }, [videoId, autoplay, start]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsReady(true), 100);
+    return () => clearTimeout(timer);
+  }, [videoId]);
+
+  // Listen for video end events via postMessage
+  useEffect(() => {
+    if (!onEnded) return;
+
+    const handleMessage = (event: MessageEvent) => {
+      // Verify origin
+      if (!event.origin.includes('youtube.com')) return;
+      
+      try {
+        const data = JSON.parse(event.data);
+        if (data.event === 'onStateChange' && data.info === 0) {
+          onEnded();
+        }
+      } catch {
+        // Ignore non-JSON messages
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [onEnded]);
 
   if (!videoId) {
     return (
-      <div className={`bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center ${className}`}>
+      <div className={`bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center min-h-[200px] ${className}`}>
         <p className="text-gray-500 dark:text-gray-400">No video available</p>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className={`bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center min-h-[200px] ${className}`}>
+        <div className="text-center p-4">
+          <p className="text-red-500 mb-2">Failed to load video</p>
+          <p className="text-sm text-gray-500">Video ID: {videoId}</p>
+          <a 
+            href={`https://www.youtube-nocookie.com/embed/${videoId}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-2 text-blue-600 hover:underline text-sm"
+          >
+            Open on YouTube
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  const embedUrl = buildEmbedUrl();
+
   return (
-    <div className={`relative bg-black rounded-lg overflow-hidden ${className}`}>
-      {!isLoaded && (
+    <div className={`relative bg-black rounded-lg overflow-hidden ${className}`} style={{ minHeight: '200px' }}>
+      {isReady && (
+        <>
+          <iframe
+            ref={iframeRef}
+            src={embedUrl}
+            title={title || "Video player"}
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+            allowFullScreen
+            className="w-full h-full absolute inset-0"
+          />
+        </>
+      )}
+      
+      {/* Loading state */}
+      {!isReady && (
         <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
-          <div className="text-center text-white">
-            <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="currentColor" viewBox="0 0 24 24">
-              <path d="M19.615 3.184c-3.604-.246-11.631-.245-15.23 0-3.897.266-4.356 2.62-4.385 8.816.029 6.185.484 8.549 4.385 8.816 3.6.245 11.626.246 15.23 0 3.897-.266 4.356-2.62 4.385-8.816-.029-6.185-.484-8.549-4.385-8.816zm-10.615 12.816v-8l8 3.993-8 4.007z"/>
-            </svg>
-            <p className="text-sm opacity-75">Click to load video</p>
-          </div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         </div>
       )}
-
-      <iframe
-        src={`https://www.youtube-nocookie.com/embed/${videoId}?rel=0&modestbranding=1&showinfo=0`}
-        title={title || "YouTube video player"}
-        frameBorder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        allowFullScreen
-        className="w-full h-full"
-        onLoad={() => setIsLoaded(true)}
-      />
     </div>
   );
 }

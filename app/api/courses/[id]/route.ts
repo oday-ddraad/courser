@@ -36,8 +36,9 @@ export async function GET(
     }
     
     const course = await Course.findOne(query)
-      .populate('instructorId', 'name avatar instructorProfile')
+      .populate('instructorIds', 'name avatar instructorProfile')
       .lean();
+
     
     if (!course) {
       return NextResponse.json(
@@ -120,25 +121,30 @@ export async function PUT(
     }
     
     // Check ownership (instructors can only edit their own courses)
-    if (userRole === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
+    if (userRole === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - You can only edit your own courses' },
         { status: 403 }
       );
     }
+
     
     const body = await request.json();
     
     console.log('PUT /api/courses/[id] - Request body:', JSON.stringify(body, null, 2));
-    console.log('Current course instructorId:', course.instructorId?.toString());
+    console.log('Current course instructorIds:', course.instructorIds?.map((id: Types.ObjectId) => id.toString()));
     
     // Remove empty strings for ObjectId fields to prevent cast errors
-    if (body.instructorId === '') {
-      console.log('Removing empty instructorId');
-      delete body.instructorId;
-    } else if (body.instructorId) {
-      console.log('Updating instructorId to:', body.instructorId);
+    if (body.instructorIds === '') {
+      console.log('Removing empty instructorIds');
+      delete body.instructorIds;
+    } else if (body.instructorIds) {
+      console.log('Updating instructorIds to:', body.instructorIds);
     }
+
 
     
     // Prevent changing slug if course is published
@@ -163,7 +169,8 @@ export async function PUT(
     
     // Update course
     Object.assign(course, body);
-    console.log('Course after Object.assign, instructorId:', course.instructorId?.toString());
+    console.log('Course after Object.assign, instructorIds:', course.instructorIds?.map((id: Types.ObjectId) => id.toString()));
+
     
     await course.save();
     console.log('Course saved successfully');
@@ -229,12 +236,16 @@ export async function DELETE(
     }
     
     // Check ownership (instructors can only delete their own courses)
-    if (userRole === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (id: Types.ObjectId) => id.toString() === session.user.id
+    );
+    if (userRole === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - You can only delete your own courses' },
         { status: 403 }
       );
     }
+
     
     // Check if course has enrollments
     const enrollmentCount = await Enrollment.countDocuments({ courseId: id });

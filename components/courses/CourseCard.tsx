@@ -29,10 +29,11 @@ interface SerializedCourse {
   isLiveStream: boolean;
   enrollmentCount: number;
   rating: number;
-  instructorId?: PopulatedInstructor;
+  instructorIds?: PopulatedInstructor[];
   lessons?: any[];
   reviews?: any[];
 }
+
 
 interface CourseCardProps {
   course: SerializedCourse;
@@ -138,13 +139,13 @@ export default function CourseCard({ course, showEnrolled = false }: CourseCardP
           {description}
         </p>
         
-        {/* Instructor */}
-        {course.instructorId && typeof course.instructorId === 'object' && (
+        {/* Instructor - show first instructor from array */}
+        {course.instructorIds && course.instructorIds.length > 0 && (
           <div className="flex items-center gap-2 mb-4">
-            {course.instructorId.avatar ? (
+            {course.instructorIds[0].avatar ? (
               <Image
-                src={course.instructorId.avatar}
-                alt={course.instructorId.name}
+                src={course.instructorIds[0].avatar}
+                alt={course.instructorIds[0].name}
                 width={24}
                 height={24}
                 className="rounded-full"
@@ -152,15 +153,17 @@ export default function CourseCard({ course, showEnrolled = false }: CourseCardP
             ) : (
               <div className="w-6 h-6 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
                 <span className="text-xs text-gray-600 dark:text-gray-400">
-                  {course.instructorId.name?.charAt(0) || '?'}
+                  {course.instructorIds[0].name?.charAt(0) || '?'}
                 </span>
               </div>
             )}
             <span className="text-sm text-gray-700 dark:text-gray-300">
-              {course.instructorId.name}
+              {course.instructorIds[0].name}
+              {course.instructorIds.length > 1 && ` +${course.instructorIds.length - 1}`}
             </span>
           </div>
         )}
+
 
         
         {/* Stats */}

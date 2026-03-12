@@ -73,7 +73,7 @@ export default async function CoursesPage({ params, searchParams }: Props) {
   // Fetch courses
   const [coursesData, totalCount, categories] = await Promise.all([
     Course.find(query)
-      .populate('instructorId', 'name avatar')
+      .populate('instructorIds', 'name avatar')
       .sort(sort)
       .skip(skip)
       .limit(limit)
@@ -86,11 +86,12 @@ export default async function CoursesPage({ params, searchParams }: Props) {
   const courses = coursesData.map((course: any) => ({
     ...course,
     _id: course._id.toString(),
-    instructorId: course.instructorId ? {
-      _id: course.instructorId._id.toString(),
-      name: course.instructorId.name,
-      avatar: course.instructorId.avatar,
-    } : undefined,
+    instructorIds: course.instructorIds ? course.instructorIds.map((inst: any) => ({
+      _id: inst._id.toString(),
+      name: inst.name,
+      avatar: inst.avatar,
+    })) : [],
+
     lessons: course.lessons?.map((lesson: any) => ({
       _id: lesson._id.toString(),
       order: lesson.order,

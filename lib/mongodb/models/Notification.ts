@@ -13,7 +13,12 @@ export interface INotification extends Document {
     | 'instructor_message'
     | 'course_approved'
     | 'course_rejected'
-    | 'course_submitted';
+    | 'course_submitted'
+    | 'live_lesson_reminder'
+    | 'live_lesson_instructor_reminder'
+    | 'live_lesson_final_reminder'
+    | 'live_lesson_started'
+    | 'live_lesson_ended';
 
   title: {
     en: string;
@@ -56,6 +61,11 @@ const NotificationSchema = new Schema<INotification>(
         'course_approved',
         'course_rejected',
         'course_submitted',
+        'live_lesson_reminder',
+        'live_lesson_instructor_reminder',
+        'live_lesson_final_reminder',
+        'live_lesson_started',
+        'live_lesson_ended',
       ],
       required: [true, 'Notification type is required'],
     },

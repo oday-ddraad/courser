@@ -6,14 +6,16 @@ import { Course, Enrollment } from '@/lib/mongodb/models';
 import { notificationService } from '@/lib/services/notifications';
 import { emailService } from '@/lib/services/email';
 import { whatsappService } from '@/lib/services/whatsapp';
-
+import { Types } from 'mongoose';
 
 // POST /api/courses/[id]/notify - Send notifications to enrolled students
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -33,7 +35,7 @@ export async function POST(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -43,7 +45,10 @@ export async function POST(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
         { status: 403 }
@@ -60,7 +65,7 @@ export async function POST(
     } = body;
 
     // Get enrolled students
-    const enrollmentQuery: any = { courseId: params.id, status: 'active' };
+    const enrollmentQuery: any = { courseId: id, status: 'active' };
     if (groupIds.length > 0) {
       enrollmentQuery.groupId = { $in: groupIds };
     }
@@ -84,7 +89,6 @@ export async function POST(
     // Check if WhatsApp notifications are enabled
     const whatsappEnabled = await whatsappService.isNotificationsEnabled();
 
-
     // Send notifications
     for (const enrollment of enrollments) {
       const user = enrollment.userId as any;
@@ -98,7 +102,7 @@ export async function POST(
             title: `Announcement: ${course.title.en}`,
             message: message,
             data: {
-              courseId: params.id,
+              courseId: id,
               lessonId,
             },
           });

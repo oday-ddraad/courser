@@ -8,9 +8,11 @@ import { Types } from 'mongoose';
 // GET /api/courses/[id]/groups - Get all groups for a course
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -22,7 +24,7 @@ export async function GET(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -32,9 +34,12 @@ export async function GET(
     }
 
     // Check if user is authorized (admin, instructor of this course, or enrolled student)
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
     const isAuthorized = 
       session.user.role === 'admin' ||
-      course.instructorId.toString() === session.user.id ||
+      isInstructor ||
       course.groups.some((group: any) => 
         group.studentIds.includes(session.user.id)
       );
@@ -57,15 +62,16 @@ export async function GET(
       { status: 500 }
     );
   }
-
 }
 
 // POST /api/courses/[id]/groups - Create a new group
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -85,7 +91,7 @@ export async function POST(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -95,7 +101,10 @@ export async function POST(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
         { status: 403 }
@@ -129,8 +138,7 @@ export async function POST(
       order: course.groups.length + 1,
       maxStudents: body.maxStudents || 20,
       studentIds: [],
-      instructorId: new Types.ObjectId(session.user.id),
-
+      instructorIds: [new Types.ObjectId(session.user.id)],
       schedule: body.schedule || [],
       notificationSettings: {
         enabled: body.notificationSettings?.enabled ?? true,
@@ -140,7 +148,6 @@ export async function POST(
         notificationTypes: body.notificationSettings?.notificationTypes || ['email', 'in_app'],
         alertType: 'live_lesson' as const,
       },
-
       createdAt: new Date(),
     };
 
@@ -158,5 +165,4 @@ export async function POST(
       { status: 500 }
     );
   }
-
 }

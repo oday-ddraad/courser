@@ -27,18 +27,22 @@ interface Course {
     de: string;
     ar: string;
   };
-  instructorId: {
+  instructorIds: Array<{
     _id: string;
     name: string;
     email: string;
-  } | string;
+  } | string>;
   level: string;
   category: string;
   price: number;
-  duration: string;
+  currency: string;
+  duration: number;
+  courseType: 'live' | 'uploaded';
+  approvalStatus: 'pending' | 'approved' | 'rejected';
   isPublished: boolean;
   thumbnail: string;
 }
+
 
 
 interface Instructor {
@@ -70,14 +74,18 @@ export default function EditCoursePage() {
     descriptionEn: '',
     descriptionDe: '',
     descriptionAr: '',
-    instructor: '',
+    instructors: [] as string[],
     level: 'beginner',
     category: '',
     price: 0,
-    duration: '',
+    currency: 'USD',
+    duration: 0,
+    courseType: 'uploaded' as 'live' | 'uploaded',
+    approvalStatus: 'pending' as 'pending' | 'approved' | 'rejected',
     isPublished: false,
     thumbnail: '',
   });
+
 
   useEffect(() => {
     if (status !== 'loading' && session) {
@@ -111,14 +119,19 @@ export default function EditCoursePage() {
           descriptionEn: courseData.description?.en || '',
           descriptionDe: courseData.description?.de || '',
           descriptionAr: courseData.description?.ar || '',
-          instructor: courseData.instructorId?._id || courseData.instructorId || '',
-
+          instructors: courseData.instructorIds?.map((id: any) => 
+            typeof id === 'string' ? id : id._id
+          ) || [],
           level: courseData.level || 'beginner',
           category: courseData.category || '',
           price: courseData.price || 0,
-          duration: courseData.duration || '',
+          currency: courseData.currency || 'USD',
+          duration: courseData.duration || 0,
+          courseType: courseData.courseType || 'uploaded',
+          approvalStatus: courseData.approvalStatus || 'pending',
           isPublished: courseData.isPublished || false,
           thumbnail: courseData.thumbnail || '',
+
         });
       }
     } catch (error) {
@@ -173,14 +186,17 @@ export default function EditCoursePage() {
             de: formData.descriptionDe,
             ar: formData.descriptionAr,
           },
-          instructorId: formData.instructor,
-
+          instructorIds: formData.instructors,
           level: formData.level,
           category: formData.category,
           price: formData.price,
+          currency: formData.currency,
           duration: formData.duration,
+          courseType: formData.courseType,
+          approvalStatus: formData.approvalStatus,
           isPublished: formData.isPublished,
           thumbnail: formData.thumbnail,
+
         }),
       });
 
@@ -366,21 +382,55 @@ export default function EditCoursePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('instructor')}
+                {t('instructors')}
               </label>
               <select
-                value={formData.instructor}
-                onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                multiple
+                value={formData.instructors}
+                onChange={(e) => {
+                  const selected = Array.from(e.target.selectedOptions, option => option.value);
+                  setFormData({ ...formData, instructors: selected });
+                }}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white min-h-[100px]"
               >
-                <option value="">{t('selectInstructor')}</option>
                 {instructors.map((inst) => (
                   <option key={inst._id} value={inst._id}>
                     {inst.name} ({inst.email})
                   </option>
                 ))}
               </select>
+              <p className="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple instructors</p>
             </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('courseType')}
+              </label>
+              <select
+                value={formData.courseType}
+                onChange={(e) => setFormData({ ...formData, courseType: e.target.value as 'live' | 'uploaded' })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+              >
+                <option value="live">{t('live')}</option>
+                <option value="uploaded">{t('uploaded')}</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                {t('approvalStatus')}
+              </label>
+              <select
+                value={formData.approvalStatus}
+                onChange={(e) => setFormData({ ...formData, approvalStatus: e.target.value as 'pending' | 'approved' | 'rejected' })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+              >
+                <option value="pending">{t('pending')}</option>
+                <option value="approved">{t('approved')}</option>
+                <option value="rejected">{t('rejected')}</option>
+              </select>
+            </div>
+
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -418,30 +468,43 @@ export default function EditCoursePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('price')} ($)
+                {t('price')}
               </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={formData.price}
-                onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
-              />
+              <div className="flex space-x-2">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                  className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                />
+                <select
+                  value={formData.currency}
+                  onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                  className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                >
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="SYP">SYP</option>
+                </select>
+              </div>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                {t('duration')}
+                {t('duration')} ({t('hours')})
               </label>
               <input
-                type="text"
-                placeholder="e.g., 8 weeks"
+                type="number"
+                min="0"
+                placeholder="e.g., 40"
                 value={formData.duration}
-                onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 0 })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
               />
             </div>
+
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

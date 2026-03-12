@@ -123,3 +123,13 @@ class JaaSService {
 }
 
 export const jaasService = new JaaSService();
+
+// Generate a unique room name for a lesson
+export function generateRoomName(courseSlug: string, lessonId: string): string {
+  const timestamp = Date.now().toString(36);
+  const hash = crypto.createHash('md5').update(`${courseSlug}-${lessonId}-${timestamp}`).digest('hex').substring(0, 8);
+  return `${courseSlug}-lesson-${lessonId}-${hash}`;
+}
+
+// Default export
+export default jaasService;

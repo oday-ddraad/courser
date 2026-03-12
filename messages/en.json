@@ -214,6 +214,7 @@
         "advanced": "Advanced",
         "allCategories": "All Categories",
         "allStatuses": "All Statuses",
+        "allApprovalStatuses": "All Approval Statuses",
         "published": "Published",
         "draft": "Draft",
         "loading": "Loading...",
@@ -669,7 +670,82 @@
       "quickActions": "Quick Actions",
       "createCourse": "Create New Course",
       "manageCourses": "Manage Courses",
-      "viewStudents": "View Students"
+      "viewStudents": "View Students",
+      "courses": {
+        "title": "My Courses",
+        "subtitle": "Manage your courses and lessons",
+        "createCourse": "Create New Course",
+        "searchPlaceholder": "Search your courses...",
+        "allLevels": "All Levels",
+        "beginner": "Beginner",
+        "intermediate": "Intermediate",
+        "advanced": "Advanced",
+        "allCategories": "All Categories",
+        "allStatuses": "All Statuses",
+        "published": "Published",
+        "draft": "Draft",
+        "loading": "Loading...",
+        "noCourses": "No courses found",
+        "course": "Course",
+        "level": "Level",
+        "students": "Students",
+        "groups": "Groups",
+        "status": "Status",
+        "actions": "Actions",
+        "edit": "Edit",
+        "manageLessons": "Manage Lessons",
+        "manageGroups": "Manage Groups",
+        "submitForApproval": "Submit for Approval",
+        "pendingApproval": "Pending Approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "page": "Page",
+        "of": "of",
+        "editCourse": "Edit Course",
+        "courseTitle": "Course Title",
+        "courseDescription": "Course Description",
+        "courseDetails": "Course Details",
+        "selectCategory": "Select Category",
+        "category": "Category",
+        "saveChanges": "Save Changes",
+        "price": "Price",
+        "duration": "Duration",
+        "thumbnailUrl": "Thumbnail URL",
+        "publishing": "Publishing",
+        "publishCourse": "Publish Course",
+        "publishHelp": "When published, the course will be visible to all users",
+        "live": "Live",
+        "uploaded": "Uploaded",
+        "lessons": "Lessons",
+        "approvalStatus": "Approval Status",
+        "submitSuccess": "Course submitted for approval successfully",
+        "submitError": "Failed to submit course for approval",
+        "cannotEditApproved": "Approved courses cannot be edited. Contact admin for changes.",
+        "rejectionReason": "Rejection Reason"
+      },
+      "lessons": {
+        "title": "Manage Lessons",
+        "subtitle": "Add, edit, and organize course lessons",
+        "addLesson": "Add Lesson",
+        "editLesson": "Edit Lesson",
+        "deleteLesson": "Delete Lesson",
+        "lessonTitle": "Lesson Title",
+        "lessonDescription": "Lesson Description",
+        "youtubeVideoId": "YouTube Video ID",
+        "duration": "Duration (minutes)",
+        "isPreview": "Preview Lesson",
+        "isPublished": "Published",
+        "googleDriveLinks": "Google Drive Links",
+        "addLink": "Add Link",
+        "linkName": "Link Name",
+        "linkUrl": "URL",
+        "saveLesson": "Save Lesson",
+        "cancel": "Cancel",
+        "noLessons": "No lessons yet",
+        "createFirstLesson": "Create your first lesson",
+        "order": "Order",
+        "backToCourse": "Back to Course"
+      }
     },
     "user": {
       "title": "My Dashboard",
@@ -760,9 +836,10 @@
     "noVideoAvailable": "No video available",
     "liveChat": "Live Chat",
     "chatIntegrationPlaceholder": "Chat integration will be implemented here",
-    "studentReviews": "Student Reviews"
+    "studentReviews": "Student Reviews",
+    "enrollToChat": "Enroll to join the chat"
   },
-  "notifications": {
+    "notifications": {
     "title": "Notifications",
     "notifications": "Notifications",
     "noNotifications": "No notifications yet",
@@ -779,7 +856,45 @@
       "lesson_available": "Lesson Available",
       "course_completed": "Course Completed",
       "admin_message": "Admin Message",
-      "instructor_message": "Instructor Message"
+      "instructor_message": "Instructor Message",
+      "live_lesson_reminder": "Live Lesson Reminder",
+      "live_lesson_instructor_reminder": "Live Lesson Starting Soon",
+      "live_lesson_started": "Live Lesson Started",
+      "live_lesson_ended": "Live Lesson Ended"
+    }
+  },
+  "liveLessons": {
+    "schedule": {
+      "title": "Schedule Live Lesson",
+      "dateTime": "Date & Time",
+      "timezone": "Timezone",
+      "reminderMinutes": "Reminder (minutes before)",
+      "validation": {
+        "required": "Schedule is required for live lessons",
+        "pastDate": "Cannot schedule in the past",
+        "invalidDate": "Invalid date format"
+      }
+    },
+    "status": {
+      "scheduled": "Scheduled",
+      "live": "LIVE NOW",
+      "ended": "Ended"
+    },
+    "actions": {
+      "startLive": "Start Live",
+      "joinLive": "Join Live",
+      "scheduleLesson": "Schedule Lesson"
+    },
+    "student": {
+      "waitingTitle": "Live Lesson Scheduled",
+      "waitingMessage": "This live lesson is scheduled. You will be notified when it starts.",
+      "scheduledFor": "Scheduled for",
+      "backToCourse": "Back to Course"
+    },
+    "enrollment": {
+      "requiredTitle": "Enrollment Required",
+      "requiredMessage": "You need to enroll in this course to access this lesson.",
+      "enrollNow": "Enroll Now"
     }
   },
   "admin": {

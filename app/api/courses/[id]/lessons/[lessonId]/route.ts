@@ -8,9 +8,11 @@ import { Types } from 'mongoose';
 // PUT /api/courses/[id]/lessons/[lessonId] - Update lesson
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   try {
+    const { id, lessonId } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -30,7 +32,7 @@ export async function PUT(
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -40,16 +42,27 @@ export async function PUT(
     }
 
     // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
+    const isInstructor = course.instructorIds.some(
+      (instructorId: Types.ObjectId) => instructorId.toString() === session.user.id
+    );
+    if (session.user.role === 'instructor' && !isInstructor) {
       return NextResponse.json(
         { success: false, error: 'Forbidden - Not your course' },
         { status: 403 }
       );
     }
 
-    const lesson = course.lessons.find((l: any) => l._id.toString() === params.lessonId);
-    if (!lesson) {
+    // Instructors can only edit lessons if course is pending or rejected
+    // Once approved, only admin can edit
+    if (session.user.role === 'instructor' && course.approvalStatus === 'approved') {
+      return NextResponse.json(
+        { success: false, error: 'Forbidden - Cannot edit lessons after course is approved' },
+        { status: 403 }
+      );
+    }
 
+    const lesson = course.lessons.find((l: any) => l._id.toString() === lessonId);
+    if (!lesson) {
       return NextResponse.json(
         { success: false, error: 'Lesson not found' },
         { status: 404 }
@@ -117,9 +130,11 @@ export async function PUT(
 // DELETE /api/courses/[id]/lessons/[lessonId] - Delete lesson
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   try {
+    const { id, lessonId } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -129,17 +144,17 @@ export async function DELETE(
       );
     }
 
-    // Only admin and instructor can delete lessons
-    if (!['admin', 'instructor'].includes(session.user.role)) {
+    // Only admin can delete lessons - instructors cannot delete
+    if (session.user.role !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'Forbidden' },
+        { success: false, error: 'Forbidden - Only admin can delete lessons' },
         { status: 403 }
       );
     }
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -148,16 +163,8 @@ export async function DELETE(
       );
     }
 
-    // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden - Not your course' },
-        { status: 403 }
-      );
-    }
-
     const lessonIndex = course.lessons.findIndex(
-      (l: any) => l._id.toString() === params.lessonId
+      (l: any) => l._id.toString() === lessonId
     );
 
     if (lessonIndex === -1) {
@@ -193,9 +200,11 @@ export async function DELETE(
 // PATCH /api/courses/[id]/lessons/[lessonId] - Quick publish/unpublish toggle
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string; lessonId: string } }
+  { params }: { params: Promise<{ id: string; lessonId: string }> }
 ) {
   try {
+    const { id, lessonId } = await params;
+    
     const session = await getServerSession(authOptions);
     
     if (!session?.user?.id) {
@@ -205,17 +214,18 @@ export async function PATCH(
       );
     }
 
-    // Only admin and instructor can publish lessons
-    if (!['admin', 'instructor'].includes(session.user.role)) {
+    // Only admin can publish/unpublish lessons directly
+    // Instructors cannot publish directly - requires admin approval
+    if (session.user.role !== 'admin') {
       return NextResponse.json(
-        { success: false, error: 'Forbidden' },
+        { success: false, error: 'Forbidden - Only admin can publish lessons' },
         { status: 403 }
       );
     }
 
     await connectDB();
     
-    const course = await Course.findById(params.id);
+    const course = await Course.findById(id);
     
     if (!course) {
       return NextResponse.json(
@@ -224,19 +234,10 @@ export async function PATCH(
       );
     }
 
-    // Check if user is the instructor of this course or admin
-    if (session.user.role === 'instructor' && course.instructorId.toString() !== session.user.id) {
-      return NextResponse.json(
-        { success: false, error: 'Forbidden - Not your course' },
-        { status: 403 }
-      );
-    }
-
     const body = await request.json();
-    const lesson = course.lessons.find((l: any) => l._id.toString() === params.lessonId);
+    const lesson = course.lessons.find((l: any) => l._id.toString() === lessonId);
     
     if (!lesson) {
-
       return NextResponse.json(
         { success: false, error: 'Lesson not found' },
         { status: 404 }
