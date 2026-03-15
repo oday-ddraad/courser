@@ -78,8 +78,8 @@ export async function POST(req: NextRequest) {
     user.emailVerificationExpires = expires;
     await user.save();
 
-    // Generate verification URL
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    // Generate verification URL - use NexaPath Academy domain
+    const baseUrl = 'https://nexapath.academy';
     const verificationUrl = `${baseUrl}/${locale}/verify-email?token=${token}`;
 
     // In development, auto-verify the email for easy testing

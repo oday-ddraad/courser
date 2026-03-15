@@ -78,11 +78,18 @@ export default function SendMessageModal({ user, onClose }: SendMessageModalProp
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          {success ? (
-            <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg text-center">
-              <p className="font-medium">{t('messageSentSuccess')}</p>
-            </div>
-          ) : (
+              {success ? (
+                <div className="p-4 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg text-center">
+                  <p className="font-medium">
+                    {messageType === 'email' ? 'Email sent successfully!' : t('messageSentSuccess')}
+                  </p>
+                  {messageType === 'email' && (
+                    <p className="text-sm mt-2 text-green-600 dark:text-green-400">
+                      The email has been sent to {user.email}
+                    </p>
+                  )}
+                </div>
+              ) : (
             <>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
                 {t('sendMessageTo', { name: user.name, email: user.email })}

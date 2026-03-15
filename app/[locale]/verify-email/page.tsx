@@ -29,12 +29,12 @@ function VerifyEmailContent() {
 
         if (data.success) {
           setStatus('success');
-          setMessage('Your email has been verified successfully!');
+          setMessage(data.message || 'Your email has been verified successfully!');
           
-          // Redirect to profile completion after 3 seconds
+          // Redirect to success page after 2 seconds
           setTimeout(() => {
-            router.push('/complete-profile');
-          }, 3000);
+            router.push(data.redirectTo || '/verify-email/success');
+          }, 2000);
         } else {
           setStatus('error');
           setMessage(data.error || 'Failed to verify email');

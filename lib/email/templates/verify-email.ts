@@ -5,34 +5,34 @@ export function generateVerificationEmail(
 ): { subject: string; html: string } {
   const translations = {
     en: {
-      subject: 'Verify Your Email Address',
+      subject: 'Verify Your Email Address - NexaPath Academy',
       title: 'Email Verification',
       greeting: `Hello ${name},`,
-      message: 'Thank you for signing up! Please verify your email address by clicking the button below:',
+      message: 'Thank you for signing up with NexaPath Academy! Please verify your email address by clicking the button below:',
       button: 'Verify Email',
       expires: 'This link will expire in 24 hours.',
       ignore: 'If you did not create an account, you can safely ignore this email.',
-      footer: 'Best regards, The Team',
+      footer: 'Best regards, NexaPath Academy Team',
     },
     de: {
-      subject: 'Bestätigen Sie Ihre E-Mail-Adresse',
+      subject: 'Bestätigen Sie Ihre E-Mail-Adresse - NexaPath Academy',
       title: 'E-Mail-Verifizierung',
       greeting: `Hallo ${name},`,
-      message: 'Vielen Dank für Ihre Anmeldung! Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf die Schaltfläche unten klicken:',
+      message: 'Vielen Dank für Ihre Anmeldung bei NexaPath Academy! Bitte bestätigen Sie Ihre E-Mail-Adresse, indem Sie auf die Schaltfläche unten klicken:',
       button: 'E-Mail bestätigen',
       expires: 'Dieser Link läuft in 24 Stunden ab.',
       ignore: 'Wenn Sie kein Konto erstellt haben, können Sie diese E-Mail ignorieren.',
-      footer: 'Mit freundlichen Grüßen, Das Team',
+      footer: 'Mit freundlichen Grüßen, NexaPath Academy Team',
     },
     ar: {
-      subject: 'تحقق من عنوان بريدك الإلكتروني',
+      subject: 'تحقق من عنوان بريدك الإلكتروني - أكاديمية نيكساباث',
       title: 'التحقق من البريد الإلكتروني',
       greeting: `مرحباً ${name}،`,
-      message: 'شكراً لتسجيلك! يرجى التحقق من عنوان بريدك الإلكتروني بالنقر على الزر أدناه:',
+      message: 'شكراً لتسجيلك في أكاديمية نيكساباث! يرجى التحقق من عنوان بريدك الإلكتروني بالنقر على الزر أدناه:',
       button: 'تحقق من البريد',
       expires: 'سينتهي صلاحية هذا الرابط خلال 24 ساعة.',
       ignore: 'إذا لم تقم بإنشاء حساب، يمكنك تجاهل هذا البريد الإلكتروني بأمان.',
-      footer: 'مع أطيب التحيات، الفريق',
+      footer: 'مع أطيب التحيات، فريق أكاديمية نيكساباث',
     },
   };
 
@@ -64,6 +64,12 @@ export function generateVerificationEmail(
     .header {
       text-align: center;
       margin-bottom: 30px;
+    }
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: #2563eb;
+      margin-bottom: 10px;
     }
     .title {
       color: #2563eb;
@@ -113,11 +119,16 @@ export function generateVerificationEmail(
       font-size: 14px;
       margin-top: 30px;
     }
+    .brand {
+      font-weight: bold;
+      color: #2563eb;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
+      <div class="logo">NEXAPATH</div>
       <h1 class="title">${t.title}</h1>
     </div>
     <div class="content">
@@ -131,6 +142,7 @@ export function generateVerificationEmail(
     <p class="ignore">${t.ignore}</p>
     <div class="footer">
       <p>${t.footer}</p>
+      <p class="brand">NexaPath Academy</p>
     </div>
   </div>
 </body>

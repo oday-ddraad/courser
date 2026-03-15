@@ -11,7 +11,15 @@ type NotificationType =
   | 'lesson_available' 
   | 'course_completed' 
   | 'admin_message' 
-  | 'instructor_message';
+  | 'instructor_message'
+  | 'course_approved'
+  | 'course_rejected'
+  | 'course_submitted'
+  | 'live_lesson_reminder'
+  | 'live_lesson_instructor_reminder'
+  | 'live_lesson_final_reminder'
+  | 'live_lesson_started'
+  | 'live_lesson_ended';
 
 interface Notification {
   _id: string;

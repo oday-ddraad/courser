@@ -15,7 +15,13 @@ import {
   Video,
   GraduationCap,
   MessageSquare,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  Send,
+  Clock,
+  PlayCircle,
+  StopCircle
 } from 'lucide-react';
 import { formatDistanceToNow } from '@/lib/utils/date';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -28,7 +34,15 @@ type NotificationType =
   | 'lesson_available' 
   | 'course_completed' 
   | 'admin_message' 
-  | 'instructor_message';
+  | 'instructor_message'
+  | 'course_approved'
+  | 'course_rejected'
+  | 'course_submitted'
+  | 'live_lesson_reminder'
+  | 'live_lesson_instructor_reminder'
+  | 'live_lesson_final_reminder'
+  | 'live_lesson_started'
+  | 'live_lesson_ended';
 
 interface Notification {
   _id: string;
@@ -58,6 +72,14 @@ const typeIcons: Record<NotificationType, React.ReactNode> = {
   course_completed: <GraduationCap className="w-4 h-4 text-green-500" />,
   admin_message: <AlertCircle className="w-4 h-4 text-orange-500" />,
   instructor_message: <MessageSquare className="w-4 h-4 text-teal-500" />,
+  course_approved: <CheckCircle className="w-4 h-4 text-green-500" />,
+  course_rejected: <XCircle className="w-4 h-4 text-red-500" />,
+  course_submitted: <Send className="w-4 h-4 text-blue-500" />,
+  live_lesson_reminder: <Clock className="w-4 h-4 text-yellow-500" />,
+  live_lesson_instructor_reminder: <Clock className="w-4 h-4 text-orange-500" />,
+  live_lesson_final_reminder: <Clock className="w-4 h-4 text-red-500" />,
+  live_lesson_started: <PlayCircle className="w-4 h-4 text-green-500" />,
+  live_lesson_ended: <StopCircle className="w-4 h-4 text-gray-500" />,
 };
 
 const typeColors: Record<NotificationType, string> = {
@@ -69,6 +91,14 @@ const typeColors: Record<NotificationType, string> = {
   course_completed: 'bg-green-50 border-green-200',
   admin_message: 'bg-orange-50 border-orange-200',
   instructor_message: 'bg-teal-50 border-teal-200',
+  course_approved: 'bg-green-50 border-green-200',
+  course_rejected: 'bg-red-50 border-red-200',
+  course_submitted: 'bg-blue-50 border-blue-200',
+  live_lesson_reminder: 'bg-yellow-50 border-yellow-200',
+  live_lesson_instructor_reminder: 'bg-orange-50 border-orange-200',
+  live_lesson_final_reminder: 'bg-red-50 border-red-200',
+  live_lesson_started: 'bg-green-50 border-green-200',
+  live_lesson_ended: 'bg-gray-50 border-gray-200',
 };
 
 export default function NotificationBell() {
