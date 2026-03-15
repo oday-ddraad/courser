@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
-import { Course, Notification } from '@/lib/mongodb/models';
+import { Course, Notification, Enrollment, User } from '@/lib/mongodb/models';
 import { Types } from 'mongoose';
 import { notificationService } from '@/lib/services/notifications';
+import { notificationWorker } from '@/lib/services/notificationWorker';
 
 // GET /api/courses/[id]/lessons - Get all lessons for a course
 export async function GET(
@@ -196,6 +197,122 @@ export async function POST(
         }
       } catch (notifyError) {
         console.error('Failed to send lesson notifications:', notifyError);
+      }
+    }
+
+    // Schedule reminder notifications for live lessons with scheduledDateTime
+    if (newLesson.isLiveStream && newLesson.scheduledDateTime) {
+      try {
+        const scheduledTime = new Date(newLesson.scheduledDateTime);
+        const enrollments = await Enrollment.find({
+          courseId: course._id,
+          status: 'active',
+        }).populate('userId', 'name email locale');
+
+        // Schedule reminders for each enrolled student
+        for (const enrollment of enrollments) {
+          const student = enrollment.userId as any;
+          const locale = student.locale || 'en';
+          const userId = student._id.toString();
+
+          // 30 minutes before - Student reminder
+          const reminder30min = new Date(scheduledTime.getTime() - 30 * 60000);
+          if (reminder30min > new Date()) {
+            await notificationWorker.scheduleNotification({
+              userId,
+              type: 'live_lesson_reminder',
+              title: {
+                en: 'Live Lesson Starting Soon',
+                de: 'Live-Unterricht beginnt bald',
+                ar: 'الدرس المباشر سيبدأ قريباً',
+              },
+              message: {
+                en: `"${title.en}" starts in 30 minutes. Get ready!`,
+                de: `"${title.de || title.en}" beginnt in 30 Minuten. Bereiten Sie sich vor!`,
+                ar: `"${title.ar || title.en}" يبدأ خلال 30 دقيقة. استعد!`,
+              },
+              sendAt: reminder30min,
+              actionUrl: `/${locale}/courses/${course.slug}/lessons/${newLesson._id}`,
+              data: {
+                courseId: course._id.toString(),
+                lessonId: newLesson._id.toString(),
+                scheduledTime: scheduledTime.toISOString(),
+              },
+              lessonId: newLesson._id.toString(),
+              courseId: course._id.toString(),
+            });
+          }
+
+          // 5 minutes before - Final reminder
+          const reminder5min = new Date(scheduledTime.getTime() - 5 * 60000);
+          if (reminder5min > new Date()) {
+            await notificationWorker.scheduleNotification({
+              userId,
+              type: 'live_lesson_final_reminder',
+              title: {
+                en: 'Live Lesson Starting in 5 Minutes',
+                de: 'Live-Unterricht beginnt in 5 Minuten',
+                ar: 'الدرس المباشر يبدأ خلال 5 دقائق',
+              },
+              message: {
+                en: `"${title.en}" starts in 5 minutes. Join now!`,
+                de: `"${title.de || title.en}" beginnt in 5 Minuten. Treten Sie jetzt bei!`,
+                ar: `"${title.ar || title.en}" يبدأ خلال 5 دقائق. انضم الآن!`,
+              },
+              sendAt: reminder5min,
+              actionUrl: `/${locale}/courses/${course.slug}/lessons/${newLesson._id}`,
+              data: {
+                courseId: course._id.toString(),
+                lessonId: newLesson._id.toString(),
+                scheduledTime: scheduledTime.toISOString(),
+              },
+              lessonId: newLesson._id.toString(),
+              courseId: course._id.toString(),
+            });
+          }
+        }
+
+        // Schedule instructor reminders
+        for (const instructorId of course.instructorIds) {
+          const instructor = await User.findById(instructorId);
+          if (instructor) {
+            const locale = instructor.locale || 'en';
+            const userId = instructor._id.toString();
+
+            // 15 minutes before - Instructor reminder
+            const reminder15min = new Date(scheduledTime.getTime() - 15 * 60000);
+            if (reminder15min > new Date()) {
+              await notificationWorker.scheduleNotification({
+                userId,
+                type: 'live_lesson_instructor_reminder',
+                title: {
+                  en: 'Your Live Lesson Starts in 15 Minutes',
+                  de: 'Ihr Live-Unterricht beginnt in 15 Minuten',
+                  ar: 'درسك المباشر يبدأ خلال 15 دقيقة',
+                },
+                message: {
+                  en: `"${title.en}" starts in 15 minutes. Prepare to go live!`,
+                  de: `"${title.de || title.en}" beginnt in 15 Minuten. Bereiten Sie sich vor, live zu gehen!`,
+                  ar: `"${title.ar || title.en}" يبدأ خلال 15 دقيقة. استعد للبث المباشر!`,
+                },
+                sendAt: reminder15min,
+                actionUrl: `/${locale}/dashboard/instructor/courses/${course.slug}/lessons`,
+                data: {
+                  courseId: course._id.toString(),
+                  lessonId: newLesson._id.toString(),
+                  scheduledTime: scheduledTime.toISOString(),
+                },
+                lessonId: newLesson._id.toString(),
+                courseId: course._id.toString(),
+              });
+            }
+          }
+        }
+
+        console.log(`Scheduled reminders for lesson ${newLesson._id}`);
+      } catch (scheduleError) {
+        console.error('Failed to schedule lesson reminders:', scheduleError);
+        // Don't fail the request if scheduling fails
       }
     }
 

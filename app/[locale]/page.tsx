@@ -14,7 +14,7 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Metadata' });
-  const baseUrl = "https://your-language-app.com"; // Replace with your domain
+  const baseUrl = "https://nexapath.academy";
 
   return {
     title: t('title'),
@@ -31,7 +31,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: t('title'),
       description: t('description'),
       url: `${baseUrl}/${locale}`,
-      siteName: "MyApp Languages",
+      siteName: "NexaPath Academy",
       images: [{ url: '/images/og-main.png', width: 1200, height: 630 }],
       locale: locale === 'ar' ? 'ar_AR' : locale === 'de' ? 'de_DE' : 'en_US',
       type: 'website',
@@ -53,10 +53,10 @@ export default async function HomePage({ params }: Props) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "EducationalOrganization",
-    "name": "MyApp Languages",
+    "name": "NexaPath Academy",
     "description": t('courses.desc'),
-    "url": `https://your-language-app.com/${locale}`,
-    "logo": "https://your-language-app.com/icon.png",
+    "url": `https://nexapath.academy/${locale}`,
+    "logo": "https://nexapath.academy/icon.png",
   };
 
   return (

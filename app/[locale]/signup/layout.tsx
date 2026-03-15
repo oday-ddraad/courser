@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Create Account | Sign Up',
+  title: 'Create Account | NexaPath Academy',
   description: 'Create your account to start learning. Sign up with Google or email.',
 };
 

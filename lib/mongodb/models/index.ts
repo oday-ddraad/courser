@@ -19,6 +19,9 @@ export { default as WhatsAppSettings, type IWhatsAppSettings } from './WhatsAppS
 // Jitsi/JaaS meeting model
 export { default as Meeting, type IMeeting } from './Meeting';
 
+// Scheduled notifications for event-driven reminders
+export { default as ScheduledNotification, type IScheduledNotification } from './ScheduledNotification';
+
 // Add other models here as we create them:
 // export { default as Payment, IPayment } from './Payment';
 // etc.
