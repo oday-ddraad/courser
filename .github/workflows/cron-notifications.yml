@@ -10,9 +10,25 @@ jobs:
   cron:
     runs-on: ubuntu-latest
     steps:
+      - name: Check Secrets
+        run: |
+          if [ -z "${{ secrets.VERCEL_DOMAIN }}" ]; then
+            echo "❌ ERROR: VERCEL_DOMAIN secret is not set!"
+            echo "Please add VERCEL_DOMAIN to your repository secrets."
+            echo "Go to: Settings → Secrets and variables → Actions"
+            echo "Add: VERCEL_DOMAIN = your-app.vercel.app"
+            exit 1
+          fi
+          if [ -z "${{ secrets.CRON_SECRET }}" ]; then
+            echo "❌ ERROR: CRON_SECRET is not set!"
+            echo "Please add CRON_SECRET to your repository secrets."
+            exit 1
+          fi
+          echo "✅ Secrets verified. Domain: ${{ secrets.VERCEL_DOMAIN }}"
+
       - name: Trigger Notification Cron
         run: |
-          curl -X GET \
-            -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            https://${{ secrets.VERCEL_DOMAIN }}/api/cron/notifications \
-            -v
+          echo "Calling: https://${{ secrets.VERCEL_DOMAIN }}/api/cron/notifications"
+          curl -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "https://${{ secrets.VERCEL_DOMAIN }}/api/cron/notifications" \
+            -v -s -S
