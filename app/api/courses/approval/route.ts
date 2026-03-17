@@ -5,7 +5,9 @@ import connectDB from '@/lib/mongodb/connection';
 import { Course, User } from '@/lib/mongodb/models';
 import { UserRole } from '@/types/database';
 import { notificationService } from '@/lib/services/notifications';
+import { triggerCourseApproved } from '@/lib/services/pusherNotifications';
 import { Types } from 'mongoose';
+
 
 // GET /api/courses/approval - List pending approval courses (admin only)
 export async function GET(request: NextRequest) {
@@ -126,21 +128,20 @@ export async function PUT(request: NextRequest) {
       
       await course.save();
       
-      // Send notification to all instructors
+      // Send real-time notifications to all instructors via Pusher
       try {
         for (const instructor of course.instructorIds) {
-          await notificationService.createNotification({
-            userId: instructor._id.toString(),
-            type: 'course_approved',
-            title: 'Course Approved',
-            message: `Your course "${course.title.en}" has been approved and is ready for pricing.`,
-            data: { courseId: course._id.toString() },
-            actionUrl: `/dashboard/instructor/courses/${course._id}`,
+          await triggerCourseApproved(instructor._id.toString(), {
+            courseId: course._id.toString(),
+            courseTitle: course.title.en,
+            courseSlug: course.slug,
           });
         }
+        console.log(`Real-time notifications sent to ${course.instructorIds.length} instructors`);
       } catch (notifyError) {
         console.error('Failed to send approval notification:', notifyError);
       }
+
 
       
       return NextResponse.json({
