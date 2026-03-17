@@ -83,64 +83,72 @@ export default async function CoursesPage({ params, searchParams }: Props) {
   ]);
   
   // Serialize courses to convert ObjectIds to strings
-  const courses = coursesData.map((course: any) => ({
-    ...course,
-    _id: course._id.toString(),
-    instructorIds: course.instructorIds ? course.instructorIds.map((inst: any) => ({
-      _id: inst._id.toString(),
-      name: inst.name,
-      avatar: inst.avatar,
-    })) : [],
+  const courses = coursesData.map((course: any) => {
+    // Handle instructorId field (singular) if it exists
+    const instructorId = course.instructorId?.toString() || null;
 
-    lessons: course.lessons?.map((lesson: any) => ({
-      _id: lesson._id.toString(),
-      order: lesson.order,
-      title: lesson.title,
-      description: lesson.description,
-      content: lesson.content,
-      videoUrl: lesson.videoUrl,
-      youtubeVideoId: lesson.youtubeVideoId,
-      duration: lesson.duration,
-      isLiveStream: lesson.isLiveStream,
-      isPreview: lesson.isPreview,
-      isPublished: lesson.isPublished,
-    })) || [],
-    reviews: course.reviews?.map((review: any) => ({
-      _id: review._id.toString(),
-      userId: review.userId?.toString(),
-      rating: review.rating,
-      comment: review.comment,
-      createdAt: review.createdAt?.toISOString?.() || review.createdAt,
-    })) || [],
-    groups: course.groups?.map((group: any) => ({
-      _id: group._id.toString(),
-      name: group.name,
-      description: group.description,
-      order: group.order,
-      maxStudents: group.maxStudents,
-      studentIds: group.studentIds?.map((id: any) => id.toString()) || [],
-      instructorId: group.instructorId?.toString(),
-      createdAt: group.createdAt?.toISOString?.() || group.createdAt,
-    })) || [],
-    materials: course.materials?.map((material: any) => ({
-      _id: material._id.toString(),
-      name: material.name,
-      type: material.type,
-      fileUrl: material.fileUrl,
-      fileSize: material.fileSize,
-      isAccessibleAfterCourse: material.isAccessibleAfterCourse,
-      uploadedBy: material.uploadedBy?.toString(),
-      createdAt: material.createdAt?.toISOString?.() || material.createdAt,
-    })) || [],
-    createdAt: course.createdAt?.toISOString?.() || course.createdAt,
-    updatedAt: course.updatedAt?.toISOString?.() || course.updatedAt,
-    publishedAt: course.publishedAt?.toISOString?.() || course.publishedAt,
-    approvalDate: course.approvalDate?.toISOString?.() || course.approvalDate,
-    submittedForApprovalAt: course.submittedForApprovalAt?.toISOString?.() || course.submittedForApprovalAt,
-    priceSetAt: course.priceSetAt?.toISOString?.() || course.priceSetAt,
-    approvedBy: course.approvedBy?.toString(),
-    priceSetBy: course.priceSetBy?.toString(),
-  }));
+    return {
+      ...course,
+      _id: course._id.toString(),
+      // Handle both instructorId (singular) and instructorIds (plural)
+      instructorId: instructorId,
+      instructorIds: course.instructorIds ? course.instructorIds.map((inst: any) => ({
+        _id: inst._id.toString(),
+        name: inst.name,
+        avatar: inst.avatar,
+      })) : [],
+
+      lessons: course.lessons?.map((lesson: any) => ({
+        _id: lesson._id.toString(),
+        order: lesson.order,
+        title: lesson.title,
+        description: lesson.description,
+        content: lesson.content,
+        videoUrl: lesson.videoUrl,
+        youtubeVideoId: lesson.youtubeVideoId,
+        duration: lesson.duration,
+        isLiveStream: lesson.isLiveStream,
+        isPreview: lesson.isPreview,
+        isPublished: lesson.isPublished,
+      })) || [],
+      reviews: course.reviews?.map((review: any) => ({
+        _id: review._id.toString(),
+        userId: review.userId?.toString(),
+        rating: review.rating,
+        comment: review.comment,
+        createdAt: review.createdAt?.toISOString?.() || review.createdAt,
+      })) || [],
+      groups: course.groups?.map((group: any) => ({
+        _id: group._id.toString(),
+        name: group.name,
+        description: group.description,
+        order: group.order,
+        maxStudents: group.maxStudents,
+        studentIds: group.studentIds?.map((id: any) => id.toString()) || [],
+        instructorId: group.instructorId?.toString(),
+        createdAt: group.createdAt?.toISOString?.() || group.createdAt,
+      })) || [],
+      materials: course.materials?.map((material: any) => ({
+        _id: material._id.toString(),
+        name: material.name,
+        type: material.type,
+        fileUrl: material.fileUrl,
+        fileSize: material.fileSize,
+        isAccessibleAfterCourse: material.isAccessibleAfterCourse,
+        uploadedBy: material.uploadedBy?.toString(),
+        createdAt: material.createdAt?.toISOString?.() || material.createdAt,
+      })) || [],
+      createdAt: course.createdAt?.toISOString?.() || course.createdAt,
+      updatedAt: course.updatedAt?.toISOString?.() || course.updatedAt,
+      publishedAt: course.publishedAt?.toISOString?.() || course.publishedAt,
+      approvalDate: course.approvalDate?.toISOString?.() || course.approvalDate,
+      submittedForApprovalAt: course.submittedForApprovalAt?.toISOString?.() || course.submittedForApprovalAt,
+      priceSetAt: course.priceSetAt?.toISOString?.() || course.priceSetAt,
+      approvedBy: course.approvedBy?.toString(),
+      priceSetBy: course.priceSetBy?.toString(),
+    };
+  });
+
 
   
   const totalPages = Math.ceil(totalCount / limit);

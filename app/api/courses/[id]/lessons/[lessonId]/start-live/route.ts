@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb/connection';
 import { Course, Enrollment, User } from '@/lib/mongodb/models';
 import Meeting from '@/lib/mongodb/models/Meeting';
 import { Types } from 'mongoose';
-import { notificationService } from '@/lib/services/notifications';
+import { triggerLiveLessonStarted } from '@/lib/services/pusherNotifications';
 import { jaasService } from '@/lib/services/jaas';
 
 // POST /api/courses/[id]/lessons/[lessonId]/start-live - Start a live lesson
@@ -153,44 +153,23 @@ export async function POST(
       // Don't fail the request if meeting creation fails
     }
 
-    // Notify enrolled students
+    // Notify enrolled students via Pusher (real-time + in-app)
     try {
       const enrollments = await Enrollment.find({
         courseId: course._id,
         status: 'active',
-      }).populate('userId', 'name email locale');
+      }).select('userId');
 
-      for (const enrollment of enrollments) {
-        const student = enrollment.userId as any;
-        const locale = student.locale || 'en';
-        
-        // Create localized notification
-        const titles = {
-          en: 'Live Lesson Started!',
-          de: 'Live-Unterricht hat begonnen!',
-          ar: 'بدأ الدرس المباشر!',
-        };
-        
-        const messages = {
-          en: `"${lesson.title.en}" in "${course.title.en}" is now live. Click to join!`,
-          de: `"${lesson.title.de || lesson.title.en}" in "${course.title.de || course.title.en}" ist jetzt live. Klicken Sie, um beizutreten!`,
-          ar: `"${lesson.title.ar || lesson.title.en}" في "${course.title.ar || course.title.en}" مباشر الآن. انقر للانضمام!`,
-        };
+      const enrolledStudentIds = enrollments.map((e: any) => e.userId.toString());
 
-        await notificationService.createNotification({
-          userId: student._id.toString(),
-          type: 'live_lesson_started',
-          title: titles[locale as keyof typeof titles] || titles.en,
-          message: messages[locale as keyof typeof messages] || messages.en,
-          data: {
-            courseId: course._id.toString(),
-            lessonId: lesson._id.toString(),
-            courseSlug: course.slug,
-            jitsiRoomName: lesson.jitsiRoomName,
-          },
-          actionUrl: `/${locale}/courses/${course.slug}/lessons/${lesson._id}`,
-        });
-      }
+      await triggerLiveLessonStarted(enrolledStudentIds, {
+        lessonId: lesson._id.toString(),
+        lessonTitle: lesson.title.en,
+        courseTitle: course.title.en,
+        courseSlug: course.slug,
+        courseId: course._id.toString(),
+        jitsiRoomName: lesson.jitsiRoomName,
+      });
     } catch (notifyError) {
       console.error('Failed to send live start notifications:', notifyError);
       // Don't fail the request if notifications fail

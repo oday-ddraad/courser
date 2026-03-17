@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
-import { Course } from '@/lib/mongodb/models';
+import { Course, User } from '@/lib/mongodb/models';
+
 import { Types } from 'mongoose';
+import { triggerCourseSubmitted } from '@/lib/services/pusherNotifications';
+
 
 // POST /api/courses/[id]/submit - Submit course for approval
 export async function POST(
@@ -66,7 +69,23 @@ export async function POST(
     course.submittedForApprovalAt = new Date();
     await course.save();
 
+    // Notify admins about new course submission (in-app + realtime)
+    try {
+      const admins = await User.find({ role: 'admin' }).select('_id');
+      await Promise.allSettled(
+        admins.map((admin) =>
+          triggerCourseSubmitted(admin._id.toString(), {
+            courseId: course._id.toString(),
+            courseTitle: course.title.en,
+          })
+        )
+      );
+    } catch (notifyError) {
+      console.log('Failed to notify admins for course submission:', notifyError);
+    }
+
     return NextResponse.json({
+
       success: true,
       message: 'Course submitted for approval',
       data: {
@@ -76,7 +95,7 @@ export async function POST(
       },
     });
   } catch (error: any) {
-    console.error('Error submitting course for approval:', error);
+    console.log('Error submitting course for approval:', error);
     return NextResponse.json(
       { success: false, error: 'Failed to submit course' },
       { status: 500 }

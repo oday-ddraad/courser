@@ -5,7 +5,7 @@ import connectDB from '@/lib/mongodb/connection';
 import { Course } from '@/lib/mongodb/models';
 import Meeting from '@/lib/mongodb/models/Meeting';
 import { Types } from 'mongoose';
-import { notificationService } from '@/lib/services/notifications';
+import { triggerLiveLessonEnded } from '@/lib/services/pusherNotifications';
 
 // POST /api/courses/[id]/lessons/[lessonId]/end-live - End a live lesson
 export async function POST(
@@ -104,44 +104,23 @@ export async function POST(
       // Continue even if meeting end/delete fails
     }
 
-    // Notify enrolled students that live lesson ended
+    // Notify enrolled students via Pusher (real-time + in-app)
     try {
-      const { Enrollment, User } = await import('@/lib/mongodb/models');
+      const { Enrollment } = await import('@/lib/mongodb/models');
       const enrollments = await Enrollment.find({
         courseId: course._id,
         status: 'active',
-      }).populate('userId', 'name email locale');
+      }).select('userId');
 
-      for (const enrollment of enrollments) {
-        const student = enrollment.userId as any;
-        const locale = student.locale || 'en';
-        
-        // Create localized notification
-        const titles = {
-          en: 'Live Lesson Ended',
-          de: 'Live-Unterricht beendet',
-          ar: 'انتهى الدرس المباشر',
-        };
-        
-        const messages = {
-          en: `"${lesson.title.en}" in "${course.title.en}" has ended. Thank you for attending!`,
-          de: `"${lesson.title.de || lesson.title.en}" in "${course.title.de || course.title.en}" wurde beendet. Vielen Dank für Ihre Teilnahme!`,
-          ar: `"${lesson.title.ar || lesson.title.en}" في "${course.title.ar || course.title.en}" انتهى. شكراً لحضورك!`,
-        };
+      const enrolledStudentIds = enrollments.map((e: any) => e.userId.toString());
 
-        await notificationService.createNotification({
-          userId: student._id.toString(),
-          type: 'live_lesson_ended',
-          title: titles[locale as keyof typeof titles] || titles.en,
-          message: messages[locale as keyof typeof messages] || messages.en,
-          data: {
-            courseId: course._id.toString(),
-            lessonId: lesson._id.toString(),
-            courseSlug: course.slug,
-          },
-          actionUrl: `/${locale}/courses/${course.slug}/lessons/${lesson._id}`,
-        });
-      }
+      await triggerLiveLessonEnded(enrolledStudentIds, {
+        lessonId: lesson._id.toString(),
+        lessonTitle: lesson.title.en,
+        courseTitle: course.title.en,
+        courseSlug: course.slug,
+        courseId: course._id.toString(),
+      });
     } catch (notifyError) {
       console.error('Failed to send live end notifications:', notifyError);
       // Don't fail the request if notifications fail

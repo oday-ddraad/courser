@@ -4,11 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { 
-  Bell, 
-  Check, 
-  CheckCheck, 
-  Trash2, 
+import {
+  Bell,
+  Check,
+  CheckCheck,
+  Trash2,
   X,
   CreditCard,
   BookOpen,
@@ -21,21 +21,25 @@ import {
   Send,
   Clock,
   PlayCircle,
-  StopCircle
+  StopCircle,
+  AlertTriangle,
+  WifiOff,
+  CheckCircle2,
+  FlaskConical,
+  Sparkles
 } from 'lucide-react';
 import { formatDistanceToNow } from '@/lib/utils/date';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
-
-type NotificationType = 
-  | 'payment_approved' 
-  | 'payment_rejected' 
-  | 'course_enrolled' 
-  | 'live_stream_starting' 
-  | 'lesson_available' 
-  | 'course_completed' 
-  | 'admin_message' 
+type NotificationType =
+  | 'payment_approved'
+  | 'payment_rejected'
+  | 'course_enrolled'
+  | 'live_stream_starting'
+  | 'lesson_available'
+  | 'course_completed'
+  | 'admin_message'
   | 'instructor_message'
   | 'course_approved'
   | 'course_rejected'
@@ -44,7 +48,9 @@ type NotificationType =
   | 'live_lesson_instructor_reminder'
   | 'live_lesson_final_reminder'
   | 'live_lesson_started'
-  | 'live_lesson_ended';
+  | 'live_lesson_ended'
+  | 'test_notification'
+  | 'custom';
 
 interface Notification {
   _id: string;
@@ -64,7 +70,6 @@ interface Notification {
   createdAt: string;
 }
 
-
 const typeIcons: Record<NotificationType, React.ReactNode> = {
   payment_approved: <CreditCard className="w-4 h-4 text-green-500" />,
   payment_rejected: <CreditCard className="w-4 h-4 text-red-500" />,
@@ -82,6 +87,8 @@ const typeIcons: Record<NotificationType, React.ReactNode> = {
   live_lesson_final_reminder: <Clock className="w-4 h-4 text-red-500" />,
   live_lesson_started: <PlayCircle className="w-4 h-4 text-green-500" />,
   live_lesson_ended: <StopCircle className="w-4 h-4 text-gray-500" />,
+  test_notification: <FlaskConical className="w-4 h-4 text-cyan-500" />,
+  custom: <Sparkles className="w-4 h-4 text-violet-500" />,
 };
 
 const typeColors: Record<NotificationType, string> = {
@@ -101,6 +108,8 @@ const typeColors: Record<NotificationType, string> = {
   live_lesson_final_reminder: 'bg-red-50 border-red-200',
   live_lesson_started: 'bg-green-50 border-green-200',
   live_lesson_ended: 'bg-gray-50 border-gray-200',
+  test_notification: 'bg-cyan-50 border-cyan-200',
+  custom: 'bg-violet-50 border-violet-200',
 };
 
 export default function NotificationBell() {
@@ -108,22 +117,25 @@ export default function NotificationBell() {
   const t = useTranslations('notifications');
   const locale = useLocale();
   const [isOpen, setIsOpen] = useState(false);
-  
+
   const {
     notifications,
     unreadCount,
     isLoading,
+    error,
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    refetch
+    refetch,
+    pusherStatus
   } = useNotifications();
 
-  // Enable real-time notifications via Pusher
-  useRealtimeNotifications();
+  // Enable real-time notifications via Pusher and refetch when events arrive
+  useRealtimeNotifications({
+    onNotificationEvent: refetch,
+  });
 
   // Close dropdown when clicking outside
-
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -140,18 +152,6 @@ export default function NotificationBell() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen]);
-
-  // Poll for new notifications every 30 seconds as fallback
-  useEffect(() => {
-    if (!session?.user) return;
-
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [session, refetch]);
-
 
   const handleMarkAsRead = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
@@ -217,6 +217,28 @@ export default function NotificationBell() {
             </div>
           </div>
 
+          {/* Pusher Status Indicator */}
+          <div className="p-3 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <div className="flex items-center gap-2 text-sm">
+              {pusherStatus.isConnected ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  <span className="text-green-600 dark:text-green-400">{t('pusherConnected')}</span>
+                </>
+              ) : pusherStatus.connectionError ? (
+                <>
+                  <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                  <span className="text-yellow-600 dark:text-yellow-400">{t('pusherError')}: {pusherStatus.connectionError}</span>
+                </>
+              ) : (
+                <>
+                  <WifiOff className="w-4 h-4 text-gray-400" />
+                  <span className="text-gray-500 dark:text-gray-400">{t('connectingToPusher')}</span>
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Notification List */}
           <div className="overflow-y-auto flex-1 max-h-[60vh]">
             {isLoading ? (
@@ -224,10 +246,25 @@ export default function NotificationBell() {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
                 {t('loading')}
               </div>
+            ) : error ? (
+              <div className="p-8 text-center text-red-500">
+                <AlertCircle className="w-12 h-12 mx-auto mb-2" />
+                <p>{error}</p>
+                {pusherStatus.connectionError && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {t('pusherRequiredForNotifications')}
+                  </p>
+                )}
+              </div>
             ) : notifications.length === 0 ? (
               <div className="p-8 text-center text-gray-500">
                 <Bell className="w-12 h-12 mx-auto mb-2 text-gray-300" />
                 <p>{t('noNotifications')}</p>
+                {!pusherStatus.isConnected && (
+                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    {t('waitingForPusherConnection')}
+                  </p>
+                )}
               </div>
             ) : (
               <div className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -247,7 +284,6 @@ export default function NotificationBell() {
                       !notification.isRead ? 'bg-blue-50/50 dark:bg-blue-900/20' : ''
                     }`}
                   >
-
                     <div className="flex items-start gap-3">
                       <div className={`p-2 rounded-full ${typeColors[notification.type]}`}>
                         {typeIcons[notification.type]}
@@ -255,8 +291,8 @@ export default function NotificationBell() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className={`text-sm font-medium ${
-                            !notification.isRead 
-                              ? 'text-gray-900 dark:text-white' 
+                            !notification.isRead
+                              ? 'text-gray-900 dark:text-white'
                               : 'text-gray-600 dark:text-gray-300'
                           }`}>
                             {getLocalizedText(notification.title)}
@@ -294,7 +330,6 @@ export default function NotificationBell() {
                             <Trash2 className="w-3 h-3" />
                           </button>
                         </div>
-
                       </div>
                     </div>
                   </div>

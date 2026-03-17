@@ -1,10 +1,8 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import type { Channel } from 'pusher-js';
 import { usePusher } from './usePusher';
-import { useNotifications } from './useNotifications';
 
 type NotificationEvent = {
   notificationId: string;
@@ -16,31 +14,48 @@ type NotificationEvent = {
   timestamp: string;
 };
 
-export function useRealtimeNotifications() {
+interface UseRealtimeNotificationsOptions {
+  onNotificationEvent?: () => void;
+}
+
+export function useRealtimeNotifications(options: UseRealtimeNotificationsOptions = {}) {
+  const { onNotificationEvent } = options;
   const { data: session } = useSession();
   const { subscribe, unsubscribe, connectionState } = usePusher();
-  const { refetch } = useNotifications();
 
   useEffect(() => {
+    console.log('[DEBUG] useRealtimeNotifications - useEffect triggered', {
+      hasSession: !!session?.user?.id,
+      connectionState
+    });
+
     if (!session?.user?.id || connectionState !== 'connected') {
+      console.log('[DEBUG] useRealtimeNotifications - conditions not met, returning early');
       return;
     }
 
     const userId = session.user.id;
     const channelName = `private-user-${userId}`;
+    console.log('[DEBUG] useRealtimeNotifications - subscribing to channel:', channelName);
+
     const channel = subscribe(channelName);
 
-    if (!channel) return;
+    if (!channel) {
+      console.log('[DEBUG] useRealtimeNotifications - channel subscription failed');
+      return;
+    }
 
     // Handle new notification events
     const handleNewNotification = (data: NotificationEvent) => {
-      console.log('New notification received:', data);
-      
-      // Refetch notifications to update UI
-      refetch();
-      
+      console.log('[DEBUG] useRealtimeNotifications - Pusher event: new-notification', data);
+
+      // Notify consumers to refresh UI state
+      console.log('[DEBUG] useRealtimeNotifications - calling onNotificationEvent');
+      onNotificationEvent?.();
+
       // Optional: Show browser notification if permitted
       if (Notification.permission === 'granted') {
+        console.log('[DEBUG] useRealtimeNotifications - showing browser notification');
         new Notification(data.title, {
           body: data.message,
           icon: '/icon.png',
@@ -50,26 +65,35 @@ export function useRealtimeNotifications() {
 
     // Handle notification read events
     const handleNotificationRead = () => {
-      refetch();
+      console.log('[DEBUG] useRealtimeNotifications - Pusher event: notification-read');
+      onNotificationEvent?.();
     };
 
     // Handle all notifications read event
     const handleAllRead = () => {
-      refetch();
+      console.log('[DEBUG] useRealtimeNotifications - Pusher event: all-notifications-read');
+      onNotificationEvent?.();
     };
 
     // Bind to Pusher events
+    console.log('[DEBUG] useRealtimeNotifications - binding event handlers');
     channel.bind('new-notification', handleNewNotification);
     channel.bind('notification-read', handleNotificationRead);
     channel.bind('all-notifications-read', handleAllRead);
 
+    console.log('[DEBUG] useRealtimeNotifications - event handlers bound successfully');
+
     return () => {
+      console.log('[DEBUG] useRealtimeNotifications - cleanup: unbinding event handlers');
       channel.unbind('new-notification', handleNewNotification);
       channel.unbind('notification-read', handleNotificationRead);
       channel.unbind('all-notifications-read', handleAllRead);
       unsubscribe(channelName);
+      console.log('[DEBUG] useRealtimeNotifications - cleanup completed');
     };
-  }, [session?.user?.id, connectionState, subscribe, unsubscribe, refetch]);
+  }, [session?.user?.id, connectionState, subscribe, unsubscribe, onNotificationEvent]);
+
+  console.log('[DEBUG] useRealtimeNotifications - hook initialized with connectionState:', connectionState);
 }
 
 export default useRealtimeNotifications;
