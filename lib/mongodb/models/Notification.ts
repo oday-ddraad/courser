@@ -3,6 +3,8 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 export interface INotification extends Document {
   userId: Types.ObjectId;
   type: 
+    | 'test_notification'
+    | 'custom'
     | 'payment_approved' 
     | 'payment_rejected' 
     | 'course_enrolled' 
@@ -50,6 +52,8 @@ const NotificationSchema = new Schema<INotification>(
     type: {
       type: String,
       enum: [
+        'test_notification',
+        'custom',
         'payment_approved',
         'payment_rejected',
         'course_enrolled',

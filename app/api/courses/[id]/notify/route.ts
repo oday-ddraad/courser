@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Course, Enrollment } from '@/lib/mongodb/models';
-import { notificationService } from '@/lib/services/notifications';
+import { createInAppNotification } from '@/lib/services/pusherNotifications';
 import { emailService } from '@/lib/services/email';
 import { whatsappService } from '@/lib/services/whatsapp';
 import { Types } from 'mongoose';
@@ -94,17 +94,28 @@ export async function POST(
       const user = enrollment.userId as any;
       
       try {
-        // In-app notification
+        // In-app notification with real-time Pusher delivery
+        // skipEmail when the email channel is also selected to avoid duplicate emails
         if (channels.includes('in_app')) {
-          await notificationService.createNotification({
+          await createInAppNotification({
             userId: user._id.toString(),
-            type: type || 'course_announcement',
-            title: `Announcement: ${course.title.en}`,
-            message: message,
+            type: type || 'admin_message',
+            title: {
+              en: `Announcement: ${course.title.en}`,
+              de: `Ankündigung: ${course.title.de || course.title.en}`,
+              ar: `إعلان: ${course.title.ar || course.title.en}`,
+            },
+            message: {
+              en: message,
+              de: message,
+              ar: message,
+            },
             data: {
               courseId: id,
               lessonId,
             },
+            sendRealtime: true,
+            skipEmail: channels.includes('email'),
           });
           results.inApp++;
         }

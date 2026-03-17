@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb/connection';
 import { Course, Enrollment, User } from '@/lib/mongodb/models';
-import { notificationService } from '@/lib/services/notifications';
-import { emailService } from '@/lib/services/email';
+import { createInAppNotification } from '@/lib/services/pusherNotifications';
 
 // Cron job to send live lesson reminders
 // This should be called every minute by a cron service (e.g., Vercel Cron, AWS EventBridge)
@@ -66,12 +65,20 @@ export async function GET(request: NextRequest) {
             // Send to all enrolled students
             for (const student of enrolledStudents) {
               try {
-                // In-app notification with clickable link
-                await notificationService.createNotification({
+                // In-app notification with real-time Pusher delivery
+                await createInAppNotification({
                   userId: student._id.toString(),
                   type: 'live_lesson_reminder',
-                  title: 'Live Lesson Starting Soon',
-                  message: `"${lesson.title.en}" in "${course.title.en}" starts in ${studentReminderMinutes} minutes`,
+                  title: {
+                    en: 'Live Lesson Starting Soon',
+                    de: 'Live-Unterricht beginnt bald',
+                    ar: 'الدرس المباشر سيبدأ قريباً',
+                  },
+                  message: {
+                    en: `"${lesson.title.en}" in "${course.title.en}" starts in ${studentReminderMinutes} minutes`,
+                    de: `"${lesson.title.de || lesson.title.en}" in "${course.title.de || course.title.en}" beginnt in ${studentReminderMinutes} Minuten`,
+                    ar: `"${lesson.title.ar || lesson.title.en}" في "${course.title.ar || course.title.en}" يبدأ خلال ${studentReminderMinutes} دقيقة`,
+                  },
                   data: {
                     courseId: course._id.toString(),
                     lessonId: lesson._id.toString(),
@@ -79,17 +86,8 @@ export async function GET(request: NextRequest) {
                     courseSlug: course.slug,
                   },
                   actionUrl: `/${student.locale || 'en'}/courses/${course.slug}/lessons/${lesson._id}`,
+                  sendRealtime: true,
                 });
-
-                // WhatsApp notification if enabled
-                await notificationService.notifyViaWhatsApp(
-                  student._id.toString(),
-                  'live_stream_starting',
-                  {
-                    courseTitle: course.title.en,
-                    startTime: scheduledTime.toLocaleTimeString(),
-                  }
-                );
 
                 results.studentReminders++;
               } catch (error) {
@@ -123,11 +121,11 @@ export async function GET(request: NextRequest) {
                   ar: `"${lesson.title.ar || lesson.title.en}" في "${course.title.ar || course.title.en}" يبدأ الساعة ${scheduledTime.toLocaleTimeString('ar-SY')}`,
                 };
 
-                await notificationService.createNotification({
+                await createInAppNotification({
                   userId: instructorId,
                   type: 'live_lesson_instructor_reminder',
-                  title: instTitles[instLocale as keyof typeof instTitles] || instTitles.en,
-                  message: instMessages[instLocale as keyof typeof instMessages] || instMessages.en,
+                  title: instTitles,
+                  message: instMessages,
                   data: {
                     courseId: course._id.toString(),
                     lessonId: lesson._id.toString(),
@@ -135,6 +133,7 @@ export async function GET(request: NextRequest) {
                     courseSlug: course.slug,
                   },
                   actionUrl: `/${instLocale}/dashboard/instructor/courses/${course.slug}/lessons`,
+                  sendRealtime: true,
                 });
 
                 results.instructorReminders++;
@@ -162,11 +161,11 @@ export async function GET(request: NextRequest) {
                   ar: `"${lesson.title.ar || lesson.title.en}" يبدأ قريباً جداً! انقر للانضمام.`,
                 };
 
-                await notificationService.createNotification({
+                await createInAppNotification({
                   userId: student._id.toString(),
                   type: 'live_lesson_final_reminder',
-                  title: finalTitles[studentLocale as keyof typeof finalTitles] || finalTitles.en,
-                  message: finalMessages[studentLocale as keyof typeof finalMessages] || finalMessages.en,
+                  title: finalTitles,
+                  message: finalMessages,
                   data: {
                     courseId: course._id.toString(),
                     lessonId: lesson._id.toString(),
@@ -174,6 +173,7 @@ export async function GET(request: NextRequest) {
                     courseSlug: course.slug,
                   },
                   actionUrl: `/${studentLocale}/courses/${course.slug}/lessons/${lesson._id}`,
+                  sendRealtime: true,
                 });
               } catch (error) {
                 results.errors.push(`Failed to send final reminder to student ${student._id}: ${error}`);

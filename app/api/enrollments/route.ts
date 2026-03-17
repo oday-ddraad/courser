@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Enrollment, Course, User } from '@/lib/mongodb/models';
+import { triggerStudentEnrolled } from '@/lib/services/pusherNotifications';
 import { UserRole } from '@/types/database';
+
 
 // GET /api/enrollments - Get user's enrollments
 export async function GET(request: NextRequest) {
@@ -134,11 +136,32 @@ export async function POST(request: NextRequest) {
       enrolledAt: new Date(),
     });
     
+    // Notify instructor about new enrollment via Pusher
+    try {
+      const course = await Course.findById(courseId).populate('instructorIds', 'name');
+      const student = await User.findById(session.user.id).select('name');
+      
+      if (course && student) {
+        for (const instructor of course.instructorIds) {
+          await triggerStudentEnrolled(instructor._id.toString(), {
+            courseId: courseId,
+            courseTitle: course.title.en,
+            courseSlug: course.slug,
+            studentName: student.name || 'A student',
+          });
+        }
+        console.log(`Real-time enrollment notifications sent to ${course.instructorIds.length} instructors`);
+      }
+    } catch (notifyError) {
+      console.error('Failed to send enrollment notification:', notifyError);
+    }
+    
     return NextResponse.json({
       success: true,
       data: enrollment,
       message: 'Enrollment created successfully',
     }, { status: 201 });
+
   } catch (error) {
     console.error('Error in enrollment POST:', error);
     return NextResponse.json(

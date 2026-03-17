@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import dbConnect from '@/lib/mongodb/connection';
 import Notification from '@/lib/mongodb/models/Notification';
+import { createInAppNotification } from '@/lib/services/pusherNotifications';
 
 /**
  * POST /api/notifications/live-session
@@ -41,10 +42,10 @@ export async function POST(request: NextRequest) {
     const subjectText = subject || 'Live Session';
     const instructorName = session.user.name || 'Instructor';
 
-    // Create notifications for each user
+    // Create notifications for each user with real-time Pusher delivery
     const notifications = await Promise.all(
       userIds.map(async (userId: string) => {
-        const notification = await Notification.create({
+        const notification = await createInAppNotification({
           userId,
           type: 'live_stream_starting',
           title: {
@@ -67,7 +68,7 @@ export async function POST(request: NextRequest) {
             startedAt: new Date().toISOString(),
           },
           actionUrl: joinUrl,
-          isRead: false,
+          sendRealtime: true,
         });
         return notification;
       })

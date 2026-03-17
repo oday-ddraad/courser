@@ -17,7 +17,6 @@
     "sending": "Wird gesendet...",
     "emailWillArrive": "Eine Verifizierungs-E-Mail wird in Kürze in Ihrem Postfach eintreffen. Bitte überprüfen Sie Ihren Posteingang und Spam-Ordner."
   },
-
   "Articles": {
     "Hero": {
       "title": "Beherrschen Sie Sprachen Heute",
@@ -82,7 +81,6 @@
       "phoneNumber": "Telefonnummer",
       "phoneNumberRequired": "Telefonnummer ist erforderlich",
       "phoneOptional": "Telefonnummer (Optional)",
-
       "phoneHint": "Ländercode wird basierend auf Ihrem Land automatisch ausgefüllt. Bearbeiten Sie ihn bei Bedarf.",
       "streetAddress": "Straße",
       "city": "Stadt",
@@ -107,7 +105,6 @@
       "documentNamePlaceholder": "z.B. Führerschein, Studentenausweis",
       "documentUploaded": "Dokument erfolgreich hochgeladen",
       "uploadFile": "Datei hochladen",
-
       "maxFileSize": "Max. 5MB. Erlaubt: PDF, JPG, PNG, WEBP",
       "whatsappConsent": "WhatsApp-Kontakt Zustimmung",
       "whatsappConsentText": "Ich stimme zu, über WhatsApp für wichtige Updates, Kursbenachrichtigungen und Support-Nachrichten kontaktiert zu werden. Sie können diese Zustimmung jederzeit in Ihren Profileinstellungen widerrufen.",
@@ -145,7 +142,6 @@
       "goToDashboard": "Zum Dashboard",
       "thankYou": "Vielen Dank für die Verifizierung Ihrer E-Mail!"
     },
-
     "profile": {
       "title": "Mein Profil",
       "subtitle": "Profilinformationen anzeigen und verwalten",
@@ -171,9 +167,7 @@
       "cannotChange": "Kann nicht geändert werden",
       "viewProfile": "Profil anzeigen"
     }
-
   },
-
   "Dashboard": {
     "admin": {
       "title": "Admin Dashboard",
@@ -188,6 +182,7 @@
       "manageCategories": "Kategorien verwalten",
       "manageInstructors": "Dozenten verwalten",
       "sendMessages": "Nachrichten senden",
+      "testPusherNotifications": "Pusher-Benachrichtigungen testen",
       "sidebar": {
         "adminPanel": "Admin-Panel",
         "dashboard": "Dashboard",
@@ -293,7 +288,9 @@
           "deleteConfirmTitle": "Löschen bestätigen",
           "deleteConfirmMessage": "Sind Sie sicher, dass Sie die Kategorie \"{category}\" löschen möchten?",
           "cancel": "Abbrechen"
-        }
+        },
+        "instructors": "Instructors",
+        "courseType": "Course Type"
       },
       "groups": {
         "title": "Gruppenverwaltung",
@@ -404,12 +401,11 @@
         "emailSystemEnabled": "E-Mail-System aktiviert",
         "trackEmailOpens": "E-Mail-Öffnungen verfolgen",
         "trackEmailClicks": "E-Mail-Klicks verfolgen",
-        "notifyAdminOnLimit": "Admin bei Grenzwarnungen benachrichtigen",
+        "notifyAdminOnLimit": "Admin bei Erreichen der Warnschwelle benachrichtigen",
         "counterManagement": "Zählerverwaltung",
         "resetDailyCounter": "Täglichen Zähler zurücksetzen",
         "resetMonthlyCounter": "Monatlichen Zähler zurücksetzen",
         "notifications": "Benachrichtigungen",
-
         "settingsSaved": "Einstellungen erfolgreich gespeichert",
         "settingsSaveFailed": "Einstellungen konnten nicht gespeichert werden",
         "countersReset": "Zähler erfolgreich zurückgesetzt",
@@ -476,7 +472,6 @@
         "callToAction": "Handlungsaufforderung",
         "divider": "Trennlinie",
         "footer": "Fußzeile",
-        "variables": "Variablen",
         "addVariable": "Variable hinzufügen",
         "insertVariable": "{{variable}} einfügen",
         "selectBlockFirst": "Wählen Sie zuerst einen Block aus",
@@ -491,9 +486,7 @@
         "description": "Beschreibung",
         "templateIsActive": "Vorlage ist aktiv",
         "cancel": "Abbrechen",
-        "createTemplate": "Vorlage erstellen",
         "updateTemplate": "Vorlage aktualisieren",
-        "saving": "Speichern...",
         "sampleValues": "Beispielwerte",
         "enterSampleValues": "Geben Sie Beispielwerte für Vorlagenvariablen ein:",
         "contentPreview": "Inhaltsvorschau",
@@ -511,17 +504,14 @@
         "splitPercentage": "Aufteilungsprozentsatz für Variante A",
         "variantBPercentage": "Variante B erhält {percentage}%",
         "testDuration": "Testdauer (Tage)",
-        "status": "Status",
         "winner": "Gewinner",
         "startTest": "Test starten",
         "pause": "Pause",
         "resume": "Fortsetzen",
         "endAndSelectWinner": "Beenden & Gewinner wählen",
         "testResults": "Testergebnisse",
-        "sent": "Gesendet",
         "opens": "Öffnungen",
         "clicks": "Klicks",
-        "openRate": "Öffnungsrate",
         "clickRate": "Klickrate",
         "suggestedWinner": "Vorgeschlagener Gewinner basierend auf Öffnungsrate: Variante {winner}",
         "saveConfiguration": "Konfiguration speichern",
@@ -553,13 +543,8 @@
         "limitDefault": "Standard: 1000 Gespräche pro Monat",
         "warningThreshold": "Warnschwelle (%)",
         "thresholdDefault": "Standard: 80% - löst Warnbenachrichtigung aus",
-        "notifyAdminOnLimit": "Admin bei Erreichen der Warnschwelle benachrichtigen",
-        "resetMonthlyCounter": "Monatlichen Zähler zurücksetzen",
         "whatsappSettingsSaved": "WhatsApp-Einstellungen erfolgreich gespeichert",
         "whatsappSettingsSaveFailed": "Fehler beim Speichern der WhatsApp-Einstellungen",
-        "confirmReset": "Sind Sie sicher, dass Sie {type}-Zähler zurücksetzen möchten?",
-        "countersReset": "Zähler erfolgreich zurückgesetzt",
-        "countersResetFailed": "Zähler konnten nicht zurückgesetzt werden",
         "jitsi": {
           "title": "Jitsi-Einstellungen",
           "subtitle": "Videokonferenz-Einstellungen konfigurieren",
@@ -624,13 +609,9 @@
           "saveButton": "Jitsi-Einstellungen speichern"
         }
       },
-
-
       "messages": {
-
-        "title": "Nachrichten senden",
+        "title": "Titel",
         "subtitle": "Benachrichtigungen und Nachrichten an Benutzer senden",
-
         "recipients": "Empfänger",
         "targetType": "Zieltyp",
         "allUsers": "Alle Benutzer",
@@ -652,7 +633,6 @@
         "priorityLow": "Niedrig",
         "priorityNormal": "Normal",
         "priorityHigh": "Hoch",
-        "title": "Titel",
         "titlePlaceholder": "Nachrichtentitel eingeben...",
         "message": "Nachricht",
         "messagePlaceholder": "Ihre Nachricht eingeben...",
@@ -672,7 +652,83 @@
       "quickActions": "Schnelle Aktionen",
       "createCourse": "Neuen Kurs erstellen",
       "manageCourses": "Kurse verwalten",
-      "viewStudents": "Studenten anzeigen"
+      "viewStudents": "Studenten anzeigen",
+      "courses": {
+        "title": "Meine Kurse",
+        "subtitle": "Verwalten Sie Ihre Kurse und Lektionen",
+        "createCourse": "Neuen Kurs erstellen",
+        "searchPlaceholder": "Kurse durchsuchen...",
+        "allLevels": "Alle Level",
+        "beginner": "Anfänger",
+        "intermediate": "Mittelstufe",
+        "advanced": "Fortgeschritten",
+        "allCategories": "Alle Kategorien",
+        "allStatuses": "Alle Stati",
+        "published": "Veröffentlicht",
+        "draft": "Entwurf",
+        "approved": "Genehmigt",
+        "rejected": "Abgelehnt",
+        "loading": "Lade...",
+        "noCourses": "Keine Kurse gefunden",
+        "course": "Kurs",
+        "level": "Level",
+        "students": "Studenten",
+        "groups": "Gruppen",
+        "status": "Status",
+        "actions": "Aktionen",
+        "edit": "Bearbeiten",
+        "manageLessons": "Lektionen verwalten",
+        "manageGroups": "Gruppen verwalten",
+        "submitForApproval": "Zur Genehmigung einreichen",
+        "pendingApproval": "Genehmigung ausstehend",
+        "page": "Seite",
+        "of": "von",
+        "editCourse": "Kurs bearbeiten",
+        "courseTitle": "Kurstitel",
+        "courseDescription": "Kursbeschreibung",
+        "courseDetails": "Kursdetails",
+        "selectCategory": "Kategorie auswählen",
+        "category": "Kategorie",
+        "saveChanges": "Änderungen speichern",
+        "price": "Preis",
+        "duration": "Dauer",
+        "hours": "Stunden",
+        "thumbnailUrl": "Miniaturbild-URL",
+        "publishing": "Veröffentlichung",
+        "publishCourse": "Kurs veröffentlichen",
+        "publishHelp": "Bei Veröffentlichung ist der Kurs für alle Benutzer sichtbar",
+        "live": "Live",
+        "uploaded": "Hochgeladen",
+        "lessons": "Lektionen",
+        "approvalStatus": "Genehmigungsstatus",
+        "submitSuccess": "Kurs erfolgreich zur Genehmigung eingereicht",
+        "submitError": "Fehler beim Einreichen des Kurses zur Genehmigung",
+        "cannotEditApproved": "Genehmigte Kurse können nicht bearbeitet werden. Kontaktiere den Administrator für Änderungen.",
+        "rejectionReason": "Ablehnungsgrund"
+      },
+      "lessons": {
+        "title": "Lektionen verwalten",
+        "subtitle": "Füge Lektionen hinzu, bearbeite sie und organisiere sie",
+        "addLesson": "Lektion hinzufügen",
+        "editLesson": "Lektion bearbeiten",
+        "deleteLesson": "Lektion löschen",
+        "lessonTitle": "Lektionstitel",
+        "lessonDescription": "Lektionsbeschreibung",
+        "youtubeVideoId": "YouTube-Video-ID",
+        "duration": "Dauer (Minuten)",
+        "isPreview": "Vorschau-Lektion",
+        "isPublished": "Veröffentlicht",
+        "googleDriveLinks": "Google Drive Links",
+        "addLink": "Link hinzufügen",
+        "linkName": "Link-Name",
+        "linkUrl": "URL",
+        "saveLesson": "Lektion speichern",
+        "cancel": "Abbrechen",
+        "noLessons": "Noch keine Lektionen",
+        "createFirstLesson": "Erstelle deine erste Lektion",
+        "order": "Reihenfolge",
+        "backToCourse": "Zurück zum Kurs"
+      }
     },
     "user": {
       "title": "Mein Dashboard",
@@ -766,7 +822,7 @@
     "studentReviews": "Studentenbewertungen",
     "enrollToChat": "Melden Sie sich an, um am Chat teilzunehmen"
   },
-    "notifications": {
+  "notifications": {
     "title": "Benachrichtigungen",
     "notifications": "Benachrichtigungen",
     "noNotifications": "Noch keine Benachrichtigungen",
@@ -825,6 +881,55 @@
     }
   },
   "admin": {
+    "testPusherNotifications": "Pusher-Benachrichtigungen testen",
+    "testPusherNotificationsDesc": "Pusher-Echtzeit-Benachrichtigungen testen und debuggen",
+    "howToTest": "So testen Sie Pusher-Benachrichtigungen",
+    "openBrowserConsole": "Öffnen Sie die Entwicklerkonsole Ihres Browsers (F12)",
+    "selectTargetUser": "Wählen Sie den Zielbenutzer aus, der die Benachrichtigung erhalten soll",
+    "chooseNotificationType": "Wählen Sie den Typ der zu sendenden Benachrichtigung",
+    "clickSendButton": "Klicken Sie auf die Schaltfläche 'Testbenachrichtigung senden'",
+    "checkConsoleLogs": "Überprüfen Sie die Konsolenprotokolle auf Debugging-Informationen",
+    "verifyUINotifications": "Überprüfen Sie, ob die Benachrichtigung in der Benutzeroberfläche erscheint",
+    "selectUser": "Benutzer auswählen",
+    "selectUserPlaceholder": "Benutzer auswählen...",
+    "selectedUser": "Ausgewählter Benutzer",
+    "notificationType": "Benachrichtigungstyp",
+    "testNotificationType": "Testbenachrichtigung",
+    "paymentApproved": "Zahlung genehmigt",
+    "courseEnrolled": "Kurs eingeschrieben",
+    "adminMessage": "Admin-Nachricht",
+    "customNotification": "Benutzerdefinierte Benachrichtigung",
+    "customTitle": "Benutzerdefinierter Titel",
+    "customTitlePlaceholder": "Benutzerdefinierten Benachrichtigungstitel eingeben...",
+    "customMessage": "Benutzerdefinierte Nachricht",
+    "customMessagePlaceholder": "Benutzerdefinierte Benachrichtigungsnachricht eingeben...",
+    "notificationPreview": "Benachrichtigungsvorschau",
+    "sendRealtimeNotification": "Über Pusher senden (empfohlen)",
+    "recommended": "Empfohlen",
+    "sendTestNotification": "Testbenachrichtigung senden",
+    "sending": "Senden",
+    "notificationSentSuccessfully": "Benachrichtigung erfolgreich gesendet!",
+    "failedToSendNotification": "Benachrichtigung konnte nicht gesendet werden",
+    "unknownError": "Ein unbekannter Fehler ist aufgetreten",
+    "testingInstructions": "Testanweisungen",
+    "step1": "Schritt 1",
+    "step2": "Schritt 2",
+    "step3": "Schritt 3",
+    "step4": "Schritt 4",
+    "openConsoleInstructions": "Öffnen Sie die Browserkonsole, um Debug-Protokolle zu sehen",
+    "sendNotificationInstructions": "Senden Sie eine Testbenachrichtigung an den ausgewählten Benutzer",
+    "checkConsoleInstructions": "Überprüfen Sie die Konsole auf Pusher-Ereignisprotokolle und API-Antworten",
+    "verifyUIInstructions": "Überprüfen Sie, ob die Benachrichtigung in der Benachrichtigungsglocke erscheint",
+    "testNotificationTitle": "Testbenachrichtigung",
+    "testNotificationMessage": "Dies ist eine Testbenachrichtigung zur Überprüfung der Pusher-Funktionalität",
+    "paymentApprovedTitle": "Zahlung genehmigt",
+    "paymentApprovedMessage": "Ihre Zahlung wurde erfolgreich genehmigt",
+    "courseEnrolledTitle": "Kurs eingeschrieben",
+    "courseEnrolledMessage": "Sie haben sich erfolgreich in den Kurs eingeschrieben",
+    "adminMessageTitle": "Admin-Nachricht",
+    "adminMessageMessage": "Sie haben eine neue Nachricht von der Administration",
+    "notificationTitle": "Benachrichtigung",
+    "notificationMessage": "Sie haben eine neue Benachrichtigung",
     "users": {
       "title": "Benutzerverwaltung",
       "subtitle": "{count} Benutzer verwalten",
@@ -886,14 +991,11 @@
       "passwordsDoNotMatch": "Passwörter stimmen nicht überein",
       "passwordRequirements": "Passwort muss mindestens 6 Zeichen lang sein",
       "accountStatus": "Kontostatus",
-      "activeAccount": "Aktives Konto",
-      "cancel": "Abbrechen",
       "passwordResetSuccess": "Passwort erfolgreich zurückgesetzt",
       "resetPasswordFor": "Passwort zurücksetzen für {name} ({email})",
       "reset": "Zurücksetzen",
       "sendMessageTo": "Nachricht senden an {name} ({email})",
       "notification": "Benachrichtigung",
-      "email": "E-Mail",
       "messageTitle": "Nachrichtentitel",
       "titlePlaceholder": "Nachrichtentitel eingeben...",
       "messageContent": "Nachrichteninhalt",
@@ -907,11 +1009,9 @@
       "namePlaceholder": "Vollständiger Name",
       "passwordSection": "Passwort",
       "passwordPlaceholder": "Passwort eingeben",
-      "confirmPassword": "Passwort bestätigen",
       "confirmPasswordPlaceholder": "Passwort bestätigen",
       "rolePermissions": "Rolle & Berechtigungen",
       "roleHelp": "Wählen Sie die passende Rolle für diesen Benutzer",
-      "accountStatus": "Kontostatus",
       "activeAccountHelp": "Inaktive Benutzer können sich nicht anmelden",
       "localization": "Lokalisierung",
       "language": "Sprache",
@@ -944,6 +1044,5 @@
       "documents": "Dokumente",
       "download": "Herunterladen"
     }
-
   }
 }

@@ -25,8 +25,11 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow, getRelativeDateLabel } from '@/lib/utils/date';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
 
 type NotificationType = 
+  | 'test_notification'
+  | 'custom'
   | 'payment_approved' 
   | 'payment_rejected' 
   | 'course_enrolled' 
@@ -64,6 +67,8 @@ interface Notification {
 
 
 const typeIcons: Record<NotificationType, React.ReactNode> = {
+  test_notification: <Bell className="w-5 h-5 text-blue-500" />,
+  custom: <Bell className="w-5 h-5 text-purple-500" />,
   payment_approved: <CreditCard className="w-5 h-5 text-green-500" />,
   payment_rejected: <CreditCard className="w-5 h-5 text-red-500" />,
   course_enrolled: <BookOpen className="w-5 h-5 text-blue-500" />,
@@ -83,6 +88,8 @@ const typeIcons: Record<NotificationType, React.ReactNode> = {
 };
 
 const typeColors: Record<NotificationType, string> = {
+  test_notification: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
+  custom: 'bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800',
   payment_approved: 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800',
   payment_rejected: 'bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800',
   course_enrolled: 'bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800',
@@ -115,7 +122,12 @@ export default function NotificationsList() {
     markAsRead,
     markAllAsRead,
     deleteNotification,
+    refetch,
   } = useNotifications();
+
+  useRealtimeNotifications({
+    onNotificationEvent: refetch,
+  });
 
   const getLocalizedText = (obj: { en: string; de: string; ar: string }) => {
     return obj[locale as keyof typeof obj] || obj.en;

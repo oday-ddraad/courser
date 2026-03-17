@@ -5,6 +5,10 @@ import connectDB from '@/lib/mongodb/connection';
 import { Course, Enrollment } from '@/lib/mongodb/models';
 import { UserRole } from '@/types/database';
 import { Types } from 'mongoose';
+import {
+  triggerCourseApproved,
+  triggerCourseRejected,
+} from '@/lib/services/pusherNotifications';
 
 // GET /api/courses/[id] - Get single course details
 export async function GET(
@@ -133,6 +137,9 @@ export async function PUT(
 
     
     const body = await request.json();
+
+    // Capture previous approval status before update to detect changes
+    const previousApprovalStatus = course.approvalStatus;
     
     console.log('PUT /api/courses/[id] - Request body:', JSON.stringify(body, null, 2));
     console.log('Current course instructorIds:', course.instructorIds?.map((id: Types.ObjectId) => id.toString()));
@@ -174,7 +181,39 @@ export async function PUT(
     
     await course.save();
     console.log('Course saved successfully');
-    
+
+    // Send notifications if approvalStatus changed
+    if (body.approvalStatus && body.approvalStatus !== previousApprovalStatus) {
+      try {
+        // Populate instructorIds so we have their _id values
+        await course.populate('instructorIds', 'name email');
+
+        if (body.approvalStatus === 'approved') {
+          for (const instructor of course.instructorIds as any[]) {
+            await triggerCourseApproved(instructor._id.toString(), {
+              courseId: course._id.toString(),
+              courseTitle: course.title.en,
+              courseSlug: course.slug,
+            });
+          }
+          console.log(`Approval notifications sent to ${course.instructorIds.length} instructor(s)`);
+        } else if (body.approvalStatus === 'rejected') {
+          for (const instructor of course.instructorIds as any[]) {
+            await triggerCourseRejected(instructor._id.toString(), {
+              courseId: course._id.toString(),
+              courseTitle: course.title.en,
+              courseSlug: course.slug,
+              rejectionReason: body.rejectionReason || 'No reason provided',
+            });
+          }
+          console.log(`Rejection notifications sent to ${course.instructorIds.length} instructor(s)`);
+        }
+      } catch (notifyError) {
+        console.error('Failed to send approval status notification:', notifyError);
+        // Don't fail the API call if notification fails
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: course,

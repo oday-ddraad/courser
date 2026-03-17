@@ -55,6 +55,10 @@ export default function AdminDashboard() {
           <a href={`/${locale}/dashboard/admin/payments`} className="bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700 transition text-center">
             {t('reviewPayments')}
           </a>
+          <a href={`/${locale}/dashboard/test-pusher`} className="bg-teal-600 text-white p-4 rounded-lg hover:bg-teal-700 transition text-center">
+            {t('testPusherNotifications')}
+          </a>
+
         </div>
       </div>
 

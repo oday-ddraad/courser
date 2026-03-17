@@ -146,6 +146,7 @@
       "thankYou": "Thank you for verifying your email!"
     },
 
+
     "profile": {
       "title": "My Profile",
       "subtitle": "View and manage your profile information",
@@ -188,6 +189,7 @@
       "manageCategories": "Manage Categories",
       "manageInstructors": "Manage Instructors",
       "sendMessages": "Send Messages",
+      "testPusherNotifications": "Test Pusher Notifications",
       "sidebar": {
         "adminPanel": "Admin Panel",
         "dashboard": "Dashboard",
@@ -217,15 +219,25 @@
         "allApprovalStatuses": "All Approval Statuses",
         "published": "Published",
         "draft": "Draft",
+        "pendingApproval": "Pending Approval",
+        "approved": "Approved",
+        "rejected": "Rejected",
+        "approvalStatus": "Approval Status",
         "loading": "Loading...",
         "noCourses": "No courses found",
         "course": "Course",
         "instructor": "Instructor",
+        "instructors": "Instructors",
         "level": "Level",
         "students": "Students",
         "groups": "Groups",
+        "courseType": "Course Type",
         "status": "Status",
         "actions": "Actions",
+        "manageLessons": "Manage Lessons",
+
+
+
         "noInstructor": "No instructor",
         "edit": "Edit",
         "manageStudents": "Manage Students",
@@ -684,6 +696,8 @@
         "allStatuses": "All Statuses",
         "published": "Published",
         "draft": "Draft",
+        "approved": "Approved",
+        "rejected": "Rejected",
         "loading": "Loading...",
         "noCourses": "No courses found",
         "course": "Course",
@@ -697,8 +711,6 @@
         "manageGroups": "Manage Groups",
         "submitForApproval": "Submit for Approval",
         "pendingApproval": "Pending Approval",
-        "approved": "Approved",
-        "rejected": "Rejected",
         "page": "Page",
         "of": "of",
         "editCourse": "Edit Course",
@@ -710,6 +722,7 @@
         "saveChanges": "Save Changes",
         "price": "Price",
         "duration": "Duration",
+        "hours": "hours",
         "thumbnailUrl": "Thumbnail URL",
         "publishing": "Publishing",
         "publishCourse": "Publish Course",
@@ -723,6 +736,7 @@
         "cannotEditApproved": "Approved courses cannot be edited. Contact admin for changes.",
         "rejectionReason": "Rejection Reason"
       },
+
       "lessons": {
         "title": "Manage Lessons",
         "subtitle": "Add, edit, and organize course lessons",
@@ -746,6 +760,7 @@
         "order": "Order",
         "backToCourse": "Back to Course"
       }
+
     },
     "user": {
       "title": "My Dashboard",
@@ -846,6 +861,8 @@
     "loading": "Loading...",
     "markAsRead": "Mark as read",
     "markAllAsRead": "Mark all as read",
+    "connectingToPusher" :"connecting To Pusher",
+    "pusherConnected":"pusher Connected",
     "view": "View",
     "viewAll": "View all notifications",
     "types": {
@@ -898,6 +915,55 @@
     }
   },
   "admin": {
+    "testPusherNotifications": "Test Pusher Notifications",
+    "testPusherNotificationsDesc": "Test and debug Pusher real-time notifications",
+    "howToTest": "How to Test Pusher Notifications",
+    "openBrowserConsole": "Open your browser's developer console (F12)",
+    "selectTargetUser": "Select the target user who should receive the notification",
+    "chooseNotificationType": "Choose the type of notification to send",
+    "clickSendButton": "Click the 'Send Test Notification' button",
+    "checkConsoleLogs": "Check the console logs for debugging information",
+    "verifyUINotifications": "Verify that the notification appears in the UI",
+    "selectUser": "Select User",
+    "selectUserPlaceholder": "Select a user...",
+    "selectedUser": "Selected User",
+    "notificationType": "Notification Type",
+    "testNotificationType": "Test Notification",
+    "paymentApproved": "Payment Approved",
+    "courseEnrolled": "Course Enrolled",
+    "adminMessage": "Admin Message",
+    "customNotification": "Custom Notification",
+    "customTitle": "Custom Title",
+    "customTitlePlaceholder": "Enter custom notification title...",
+    "customMessage": "Custom Message",
+    "customMessagePlaceholder": "Enter custom notification message...",
+    "notificationPreview": "Notification Preview",
+    "sendRealtimeNotification": "Send via Pusher (recommended)",
+    "recommended": "Recommended",
+    "sendTestNotification": "Send Test Notification",
+    "sending": "Sending",
+    "notificationSentSuccessfully": "Notification sent successfully!",
+    "failedToSendNotification": "Failed to send notification",
+    "unknownError": "An unknown error occurred",
+    "testingInstructions": "Testing Instructions",
+    "step1": "Step 1",
+    "step2": "Step 2",
+    "step3": "Step 3",
+    "step4": "Step 4",
+    "openConsoleInstructions": "Open the browser console to see debug logs",
+    "sendNotificationInstructions": "Send a test notification to the selected user",
+    "checkConsoleInstructions": "Check console for Pusher event logs and API responses",
+    "verifyUIInstructions": "Verify the notification appears in the notification bell",
+    "testNotificationTitle": "Test Notification",
+    "testNotificationMessage": "This is a test notification to verify Pusher functionality",
+    "paymentApprovedTitle": "Payment Approved",
+    "paymentApprovedMessage": "Your payment has been successfully approved",
+    "courseEnrolledTitle": "Course Enrolled",
+    "courseEnrolledMessage": "You have successfully enrolled in the course",
+    "adminMessageTitle": "Admin Message",
+    "adminMessageMessage": "You have a new message from the administration",
+    "notificationTitle": "Notification",
+    "notificationMessage": "You have a new notification",
     "users": {
       "title": "User Management",
       "subtitle": "Manage {count} users",

@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
-import { User, Notification } from '@/lib/mongodb/models';
+import { User } from '@/lib/mongodb/models';
 import emailService from '@/lib/services/email';
+import { createInAppNotification } from '@/lib/services/pusherNotifications';
 
 // POST /api/admin/send-message - Send notification or email to user
 export async function POST(request: NextRequest) {
@@ -37,27 +38,18 @@ export async function POST(request: NextRequest) {
     }
 
     if (type === 'notification') {
-      // Create in-app notification directly using Mongoose model
-      // Support both simple strings and multi-language objects
-      const titleObj = typeof title === 'string' 
-        ? { en: title, de: title, ar: title }
-        : title;
-      const messageObj = typeof message === 'string'
-        ? { en: message, de: message, ar: message }
-        : message;
-      
-      const notification = await Notification.create({
+      // Create in-app notification with real-time Pusher delivery
+      const notification = await createInAppNotification({
         userId,
         type: 'admin_message',
-        title: titleObj,
-        message: messageObj,
+        title,
+        message,
         data: {
           sentBy: session.user.id,
           sentAt: new Date().toISOString(),
         },
-        isRead: false,
+        sendRealtime: true,
       });
-
 
       return NextResponse.json({
         success: true,
@@ -111,8 +103,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Create notification as record
-      const notification = await Notification.create({
+      // Create notification as record with real-time Pusher delivery
+      // skipEmail: true because the email was already sent above via emailService
+      const notification = await createInAppNotification({
         userId,
         type: 'admin_message',
         title: {
@@ -131,7 +124,8 @@ export async function POST(request: NextRequest) {
           emailSent: true,
           emailId: emailResult.id,
         },
-        isRead: false,
+        sendRealtime: true,
+        skipEmail: true,
       });
 
       return NextResponse.json({

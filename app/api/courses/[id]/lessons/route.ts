@@ -4,7 +4,7 @@ import { authOptions } from '@/lib/auth/config';
 import connectDB from '@/lib/mongodb/connection';
 import { Course, Notification, Enrollment, User } from '@/lib/mongodb/models';
 import { Types } from 'mongoose';
-import { notificationService } from '@/lib/services/notifications';
+import { createInAppNotification } from '@/lib/services/pusherNotifications';
 import { notificationWorker } from '@/lib/services/notificationWorker';
 
 // GET /api/courses/[id]/lessons - Get all lessons for a course
@@ -186,14 +186,29 @@ export async function POST(
     // Notify enrolled students if lesson is published immediately
     if (newLesson.isPublished && course.approvalStatus === 'approved') {
       try {
-        const enrollments = await Notification.find({ courseId: course._id, status: 'active' }).distinct('userId');
-        for (const userId of enrollments) {
-          await notificationService.notifyLessonAvailable(
-            userId.toString(),
-            course._id.toString(),
-            course.title.en,
-            title.en
-          );
+        const enrollments = await Enrollment.find({ courseId: course._id, status: 'active' }).select('userId');
+        for (const enrollment of enrollments) {
+          await createInAppNotification({
+            userId: enrollment.userId.toString(),
+            type: 'lesson_available',
+            title: {
+              en: `New Lesson Available: ${title.en}`,
+              de: `Neue Lektion verfügbar: ${title.de || title.en}`,
+              ar: `درس جديد متاح: ${title.ar || title.en}`,
+            },
+            message: {
+              en: `A new lesson "${title.en}" is now available in "${course.title.en}"`,
+              de: `Eine neue Lektion "${title.de || title.en}" ist jetzt in "${course.title.de || course.title.en}" verfügbar`,
+              ar: `درس جديد "${title.ar || title.en}" متاح الآن في "${course.title.ar || course.title.en}"`,
+            },
+            data: {
+              courseId: course._id.toString(),
+              lessonId: newLesson._id.toString(),
+              courseSlug: course.slug,
+            },
+            actionUrl: `/courses/${course.slug}/lessons/${newLesson._id}`,
+            sendRealtime: true,
+          });
         }
       } catch (notifyError) {
         console.error('Failed to send lesson notifications:', notifyError);
