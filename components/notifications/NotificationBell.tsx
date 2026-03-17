@@ -25,6 +25,8 @@ import {
 } from 'lucide-react';
 import { formatDistanceToNow } from '@/lib/utils/date';
 import { useNotifications } from '@/hooks/useNotifications';
+import { useRealtimeNotifications } from '@/hooks/useRealtimeNotifications';
+
 
 type NotificationType = 
   | 'payment_approved' 
@@ -117,7 +119,11 @@ export default function NotificationBell() {
     refetch
   } = useNotifications();
 
+  // Enable real-time notifications via Pusher
+  useRealtimeNotifications();
+
   // Close dropdown when clicking outside
+
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -135,7 +141,7 @@ export default function NotificationBell() {
     };
   }, [isOpen]);
 
-  // Poll for new notifications every 30 seconds
+  // Poll for new notifications every 30 seconds as fallback
   useEffect(() => {
     if (!session?.user) return;
 
@@ -145,6 +151,7 @@ export default function NotificationBell() {
 
     return () => clearInterval(interval);
   }, [session, refetch]);
+
 
   const handleMarkAsRead = useCallback(async (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
