@@ -5,6 +5,10 @@ export interface IEnrollment extends Document {
   courseId: Types.ObjectId;
   paymentId?: Types.ObjectId;
   status: 'pending' | 'active' | 'completed' | 'cancelled';
+  paymentStatus?: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'free' | 'expired' | 'refunded';
+  amountPaid?: number;
+  currency?: 'USD' | 'EUR' | 'SYP';
+
   progress: {
     completedLessons: Types.ObjectId[];
     lastAccessedLesson?: Types.ObjectId;
@@ -51,7 +55,23 @@ const EnrollmentSchema = new Schema<IEnrollment>(
       enum: ['pending', 'active', 'completed', 'cancelled'],
       default: 'pending',
     },
+    paymentStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected', 'cancelled', 'free', 'expired', 'refunded'],
+      default: 'pending',
+    },
+    amountPaid: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    currency: {
+      type: String,
+      enum: ['USD', 'EUR', 'SYP'],
+      default: 'USD',
+    },
     progress: {
+
       completedLessons: [{
         type: Schema.Types.ObjectId,
       }],
@@ -112,6 +132,8 @@ EnrollmentSchema.index({ courseId: 1 });
 EnrollmentSchema.index({ status: 1 });
 EnrollmentSchema.index({ enrolledAt: -1 });
 EnrollmentSchema.index({ 'progress.completionPercentage': 1 });
+EnrollmentSchema.index({ paymentStatus: 1 });
+
 
 // Compound indexes for common queries
 EnrollmentSchema.index({ userId: 1, status: 1 });

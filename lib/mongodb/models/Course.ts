@@ -127,6 +127,11 @@ export interface IGroup {
 export interface ICourse extends Document {
   slug: string;
   instructorIds: Types.ObjectId[];
+  revenueShare?: {
+    instructorId: Types.ObjectId;
+    percentage: number;
+  }[];
+
   title: {
     en: string;
     de: string;
@@ -475,6 +480,20 @@ const CourseSchema = new Schema<ICourse>(
       ref: 'User',
       required: true,
     }],
+    revenueShare: [{
+      instructorId: {
+        type: Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+      percentage: {
+        type: Number,
+        required: true,
+        min: 0,
+        max: 100,
+      },
+    }],
+
     title: {
       en: { type: String, required: true },
       de: { type: String, default: '' },
@@ -591,6 +610,8 @@ const CourseSchema = new Schema<ICourse>(
 
 // Indexes
 CourseSchema.index({ instructorIds: 1 });
+CourseSchema.index({ 'revenueShare.instructorId': 1 });
+
 CourseSchema.index({ isPublished: 1 });
 CourseSchema.index({ category: 1 });
 CourseSchema.index({ level: 1 });

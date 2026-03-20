@@ -6,7 +6,13 @@ export interface INotification extends Document {
     | 'test_notification'
     | 'custom'
     | 'payment_approved' 
-    | 'payment_rejected' 
+    | 'payment_rejected'
+    | 'payment_pending_review'
+    | 'payment_resubmitted'
+    | 'payment_expired'
+    | 'payment_reminder'
+    | 'payment_refunded'
+    | 'new_enrollment_instructor'
     | 'course_enrolled' 
     | 'live_stream_starting' 
     | 'lesson_available' 
@@ -21,6 +27,7 @@ export interface INotification extends Document {
     | 'live_lesson_final_reminder'
     | 'live_lesson_started'
     | 'live_lesson_ended';
+
 
   title: {
     en: string;
@@ -56,7 +63,14 @@ const NotificationSchema = new Schema<INotification>(
         'custom',
         'payment_approved',
         'payment_rejected',
+        'payment_pending_review',
+        'payment_resubmitted',
+        'payment_expired',
+        'payment_reminder',
+        'payment_refunded',
+        'new_enrollment_instructor',
         'course_enrolled',
+
         'live_stream_starting',
         'lesson_available',
         'course_completed',

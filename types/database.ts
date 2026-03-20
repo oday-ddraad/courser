@@ -11,7 +11,8 @@ export type CountryCode = string; // ISO 3166-1 alpha-2 (e.g., 'US', 'DE', 'SA',
 // Course Types
 export type CourseLevel = 'beginner' | 'intermediate' | 'advanced';
 export type EnrollmentStatus = 'pending' | 'active' | 'completed' | 'cancelled';
-export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
+export type PaymentStatus = 'pending' | 'approved' | 'rejected' | 'cancelled' | 'expired' | 'refunded';
+
 export type PaymentMethodType = 
   | 'bank_transfer' 
   | 'credit_card' 
@@ -20,10 +21,19 @@ export type PaymentMethodType =
   | 'crypto' 
   | 'custom';
 
+export type PaymentProofRequirement = 'operation_number' | 'screenshot' | 'both' | 'none';
+
+
 // Notification Types
 export type NotificationType = 
   | 'payment_approved' 
-  | 'payment_rejected' 
+  | 'payment_rejected'
+  | 'payment_pending_review'
+  | 'payment_resubmitted'
+  | 'payment_expired'
+  | 'payment_reminder'
+  | 'payment_refunded'
+  | 'new_enrollment_instructor'
   | 'course_enrolled' 
   | 'live_stream_starting' 
   | 'lesson_available' 
@@ -33,6 +43,7 @@ export type NotificationType =
   | 'course_approved'
   | 'course_rejected'
   | 'course_submitted';
+
 
 
 // Multi-language content type

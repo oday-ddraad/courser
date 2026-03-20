@@ -22,6 +22,7 @@ export { default as Meeting, type IMeeting } from './Meeting';
 // Scheduled notifications for event-driven reminders
 export { default as ScheduledNotification, type IScheduledNotification } from './ScheduledNotification';
 
-// Add other models here as we create them:
-// export { default as Payment, IPayment } from './Payment';
-// etc.
+export { default as PaymentMethod, type IPaymentMethod } from './PaymentMethod';
+export { default as Payment, type IPayment } from './Payment';
+export { default as InstructorEarnings, type IInstructorEarnings } from './InstructorEarnings';
+export { default as PaymentSettings, type IPaymentSettings } from './PaymentSettings';
