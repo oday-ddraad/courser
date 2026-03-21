@@ -85,7 +85,7 @@ export default function AdminPaymentReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[100] bg-black/50" onClick={onClose}>
+    <div className="fixed inset-0 z-100 bg-black/50" onClick={onClose}>
       <div className="flex min-h-full items-center justify-center p-4">
         <div
           className="w-full max-w-4xl rounded-xl border border-gray-200 bg-white shadow-2xl dark:border-gray-700 dark:bg-gray-900"
