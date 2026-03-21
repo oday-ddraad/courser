@@ -15,16 +15,20 @@ interface PaymentMethodListProps {
   onEdit?: (id: string) => void;
   onPreview?: (id: string) => void;
   onToggleActive?: (id: string, next: boolean) => void;
+  onDelete?: (id: string) => void;
   className?: string;
 }
+
 
 export default function PaymentMethodList({
   items,
   onEdit,
   onPreview,
   onToggleActive,
+  onDelete,
   className = '',
 }: PaymentMethodListProps) {
+
   return (
     <div className={['space-y-3', className].join(' ')}>
       {items.map((item) => (
@@ -50,6 +54,14 @@ export default function PaymentMethodList({
               >
                 {item.isActive ? 'Deactivate' : 'Activate'}
               </button>
+              <button
+                type="button"
+                onClick={() => onDelete?.(item.id)}
+                className="rounded border border-red-300 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+              >
+                Delete
+              </button>
+
             </div>
           </div>
         </div>

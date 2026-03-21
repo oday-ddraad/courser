@@ -1,7 +1,7 @@
 'use client';
 
 import QRCodeDisplay from './QRCodeDisplay';
-import PaymentReferenceCode from './PaymentReferenceCode';
+import PaymentReferenceCode from './PaymentReferenceCode';;
 
 interface PaymentDetailsPanelProps {
   methodName: string;

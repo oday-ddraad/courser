@@ -526,7 +526,8 @@ export async function triggerPaymentApproved(
         de: `Ihre Zahlung für "${paymentData.courseTitle}" wurde genehmigt. Sie können jetzt auf den Kurs zugreifen.`,
         ar: `تمت الموافقة على دفعتك لـ "${paymentData.courseTitle}". يمكنك الآن الوصول إلى الدورة.`,
       },
-      actionUrl: `/courses/${paymentData.courseSlug}/lessons`,
+      actionUrl: '/dashboard/user/payments',
+
       data: {
         paymentId: paymentData.paymentId,
         enrollmentId: paymentData.enrollmentId,

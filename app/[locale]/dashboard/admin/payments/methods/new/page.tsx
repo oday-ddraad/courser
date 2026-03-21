@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import PaymentMethodForm, { PaymentMethodFormValues } from '@/components/payments/PaymentMethodForm';
 
 export default function NewPaymentMethodPage() {
   const router = useRouter();
+  const params = useParams<{ locale: string }>();
+  const locale = params?.locale || 'en';
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
@@ -15,9 +17,20 @@ export default function NewPaymentMethodPage() {
 
     const payload = {
       name: { en: values.name, de: values.name, ar: values.name },
-      description: { en: values.description || '', de: values.description || '', ar: values.description || '' },
-      instructions: { en: values.instructions || '', de: values.instructions || '', ar: values.instructions || '' },
+      description: {
+        en: values.description || '',
+        de: values.description || '',
+        ar: values.description || '',
+      },
+      instructions: {
+        en: values.instructions || '',
+        de: values.instructions || '',
+        ar: values.instructions || '',
+      },
+      type: values.type,
       paymentAddress: values.paymentAddress,
+      logo: values.logo,
+      qrCode: values.qrCode || '',
       isGlobal: values.isGlobal,
       countries: values.countries,
       requiresOperationNumber: values.requiresOperationNumber,
@@ -37,7 +50,7 @@ export default function NewPaymentMethodPage() {
         throw new Error(json?.error || 'Failed to create payment method');
       }
 
-      router.push('/en/dashboard/admin/payments/methods');
+      router.push(`/${locale}/dashboard/admin/payments/methods`);
     } catch (e: any) {
       setError(e.message || 'Failed to create payment method');
     } finally {
@@ -65,7 +78,7 @@ export default function NewPaymentMethodPage() {
       <div className="flex items-center gap-3">
         <button
           disabled={saving}
-          onClick={() => router.push('/en/dashboard/admin/payments/methods')}
+          onClick={() => router.push(`/${locale}/dashboard/admin/payments/methods`)}
           className="rounded-md border border-gray-300 px-3 py-2 text-sm hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:hover:bg-gray-700"
         >
           Back

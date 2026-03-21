@@ -3,11 +3,46 @@
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 import { hasPermission } from '@/lib/auth/permissions';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+import { useState } from 'react';
+
 
 export default function InstructorDashboard() {
   const { data: session, status } = useSession();
   const t = useTranslations('Dashboard.instructor');
+  const locale = useLocale();
+  const [stats, setStats] = useState({
+    myCourses: 12,
+    totalStudents: 456,
+    pendingReviews: 0,
+    revenue: 0,
+  });
+
+  const loadStats = async () => {
+    try {
+      const [paymentStatsRes, coursesRes] = await Promise.all([
+        fetch('/api/instructor/payment-stats', { cache: 'no-store' }),
+        fetch('/api/courses?instructor=me&limit=1', { cache: 'no-store' }),
+      ]);
+
+      const paymentStatsJson = await paymentStatsRes.json();
+      const coursesJson = coursesRes.ok ? await coursesRes.json() : null;
+
+      setStats((prev) => ({
+        ...prev,
+        myCourses: coursesJson?.pagination?.total ?? prev.myCourses,
+        totalStudents: paymentStatsJson?.data?.totalEnrollments ?? prev.totalStudents,
+        pendingReviews: paymentStatsJson?.data?.pendingEnrollments ?? 0,
+        revenue: paymentStatsJson?.data?.netRevenue ?? 0,
+      }));
+    } catch (error) {
+      console.error('Failed to load instructor dashboard stats:', error);
+    }
+  };
+
+  useAutoRefresh(loadStats, 10000);
+
 
   if (status === 'loading') {
     return <div className="p-6">Loading...</div>;
@@ -25,22 +60,28 @@ export default function InstructorDashboard() {
         {/* Instructor-specific widgets */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('myCourses')}</h3>
-          <p className="text-3xl font-bold text-blue-600">12</p>
+          <p className="text-3xl font-bold text-blue-600">{stats.myCourses}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('totalStudents')}</h3>
-          <p className="text-3xl font-bold text-green-600">456</p>
+          <p className="text-3xl font-bold text-green-600">{stats.totalStudents}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('pendingReviews')}</h3>
-          <p className="text-3xl font-bold text-yellow-600">8</p>
+          <p className="text-3xl font-bold text-yellow-600">{stats.pendingReviews}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('revenue')}</h3>
-          <p className="text-3xl font-bold text-purple-600">$3,456</p>
+          <p className="text-3xl font-bold text-purple-600">
+            {new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(stats.revenue)}
+          </p>
+
         </div>
       </div>
 

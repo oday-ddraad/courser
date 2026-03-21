@@ -16,8 +16,10 @@ interface PaymentRow {
   createdAt?: string;
   operationNumber?: string;
   rejectionReason?: string;
+  receiptScreenshots?: string[];
   userId?: { _id: string; name?: string; email?: string } | string;
   courseId?: { _id: string; title?: any } | string;
+  paymentMethodId?: { _id: string; name?: any; type?: string } | string;
 }
 
 export default function AdminPaymentsPage() {
@@ -104,6 +106,75 @@ export default function AdminPaymentsPage() {
   const handleExport = () => {
     window.open('/api/payments/export?format=csv', '_blank');
   };
+
+  const handleApprove = async (adminNotes?: string) => {
+    if (!activePayment) return;
+    const res = await fetch(`/api/payments/${activePayment._id}/approve`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ adminNotes: adminNotes || '' }),
+    });
+
+    if (res.ok) {
+      setActivePayment(null);
+      setRefreshTick((v) => v + 1);
+    }
+  };
+
+  const handleReject = async (reason: string, adminNotes?: string) => {
+    if (!activePayment) return;
+    const res = await fetch(`/api/payments/${activePayment._id}/reject`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason, adminNotes: adminNotes || '' }),
+    });
+
+    if (res.ok) {
+      setActivePayment(null);
+      setRefreshTick((v) => v + 1);
+    }
+  };
+
+  const handleRefund = async (reason: string) => {
+    if (!activePayment) return;
+    const res = await fetch(`/api/payments/${activePayment._id}/refund`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refundReason: reason }),
+    });
+
+    if (res.ok) {
+      setActivePayment(null);
+      setRefreshTick((v) => v + 1);
+    }
+  };
+
+  const reviewPayment = activePayment
+    ? {
+        id: activePayment._id,
+        courseName:
+          typeof activePayment.courseId === 'string'
+            ? activePayment.courseId
+            : activePayment.courseId?.title?.en ||
+              activePayment.courseId?.title?.de ||
+              activePayment.courseId?.title?.ar ||
+              '-',
+        amount: activePayment.amount || 0,
+        currency: activePayment.currency || 'USD',
+        methodName:
+          typeof activePayment.paymentMethodId === 'string'
+            ? activePayment.paymentMethodId
+            : activePayment.paymentMethodId?.name?.en ||
+              activePayment.paymentMethodId?.name?.de ||
+              activePayment.paymentMethodId?.name?.ar ||
+              activePayment.paymentMethodId?.type ||
+              '-',
+        status: activePayment.status,
+        operationNumber: activePayment.operationNumber,
+        screenshots: activePayment.receiptScreenshots || [],
+        rejectionReason: activePayment.rejectionReason,
+      }
+    : undefined;
 
   return (
     <div className="space-y-6">
@@ -229,7 +300,10 @@ export default function AdminPaymentsPage() {
       {activePayment ? (
         <AdminPaymentReviewModal
           open={Boolean(activePayment)}
-          payment={activePayment as any}
+          payment={reviewPayment}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          onRefund={handleRefund}
           onClose={() => setActivePayment(null)}
         />
       ) : null}

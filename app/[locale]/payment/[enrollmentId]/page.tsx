@@ -7,7 +7,8 @@ import { Enrollment, Payment, PaymentMethod } from '@/lib/mongodb/models';
 import PaymentStatusBanner from '@/components/payments/PaymentStatusBanner';
 import PaymentMethodSelector from '@/components/payments/PaymentMethodSelector';
 import PaymentDetailsPanel from '@/components/payments/PaymentDetailsPanel';
-import PaymentProofForm from '@/components/payments/PaymentProofForm';
+import PaymentProofSection from '@/components/payments/PaymentProofSection';
+
 
 interface Props {
   params: Promise<{ locale: string; enrollmentId: string }>;
@@ -136,9 +137,11 @@ export default async function PaymentPage({ params }: Props) {
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
             Submit Payment Proof
           </h2>
-          <PaymentProofForm
+          <PaymentProofSection
+            paymentId={payment._id.toString()}
             requireOperationNumber={selectedMethod?.requiresOperationNumber ?? true}
           />
+
         </section>
       </div>
     </div>

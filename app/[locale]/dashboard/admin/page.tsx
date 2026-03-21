@@ -1,13 +1,49 @@
 'use client';
 
+import { useState } from 'react';
+
 import { useTranslations, useLocale } from 'next-intl';
+import { useAutoRefresh } from '@/hooks/useAutoRefresh';
+
 
 export default function AdminDashboard() {
   const t = useTranslations('Dashboard.admin');
   const locale = useLocale();
+  const [stats, setStats] = useState({
+    totalUsers: 1234,
+    activeCourses: 56,
+    pendingPayments: 0,
+    revenue: 0,
+  });
 
+  const loadStats = async () => {
+    try {
+      const [paymentStatsRes, usersRes, coursesRes] = await Promise.all([
+        fetch('/api/admin/payment-stats', { cache: 'no-store' }),
+        fetch('/api/users?limit=1', { cache: 'no-store' }),
+        fetch('/api/courses?limit=1', { cache: 'no-store' }),
+      ]);
+
+      const paymentStatsJson = await paymentStatsRes.json();
+      const usersJson = usersRes.ok ? await usersRes.json() : null;
+      const coursesJson = coursesRes.ok ? await coursesRes.json() : null;
+
+      setStats((prev) => ({
+        ...prev,
+        pendingPayments: paymentStatsJson?.data?.pendingPayments ?? 0,
+        revenue: paymentStatsJson?.data?.totalRevenue ?? 0,
+        totalUsers: usersJson?.pagination?.total ?? prev.totalUsers,
+        activeCourses: coursesJson?.pagination?.total ?? prev.activeCourses,
+      }));
+    } catch (error) {
+      console.error('Failed to load admin dashboard stats:', error);
+    }
+  };
+
+  useAutoRefresh(loadStats, 10000);
 
   return (
+
     <div>
       <h1 className="text-2xl font-bold mb-6">{t('title')}</h1>
 
@@ -15,22 +51,28 @@ export default function AdminDashboard() {
         {/* Admin-specific widgets */}
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('totalUsers')}</h3>
-          <p className="text-3xl font-bold text-blue-600">1,234</p>
+          <p className="text-3xl font-bold text-blue-600">{stats.totalUsers}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('activeCourses')}</h3>
-          <p className="text-3xl font-bold text-green-600">56</p>
+          <p className="text-3xl font-bold text-green-600">{stats.activeCourses}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('pendingPayments')}</h3>
-          <p className="text-3xl font-bold text-yellow-600">23</p>
+          <p className="text-3xl font-bold text-yellow-600">{stats.pendingPayments}</p>
+
         </div>
 
         <div className="bg-white dark:bg-slate-800 p-6 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">{t('revenue')}</h3>
-          <p className="text-3xl font-bold text-purple-600">$12,345</p>
+          <p className="text-3xl font-bold text-purple-600">
+            {new Intl.NumberFormat(locale, { style: 'currency', currency: 'USD' }).format(stats.revenue)}
+          </p>
+
         </div>
       </div>
 
@@ -55,9 +97,13 @@ export default function AdminDashboard() {
           <a href={`/${locale}/dashboard/admin/payments`} className="bg-yellow-600 text-white p-4 rounded-lg hover:bg-yellow-700 transition text-center">
             {t('reviewPayments')}
           </a>
+          <a href={`/${locale}/dashboard/admin/payments/methods`} className="bg-amber-600 text-white p-4 rounded-lg hover:bg-amber-700 transition text-center">
+            Payment Methods
+          </a>
           <a href={`/${locale}/dashboard/test-pusher`} className="bg-teal-600 text-white p-4 rounded-lg hover:bg-teal-700 transition text-center">
             {t('testPusherNotifications')}
           </a>
+
 
         </div>
       </div>

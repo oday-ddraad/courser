@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { useLocale } from 'next-intl';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PaymentMethodList, { PaymentMethodListItem } from '@/components/payments/PaymentMethodList';
 import PaymentMethodPreviewModal from '@/components/payments/PaymentMethodPreviewModal';
@@ -85,6 +86,19 @@ export default function AdminPaymentMethodsPage() {
     }
   };
 
+  const deleteMethod = async (id: string) => {
+    const confirmed = window.confirm('Are you sure you want to delete this payment method?');
+    if (!confirmed) return;
+
+    const res = await fetch(`/api/payment-methods/${id}`, {
+      method: 'DELETE',
+    });
+
+    if (res.ok) {
+      setRawMethods((prev) => prev.filter((m) => m._id !== id));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-3">
@@ -94,12 +108,12 @@ export default function AdminPaymentMethodsPage() {
             Manage payment methods per country and global options.
           </p>
         </div>
-        <button
-          onClick={() => router.push('/en/dashboard/admin/payments/methods/new')}
+        <Link
+          href={`/${locale}/dashboard/admin/payments/methods/new`}
           className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700"
         >
-          New Method
-        </button>
+          Create Payment Method
+        </Link>
       </div>
 
       {loading ? (
@@ -110,8 +124,9 @@ export default function AdminPaymentMethodsPage() {
         <PaymentMethodList
           items={methods}
           onPreview={(id) => setPreviewId(id)}
-          onEdit={(id) => router.push(`/en/dashboard/admin/payments/methods/${id}/edit`)}
+          onEdit={(id) => router.push(`/${locale}/dashboard/admin/payments/methods/${id}/edit`)}
           onToggleActive={toggleActive}
+          onDelete={deleteMethod}
         />
       )}
 

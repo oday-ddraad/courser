@@ -80,6 +80,13 @@ export default function AdminSidebar() {
       permission: 'payment.manage',
     },
     {
+      href: `/${locale}/dashboard/admin/payments/methods`,
+      label: 'Payment Methods',
+      icon: <CreditCard className="w-5 h-5" />,
+      permission: 'payment.manage',
+    },
+
+    {
       href: `/${locale}/dashboard/admin/settings`,
       label: t('settings'),
       icon: <Settings className="w-5 h-5" />,

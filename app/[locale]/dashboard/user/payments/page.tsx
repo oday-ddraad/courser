@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import PaymentHistoryTable from '@/components/payments/PaymentHistoryTable';
+import PaymentDetailModal from '@/components/payments/PaymentDetailModal';
+
 
 interface PaymentRow {
   _id: string;
@@ -12,12 +14,18 @@ interface PaymentRow {
   operationNumber?: string;
   createdAt: string;
   reviewedAt?: string;
-  courseTitle?: string;
+  rejectionReason?: string;
+  receiptScreenshots?: string[];
+  courseId?: { _id?: string; title?: { en?: string; de?: string; ar?: string } } | string;
+  paymentMethodId?: { _id?: string; name?: { en?: string; de?: string; ar?: string } } | string;
 }
+
 
 export default function UserPaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [activePaymentId, setActivePaymentId] = useState<string | null>(null);
+
 
   const load = async () => {
     setLoading(true);
@@ -43,9 +51,16 @@ export default function UserPaymentsPage() {
       payments.map((p) => ({
         id: p._id,
         referenceCode: p.referenceCode || '-',
-        courseName: p.courseTitle || '-',
+        courseName:
+          typeof p.courseId === 'object'
+            ? p.courseId?.title?.en || p.courseId?.title?.de || p.courseId?.title?.ar || '-'
+            : '-',
         amount: p.amount,
         currency: p.currency,
+        methodName:
+          typeof p.paymentMethodId === 'object'
+            ? p.paymentMethodId?.name?.en || p.paymentMethodId?.name?.de || p.paymentMethodId?.name?.ar || '-'
+            : '-',
         status: p.status as any,
         operationNumber: p.operationNumber || '-',
         submittedAt: p.createdAt,
@@ -53,6 +68,7 @@ export default function UserPaymentsPage() {
       })),
     [payments]
   );
+
 
   const totalPaid = useMemo(
     () =>
@@ -67,7 +83,32 @@ export default function UserPaymentsPage() {
     [payments]
   );
 
+  const activePayment = useMemo(() => {
+    if (!activePaymentId) return null;
+    const p = payments.find((item) => item._id === activePaymentId);
+    if (!p) return null;
+
+    return {
+      id: p._id,
+      courseName:
+        typeof p.courseId === 'object'
+          ? p.courseId?.title?.en || p.courseId?.title?.de || p.courseId?.title?.ar || '-'
+          : '-',
+      amount: p.amount,
+      currency: p.currency,
+      methodName:
+        typeof p.paymentMethodId === 'object'
+          ? p.paymentMethodId?.name?.en || p.paymentMethodId?.name?.de || p.paymentMethodId?.name?.ar || '-'
+          : '-',
+      status: p.status as any,
+      operationNumber: p.operationNumber,
+      screenshots: p.receiptScreenshots || [],
+      rejectionReason: p.rejectionReason,
+    };
+  }, [activePaymentId, payments]);
+
   return (
+
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">My Payments</h1>
@@ -96,8 +137,18 @@ export default function UserPaymentsPage() {
           Loading payment history...
         </div>
       ) : (
-        <PaymentHistoryTable rows={rows as any} />
+        <PaymentHistoryTable
+          rows={rows as any}
+          onView={(id) => setActivePaymentId(id)}
+        />
+
       )}
+
+      <PaymentDetailModal
+        open={Boolean(activePayment)}
+        payment={activePayment || undefined}
+        onClose={() => setActivePaymentId(null)}
+      />
     </div>
   );
 }
