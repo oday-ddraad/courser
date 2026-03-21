@@ -17,7 +17,11 @@ export const NOTIFICATION_EVENTS = {
   COURSE_REJECTED: 'course-rejected',
   COURSE_SUBMITTED: 'course-submitted',
   STUDENT_ENROLLED: 'student-enrolled',
+  PAYMENT_STATUS_CHANGED: 'payment-status-changed',
+  NEW_PAYMENT_SUBMITTED: 'new-payment-submitted',
+  INSTRUCTOR_NEW_ENROLLMENT: 'instructor-new-enrollment',
 } as const;
+
 
 type LocalizedText = {
   en: string;
@@ -62,6 +66,20 @@ function toLocalizedText(value: string | LocalizedText): LocalizedText {
     ar: value.ar,
   };
 }
+
+async function getAdminUserIds(): Promise<string[]> {
+  await connectDB();
+
+  const admins = await User.find({
+    role: 'admin',
+  })
+    .select('_id')
+    .lean();
+
+  return admins.map((admin: any) => admin._id.toString());
+}
+
+
 
 /**
  * Send notification to a specific user via Pusher
@@ -431,5 +449,313 @@ export async function triggerStudentEnrolled(
     });
   } catch (error) {
     console.error(`Failed to notify instructor ${instructorId}:`, error);
+  }
+}
+
+export async function triggerPaymentSubmitted(paymentData: {
+  paymentId: string;
+  enrollmentId: string;
+  courseId: string;
+  courseTitle: string;
+  studentId: string;
+  studentName: string;
+  amount: number;
+  currency: string;
+  referenceCode?: string;
+}): Promise<void> {
+  try {
+    const adminIds = await getAdminUserIds();
+
+    const notificationPromises = adminIds.map((adminId) =>
+      createInAppNotification({
+        userId: adminId,
+        type: 'payment_pending_review',
+        title: {
+          en: 'New Payment Submitted',
+          de: 'Neue Zahlung eingereicht',
+          ar: 'تم إرسال دفعة جديدة',
+        },
+        message: {
+          en: `${paymentData.studentName} submitted payment for "${paymentData.courseTitle}" — ${paymentData.amount} ${paymentData.currency}`,
+          de: `${paymentData.studentName} hat eine Zahlung für "${paymentData.courseTitle}" eingereicht — ${paymentData.amount} ${paymentData.currency}`,
+          ar: `قدّم ${paymentData.studentName} دفعة لـ "${paymentData.courseTitle}" — ${paymentData.amount} ${paymentData.currency}`,
+        },
+        actionUrl: '/dashboard/admin/payments',
+        data: {
+          paymentId: paymentData.paymentId,
+          enrollmentId: paymentData.enrollmentId,
+          courseId: paymentData.courseId,
+          studentId: paymentData.studentId,
+          referenceCode: paymentData.referenceCode,
+        },
+        sendRealtime: true,
+      })
+    );
+
+    await Promise.allSettled(notificationPromises);
+  } catch (error) {
+    console.error('Failed to trigger payment submitted notifications:', error);
+  }
+}
+
+export async function triggerPaymentApproved(
+  studentId: string,
+  paymentData: {
+    paymentId: string;
+    enrollmentId: string;
+    courseId: string;
+    courseTitle: string;
+    courseSlug: string;
+    amount: number;
+    currency: string;
+    instructorIds?: string[];
+    studentName?: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: studentId,
+      type: 'payment_approved',
+      title: {
+        en: 'Payment Approved! 🎉',
+        de: 'Zahlung genehmigt! 🎉',
+        ar: 'تمت الموافقة على الدفعة! 🎉',
+      },
+      message: {
+        en: `Your payment for "${paymentData.courseTitle}" has been approved. You can now access the course.`,
+        de: `Ihre Zahlung für "${paymentData.courseTitle}" wurde genehmigt. Sie können jetzt auf den Kurs zugreifen.`,
+        ar: `تمت الموافقة على دفعتك لـ "${paymentData.courseTitle}". يمكنك الآن الوصول إلى الدورة.`,
+      },
+      actionUrl: `/courses/${paymentData.courseSlug}/lessons`,
+      data: {
+        paymentId: paymentData.paymentId,
+        enrollmentId: paymentData.enrollmentId,
+        courseId: paymentData.courseId,
+        amount: paymentData.amount,
+        currency: paymentData.currency,
+      },
+      sendRealtime: true,
+    });
+
+    if (paymentData.instructorIds?.length) {
+      const instructorPromises = paymentData.instructorIds.map((instructorId) =>
+        createInAppNotification({
+          userId: instructorId,
+          type: 'new_enrollment_instructor',
+          title: {
+            en: 'New Student Enrolled',
+            de: 'Neuer Teilnehmer eingeschrieben',
+            ar: 'تسجيل طالب جديد',
+          },
+          message: {
+            en: `${paymentData.studentName || 'A student'} has enrolled in your course "${paymentData.courseTitle}"`,
+            de: `${paymentData.studentName || 'Ein Teilnehmer'} hat sich in Ihren Kurs "${paymentData.courseTitle}" eingeschrieben`,
+            ar: `قام ${paymentData.studentName || 'طالب'} بالتسجيل في دورتك "${paymentData.courseTitle}"`,
+          },
+          actionUrl: `/dashboard/instructor/courses/${paymentData.courseSlug}/students`,
+          data: {
+            paymentId: paymentData.paymentId,
+            enrollmentId: paymentData.enrollmentId,
+            courseId: paymentData.courseId,
+            studentId,
+          },
+          sendRealtime: true,
+        })
+      );
+
+      await Promise.allSettled(instructorPromises);
+    }
+  } catch (error) {
+    console.error('Failed to trigger payment approved notifications:', error);
+  }
+}
+
+export async function triggerPaymentRejected(
+  studentId: string,
+  paymentData: {
+    paymentId: string;
+    enrollmentId: string;
+    courseId: string;
+    courseTitle: string;
+    rejectionReason: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: studentId,
+      type: 'payment_rejected',
+      title: {
+        en: 'Payment Rejected',
+        de: 'Zahlung abgelehnt',
+        ar: 'تم رفض الدفعة',
+      },
+      message: {
+        en: `Your payment for "${paymentData.courseTitle}" was rejected. Reason: ${paymentData.rejectionReason}`,
+        de: `Ihre Zahlung für "${paymentData.courseTitle}" wurde abgelehnt. Grund: ${paymentData.rejectionReason}`,
+        ar: `تم رفض دفعتك لـ "${paymentData.courseTitle}". السبب: ${paymentData.rejectionReason}`,
+      },
+      actionUrl: `/payment/${paymentData.enrollmentId}`,
+      data: {
+        paymentId: paymentData.paymentId,
+        enrollmentId: paymentData.enrollmentId,
+        courseId: paymentData.courseId,
+        rejectionReason: paymentData.rejectionReason,
+      },
+      sendRealtime: true,
+    });
+  } catch (error) {
+    console.error('Failed to trigger payment rejected notification:', error);
+  }
+}
+
+export async function triggerPaymentExpired(
+  studentId: string,
+  paymentData: {
+    paymentId: string;
+    enrollmentId: string;
+    courseId: string;
+    courseTitle: string;
+    courseSlug?: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: studentId,
+      type: 'payment_expired',
+      title: {
+        en: 'Payment Expired',
+        de: 'Zahlung abgelaufen',
+        ar: 'انتهت صلاحية الدفعة',
+      },
+      message: {
+        en: `Your payment for "${paymentData.courseTitle}" has expired. Please enroll again to continue.`,
+        de: `Ihre Zahlung für "${paymentData.courseTitle}" ist abgelaufen. Bitte melden Sie sich erneut an, um fortzufahren.`,
+        ar: `انتهت صلاحية دفعتك لـ "${paymentData.courseTitle}". يرجى التسجيل مجدداً للمتابعة.`,
+      },
+      actionUrl: paymentData.courseSlug
+        ? `/courses/${paymentData.courseSlug}`
+        : '/dashboard/user/payments',
+      data: {
+        paymentId: paymentData.paymentId,
+        enrollmentId: paymentData.enrollmentId,
+        courseId: paymentData.courseId,
+      },
+      sendRealtime: true,
+    });
+  } catch (error) {
+    console.error('Failed to trigger payment expired notification:', error);
+  }
+}
+
+export async function triggerPaymentReminder(
+  studentId: string,
+  paymentData: {
+    paymentId: string;
+    enrollmentId: string;
+    courseId: string;
+    courseTitle: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: studentId,
+      type: 'payment_reminder',
+      title: {
+        en: 'Complete Your Payment ⏰',
+        de: 'Zahlung abschließen ⏰',
+        ar: 'أكمل دفعتك ⏰',
+      },
+      message: {
+        en: `Don't forget! Your payment for "${paymentData.courseTitle}" is still pending.`,
+        de: `Nicht vergessen! Ihre Zahlung für "${paymentData.courseTitle}" steht noch aus.`,
+        ar: `لا تنسَ! دفعتك لـ "${paymentData.courseTitle}" لا تزال معلقة.`,
+      },
+      actionUrl: `/payment/${paymentData.enrollmentId}`,
+      data: {
+        paymentId: paymentData.paymentId,
+        enrollmentId: paymentData.enrollmentId,
+        courseId: paymentData.courseId,
+      },
+      sendRealtime: true,
+    });
+  } catch (error) {
+    console.error('Failed to trigger payment reminder notification:', error);
+  }
+}
+
+export async function triggerPaymentRefunded(
+  studentId: string,
+  paymentData: {
+    paymentId: string;
+    enrollmentId: string;
+    courseId: string;
+    courseTitle: string;
+    refundReason?: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: studentId,
+      type: 'payment_refunded',
+      title: {
+        en: 'Payment Refunded',
+        de: 'Zahlung erstattet',
+        ar: 'تم استرداد الدفعة',
+      },
+      message: {
+        en: `Your payment for "${paymentData.courseTitle}" has been refunded${paymentData.refundReason ? `. Reason: ${paymentData.refundReason}` : '.'}`,
+        de: `Ihre Zahlung für "${paymentData.courseTitle}" wurde erstattet${paymentData.refundReason ? `. Grund: ${paymentData.refundReason}` : '.'}`,
+        ar: `تم استرداد دفعتك لـ "${paymentData.courseTitle}"${paymentData.refundReason ? `. السبب: ${paymentData.refundReason}` : '.'}`,
+      },
+      actionUrl: '/dashboard/user/payments',
+      data: {
+        paymentId: paymentData.paymentId,
+        enrollmentId: paymentData.enrollmentId,
+        courseId: paymentData.courseId,
+        refundReason: paymentData.refundReason,
+      },
+      sendRealtime: true,
+    });
+  } catch (error) {
+    console.error('Failed to trigger payment refunded notification:', error);
+  }
+}
+
+export async function triggerInstructorPayout(
+  instructorId: string,
+  payoutData: {
+    amount: number;
+    currency: string;
+    reference?: string;
+    note?: string;
+  }
+): Promise<void> {
+  try {
+    await createInAppNotification({
+      userId: instructorId,
+      type: 'custom',
+
+      title: {
+        en: 'Payout Recorded',
+        de: 'Auszahlung erfasst',
+        ar: 'تم تسجيل الدفعة',
+      },
+      message: {
+        en: `Admin has recorded a payout of ${payoutData.amount} ${payoutData.currency}${payoutData.reference ? `. Reference: ${payoutData.reference}` : ''}.`,
+        de: `Der Administrator hat eine Auszahlung von ${payoutData.amount} ${payoutData.currency}${payoutData.reference ? `. Referenz: ${payoutData.reference}` : ''} erfasst.`,
+        ar: `سجّل المسؤول دفعة بقيمة ${payoutData.amount} ${payoutData.currency}${payoutData.reference ? `. المرجع: ${payoutData.reference}` : ''}.`,
+      },
+      actionUrl: '/dashboard/instructor/earnings',
+      data: {
+        subtype: 'instructor_payout',
+        amount: payoutData.amount,
+        currency: payoutData.currency,
+        reference: payoutData.reference,
+        note: payoutData.note,
+      },
+      sendRealtime: true,
+    });
+  } catch (error) {
+    console.error('Failed to trigger instructor payout notification:', error);
   }
 }

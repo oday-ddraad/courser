@@ -4,7 +4,9 @@ import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb/connection';
 import { authOptions } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/permissions';
-import { Course, Enrollment, InstructorEarnings, Payment } from '@/lib/mongodb/models';
+import { Course, Enrollment, InstructorEarnings, Payment, User } from '@/lib/mongodb/models';
+import { triggerPaymentApproved } from '@/lib/services/pusherNotifications';
+
 
 function serializePayment(payment: any) {
   return {
@@ -76,8 +78,9 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     });
 
     // Revenue distribution
-    const course = await Course.findById(payment.courseId).select('instructorIds');
+    const course = await Course.findById(payment.courseId).select('instructorIds title slug').lean();
     if (course?.instructorIds?.length) {
+
       const adminId = new mongoose.Types.ObjectId(session.user.id);
       const instructorCount = course.instructorIds.length;
       const equalShare = instructorCount > 0 ? payment.amount / instructorCount : payment.amount;
@@ -127,7 +130,27 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       }
     }
 
+    // Notify student + instructors
+    try {
+      const student = await User.findById(payment.userId).select('name').lean();
+
+      await triggerPaymentApproved(payment.userId.toString(), {
+        paymentId: payment._id.toString(),
+        enrollmentId: payment.enrollmentId.toString(),
+        courseId: payment.courseId.toString(),
+        courseTitle: course?.title?.en || 'Course',
+        courseSlug: course?.slug || '',
+        amount: payment.amount,
+        currency: payment.currency,
+        instructorIds: (course?.instructorIds || []).map((id: any) => id.toString()),
+        studentName: student?.name || 'Student',
+      });
+    } catch (notifyError) {
+      console.error('Failed to send payment approved notifications:', notifyError);
+    }
+
     return NextResponse.json({
+
       success: true,
       data: serializePayment(payment.toObject()),
       message: 'Payment approved successfully',

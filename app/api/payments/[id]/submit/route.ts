@@ -3,7 +3,9 @@ import { getServerSession } from 'next-auth';
 import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb/connection';
 import { authOptions } from '@/lib/auth/config';
-import { Enrollment, Payment, PaymentSettings } from '@/lib/mongodb/models';
+import { Course, Enrollment, Payment, PaymentSettings, User } from '@/lib/mongodb/models';
+import { triggerPaymentSubmitted } from '@/lib/services/pusherNotifications';
+
 
 function serializePayment(payment: any) {
   return {
@@ -111,7 +113,30 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       },
     });
 
+    // Notify admins about submitted/resubmitted payment
+    try {
+      const [course, student] = await Promise.all([
+        Course.findById(payment.courseId).select('title').lean(),
+        User.findById(payment.userId).select('name').lean(),
+      ]);
+
+      await triggerPaymentSubmitted({
+        paymentId: payment._id.toString(),
+        enrollmentId: payment.enrollmentId.toString(),
+        courseId: payment.courseId.toString(),
+        courseTitle: course?.title?.en || 'Course',
+        studentId: payment.userId.toString(),
+        studentName: student?.name || 'Student',
+        amount: payment.amount,
+        currency: payment.currency,
+        referenceCode: payment.referenceCode,
+      });
+    } catch (notifyError) {
+      console.error('Failed to send payment submitted notification:', notifyError);
+    }
+
     return NextResponse.json({
+
       success: true,
       data: serializePayment(payment.toObject()),
     });

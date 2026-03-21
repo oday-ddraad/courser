@@ -4,7 +4,9 @@ import mongoose from 'mongoose';
 import connectDB from '@/lib/mongodb/connection';
 import { authOptions } from '@/lib/auth/config';
 import { hasPermission } from '@/lib/auth/permissions';
-import { Enrollment, Payment } from '@/lib/mongodb/models';
+import { Course, Enrollment, Payment } from '@/lib/mongodb/models';
+import { triggerPaymentRejected } from '@/lib/services/pusherNotifications';
+
 
 function serializePayment(payment: any) {
   return {
@@ -77,7 +79,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       },
     });
 
+    // Notify student about rejection
+    try {
+      const course = await Course.findById(payment.courseId).select('title').lean();
+
+      await triggerPaymentRejected(payment.userId.toString(), {
+        paymentId: payment._id.toString(),
+        enrollmentId: payment.enrollmentId.toString(),
+        courseId: payment.courseId.toString(),
+        courseTitle: course?.title?.en || 'Course',
+        rejectionReason,
+      });
+    } catch (notifyError) {
+      console.error('Failed to send payment rejected notification:', notifyError);
+    }
+
     return NextResponse.json({
+
       success: true,
       data: serializePayment(payment.toObject()),
       message: 'Payment rejected successfully',
