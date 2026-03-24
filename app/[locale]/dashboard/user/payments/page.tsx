@@ -137,10 +137,29 @@ export default function UserPaymentsPage() {
           Loading payment history...
         </div>
       ) : (
+
         <PaymentHistoryTable
           rows={rows as any}
           onView={(id) => setActivePaymentId(id)}
+          onResubmit={async (id) => {
+            try {
+              const res = await fetch(`/api/payments/${id}/submit`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+              });
+              if (!res.ok) {
+                const error = await res.json();
+                alert(`Resubmit failed: ${error.error || 'Unknown error'}`);
+                return;
+              }
+              // Redirect to payment page
+              window.location.href = `/en/payment/${id}`;
+            } catch (e) {
+              alert(`Resubmit failed`);
+            }
+          }}
         />
+
 
       )}
 

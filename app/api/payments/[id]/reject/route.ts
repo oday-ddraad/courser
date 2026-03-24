@@ -7,7 +7,6 @@ import { hasPermission } from '@/lib/auth/permissions';
 import { Course, Enrollment, Payment } from '@/lib/mongodb/models';
 import { triggerPaymentRejected } from '@/lib/services/pusherNotifications';
 
-
 function serializePayment(payment: any) {
   return {
     ...payment,
@@ -45,11 +44,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       return NextResponse.json({ success: false, error: 'Invalid JSON body' }, { status: 400 });
     }
 
-    const rejectionReason = body?.rejectionReason?.trim?.();
+    const rejectionReason = body?.reason?.trim?.();
     const adminNotes = body?.adminNotes?.trim?.() || '';
 
     if (!rejectionReason) {
-      return NextResponse.json({ success: false, error: 'rejectionReason is required' }, { status: 400 });
+      return NextResponse.json({ success: false, error: 'reason is required' }, { status: 400 });
     }
 
     const payment = await Payment.findById(id);
@@ -95,7 +94,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     }
 
     return NextResponse.json({
-
       success: true,
       data: serializePayment(payment.toObject()),
       message: 'Payment rejected successfully',
@@ -105,3 +103,4 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ success: false, error: 'Failed to reject payment' }, { status: 500 });
   }
 }
+
