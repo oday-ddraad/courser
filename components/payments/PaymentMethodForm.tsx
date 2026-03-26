@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+
 
 export interface PaymentMethodFormValues {
   name: string;
@@ -29,7 +31,11 @@ export default function PaymentMethodForm({
   onSubmit,
   className = '',
 }: PaymentMethodFormProps) {
+  const t = useTranslations('Payment');
+  const tt = (key: string, fallback: string) => (t.has(key) ? t(key) : fallback);
+
   const [values, setValues] = useState<PaymentMethodFormValues>({
+
     name: initialValues?.name ?? '',
     description: initialValues?.description ?? '',
     instructions: initialValues?.instructions ?? '',
@@ -90,7 +96,8 @@ export default function PaymentMethodForm({
       }}
     >
       <div>
-        <label className="mb-1 block text-sm font-medium">Method Name</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.methodName', 'Method Name')}</label>
+
         <input
           value={values.name}
           onChange={(e) => set('name', e.target.value)}
@@ -100,23 +107,26 @@ export default function PaymentMethodForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Payment Type</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.paymentType', 'Payment Type')}</label>
+
         <select
           value={values.type}
           onChange={(e) => set('type', e.target.value as PaymentMethodFormValues['type'])}
           required
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
         >
-          <option value="bank_transfer">Bank Transfer</option>
-          <option value="mobile_wallet">Mobile Wallet</option>
-          <option value="crypto">Crypto</option>
-          <option value="paypal">PayPal</option>
-          <option value="custom">Custom</option>
+          <option value="bank_transfer">{tt('methodForm.types.bank_transfer', 'Bank Transfer')}</option>
+          <option value="mobile_wallet">{tt('methodForm.types.mobile_wallet', 'Mobile Wallet')}</option>
+          <option value="crypto">{tt('methodForm.types.crypto', 'Crypto')}</option>
+          <option value="paypal">{tt('methodForm.types.paypal', 'PayPal')}</option>
+          <option value="custom">{tt('methodForm.types.custom', 'Custom')}</option>
+
         </select>
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Payment Address</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.paymentAddress', 'Payment Address')}</label>
+
         <input
           value={values.paymentAddress}
           onChange={(e) => set('paymentAddress', e.target.value)}
@@ -126,7 +136,8 @@ export default function PaymentMethodForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Description</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.description', 'Description')}</label>
+
         <textarea
           value={values.description}
           onChange={(e) => set('description', e.target.value)}
@@ -135,7 +146,8 @@ export default function PaymentMethodForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Instructions</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.instructions', 'Instructions')}</label>
+
         <textarea
           value={values.instructions}
           onChange={(e) => set('instructions', e.target.value)}
@@ -144,7 +156,8 @@ export default function PaymentMethodForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">Logo (required)</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.logoRequired', 'Logo (required)')}</label>
+
         <input
           type="file"
           accept="image/*"
@@ -160,14 +173,16 @@ export default function PaymentMethodForm({
         <textarea
           value={values.logo}
           onChange={(e) => set('logo', e.target.value)}
-          placeholder="Paste logo as base64 (data:image/...)"
+          placeholder={tt('methodForm.logoPlaceholder', 'Paste logo as base64 (data:image/...)')}
+
           required
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
         />
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium">QR Code (optional)</label>
+        <label className="mb-1 block text-sm font-medium">{tt('methodForm.qrOptional', 'QR Code (optional)')}</label>
+
         <input
           type="file"
           accept="image/*"
@@ -183,7 +198,8 @@ export default function PaymentMethodForm({
         <textarea
           value={values.qrCode || ''}
           onChange={(e) => set('qrCode', e.target.value)}
-          placeholder="Paste QR code as base64 (data:image/...)"
+          placeholder={tt('methodForm.qrPlaceholder', 'Paste QR code as base64 (data:image/...)')}
+
           className="w-full rounded border border-gray-300 px-3 py-2 text-sm dark:border-gray-700 dark:bg-gray-900"
         />
       </div>
@@ -195,17 +211,20 @@ export default function PaymentMethodForm({
             checked={values.isGlobal}
             onChange={(e) => set('isGlobal', e.target.checked)}
           />
-          Global method (available in all countries)
+          {tt('methodForm.globalMethod', 'Global method (available in all countries)')}
+
         </label>
 
         {!values.isGlobal && (
           <div className="space-y-2">
-            <label className="mb-1 block text-sm font-medium">Countries (ISO code, e.g. DE, SY, AE)</label>
+            <label className="mb-1 block text-sm font-medium">{tt('methodForm.countriesLabel', 'Countries (ISO code, e.g. DE, SY, AE)')}</label>
+
             <div className="flex gap-2">
               <input
                 value={values.countryInput || ''}
                 onChange={(e) => set('countryInput', e.target.value)}
-                placeholder="Enter country code"
+                placeholder={tt('methodForm.countryPlaceholder', 'Enter country code')}
+
                 className="w-full rounded border border-gray-300 px-3 py-2 text-sm uppercase dark:border-gray-700 dark:bg-gray-900"
               />
               <button
@@ -213,7 +232,8 @@ export default function PaymentMethodForm({
                 onClick={addCountry}
                 className="rounded bg-gray-800 px-3 py-2 text-sm text-white hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600"
               >
-                Add
+                {tt('methodForm.addCountry', 'Add')}
+
               </button>
             </div>
 
@@ -229,7 +249,8 @@ export default function PaymentMethodForm({
                       type="button"
                       onClick={() => removeCountry(code)}
                       className="text-blue-700 hover:text-blue-900 dark:text-blue-300 dark:hover:text-blue-100"
-                      aria-label={`Remove ${code}`}
+                      aria-label={tt('methodForm.removeCountryAria', 'Remove') + ` ${code}`}
+
                     >
                       ×
                     </button>
@@ -240,7 +261,8 @@ export default function PaymentMethodForm({
 
             {values.countries.length === 0 && (
               <p className="text-xs text-amber-600 dark:text-amber-400">
-                Add at least one country when Global method is disabled.
+                {tt('methodForm.countryRequiredHint', 'Add at least one country when Global method is disabled.')}
+
               </p>
             )}
           </div>
@@ -254,7 +276,8 @@ export default function PaymentMethodForm({
             checked={values.isActive}
             onChange={(e) => set('isActive', e.target.checked)}
           />
-          Active
+          {tt('methodForm.active', 'Active')}
+
         </label>
 
         <label className="flex items-center gap-2 text-sm">
@@ -263,7 +286,8 @@ export default function PaymentMethodForm({
             checked={values.requiresOperationNumber}
             onChange={(e) => set('requiresOperationNumber', e.target.checked)}
           />
-          Require operation number
+          {tt('methodForm.requiresOperationNumber', 'Require operation number')}
+
         </label>
 
         <label className="flex items-center gap-2 text-sm">
@@ -272,13 +296,15 @@ export default function PaymentMethodForm({
             checked={values.requiresScreenshot}
             onChange={(e) => set('requiresScreenshot', e.target.checked)}
           />
-          Require screenshot
+          {tt('methodForm.requiresScreenshot', 'Require screenshot')}
+
         </label>
       </div>
 
       <button type="submit" className="rounded bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700">
-        Save Payment Method
+        {tt('methodForm.saveButton', 'Save Payment Method')}
       </button>
+
     </form>
   );
 }

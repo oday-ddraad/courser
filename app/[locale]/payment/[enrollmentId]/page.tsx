@@ -16,7 +16,17 @@ interface Props {
 
 export default async function PaymentPage({ params }: Props) {
   const { locale, enrollmentId } = await params;
-  const t = await getTranslations({ locale, namespace: 'courses' });
+  const tCourses = await getTranslations({ locale, namespace: 'courses' });
+  const tPayment = await getTranslations({ locale, namespace: 'Payment' });
+
+  const tp = (key: string, fallback: string) => {
+    try {
+      return tPayment(key as never);
+    } catch {
+      return fallback;
+    }
+  };
+
 
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -65,15 +75,17 @@ export default async function PaymentPage({ params }: Props) {
 
   const methodOptions = availableMethods.map((m: any) => ({
     id: m._id.toString(),
-    name: m.name?.[locale as 'en' | 'de' | 'ar'] || m.name?.en || 'Payment Method',
+    name: m.name?.[locale as 'en' | 'de' | 'ar'] || m.name?.en || tp('methodFallback', 'Payment Method'),
     description: m.description?.[locale as 'en' | 'de' | 'ar'] || m.description?.en || '',
     logo: m.logo || '',
   }));
 
+
   const selectedMethodName =
     selectedMethod?.name?.[locale as 'en' | 'de' | 'ar'] ||
     selectedMethod?.name?.en ||
-    'Payment Method';
+    tp('methodFallback', 'Payment Method');
+
 
   const selectedInstructions =
     selectedMethod?.instructions?.[locale as 'en' | 'de' | 'ar'] ||
@@ -85,11 +97,12 @@ export default async function PaymentPage({ params }: Props) {
       <div className="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-            {t('enrollNow')} - Payment
+            {tCourses('enrollNow')} - {tp('pageTitle', 'Payment')}
           </h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-            Complete your manual payment and submit proof for admin review.
+            {tp('pageSubtitle', 'Complete your manual payment and submit proof for admin review.')}
           </p>
+
         </div>
 
         <PaymentStatusBanner
@@ -97,46 +110,52 @@ export default async function PaymentPage({ params }: Props) {
           expiresAt={payment.expiresAt}
           message={
             payment.status === 'pending'
-              ? 'Your payment is pending review. Submit proof to continue.'
+              ? tp('statusMessagePending', 'Your payment is pending review. Submit proof to continue.')
               : payment.status === 'rejected'
-              ? payment.rejectionReason || 'Your payment was rejected. Please resubmit.'
+              ? payment.rejectionReason || tp('statusMessageRejectedFallback', 'Your payment was rejected. Please resubmit.')
               : undefined
           }
+
           className="mb-6"
         />
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Select Payment Method
+              {tp('selectMethodTitle', 'Select Payment Method')}
             </h2>
+
             <PaymentMethodSelector methods={methodOptions} selectedId={selectedMethodId} />
           </section>
 
           <section className="rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
             <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
-              Payment Details
+              {tp('detailsTitle', 'Payment Details')}
             </h2>
+
             {selectedMethod ? (
               <PaymentDetailsPanel
                 methodName={selectedMethodName}
-                paymentAddress={selectedMethod.paymentAddress || 'N/A'}
+                paymentAddress={selectedMethod.paymentAddress || tp('notAvailable', 'N/A')}
                 instructions={selectedInstructions}
                 qrCodeBase64={selectedMethod.qrCode || ''}
                 referenceCode={payment.referenceCode}
               />
+
             ) : (
               <p className="text-sm text-gray-600 dark:text-gray-300">
-                No payment methods available for your country.
+                {tp('noMethodsAvailable', 'No payment methods available for your country.')}
               </p>
+
             )}
           </section>
         </div>
 
         <section className="mt-6 rounded-xl border border-gray-200 bg-white p-5 dark:border-gray-700 dark:bg-gray-800">
           <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
-            Submit Payment Proof
+            {tp('submitProofTitle', 'Submit Payment Proof')}
           </h2>
+
           <PaymentProofSection
             paymentId={payment._id.toString()}
             requireOperationNumber={selectedMethod?.requiresOperationNumber ?? true}

@@ -1,7 +1,9 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import {
+
   COMPRESSION_PRESETS,
   compressImage,
   type CompressionOptions,
@@ -27,7 +29,9 @@ export default function ReceiptUploader({
   onChange,
   className = '',
 }: ReceiptUploaderProps) {
+  const t = useTranslations('Payment');
   const inputRef = useRef<HTMLInputElement | null>(null);
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,7 +48,8 @@ export default function ReceiptUploader({
       const next = results.map((r) => r.base64);
       onChange?.(next, results);
     } catch (err: any) {
-      setError(err?.message || 'Failed to process images');
+      setError(err?.message || t('errors.imageProcessFailed'));
+
     } finally {
       setIsProcessing(false);
       if (inputRef.current) inputRef.current.value = '';
@@ -68,8 +73,9 @@ export default function ReceiptUploader({
         disabled={isProcessing}
         className="rounded-lg border border-gray-300 px-4 py-2 text-sm hover:bg-gray-50 disabled:opacity-60 dark:border-gray-700 dark:hover:bg-gray-800"
       >
-        {isProcessing ? 'Processing...' : 'Upload Receipt'}
+        {isProcessing ? t('receiptUploader.processing') : t('receiptUploader.upload')}
       </button>
+
 
       {error ? <p className="text-sm text-red-600">{error}</p> : null}
 

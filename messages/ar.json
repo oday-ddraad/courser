@@ -289,9 +289,8 @@
           "deleteConfirmMessage": "هل أنت متأكد من حذف الفئة \"{category}\"؟",
           "cancel": "إلغاء"
         },
-        "instructors": "Instructors",
-        "courseType": "نوع الدورة",
         "instructors": "المحاضرين",
+        "courseType": "نوع الدورة",
         "approved": "موافق عليه",
         "rejected": "مرفوض",
         "approvalStatus": "حالة الموافقة",
@@ -1048,6 +1047,134 @@
       "notProvided": "غير مُقدم",
       "documents": "المستندات",
       "download": "تحميل"
+    }
+  },
+  "Payment": {
+    "pageTitle": "الدفع",
+    "pageSubtitle": "Complete your manual payment and submit proof for admin review.",
+    "methodFallback": "Payment Method",
+    "statusTitle": "Payment Status",
+    "statusMessagePending": "Your payment is pending review. Submit proof to continue.",
+    "statusMessageRejectedFallback": "Your payment was rejected. Please resubmit.",
+    "selectMethodTitle": "Select Payment Method",
+    "detailsTitle": "Payment Details",
+    "submitProofTitle": "Submit Payment Proof",
+    "paymentAddressLabel": "Payment Address",
+    "instructionsLabel": "Instructions",
+    "notAvailable": "N/A",
+    "noMethodsAvailable": "No payment methods available for your country.",
+    "referenceCodeLabel": "Reference Code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "operationNumberLabel": "Operation Number",
+    "operationNumberPlaceholder": "Enter operation/transaction number",
+    "submitProofButton": "Submit Proof",
+    "qrAlt": "Payment QR Code",
+    "noQrAvailable": "No QR code available",
+    "downloadQr": "Download QR",
+    "expiryExpired": "Payment expired",
+    "expiryIn": "Expires in {time}",
+    "receiptUploader": {
+      "upload": "Upload Receipt",
+      "processing": "Processing image..."
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "refunded": "Refunded"
+    },
+    "errors": {
+      "imageProcessFailed": "Failed to process image",
+      "adminTitle": "فشلت عملية الدفع",
+      "userTitle": "حدث خطأ ما",
+      "userGeneric": "تعذّر تنفيذ طلبك الآن. يرجى المحاولة مرة أخرى.",
+      "loadFailed": "فشل تحميل المدفوعات",
+      "bulkApproveFailed": "فشلت الموافقة الجماعية على المدفوعات",
+      "approveFailed": "فشلت الموافقة على الدفعة",
+      "rejectFailed": "فشل رفض الدفعة",
+      "refundFailed": "فشل استرداد الدفعة"
+    },
+    "history": {
+      "course": "Course",
+      "amount": "Amount",
+      "method": "Method",
+      "status": "Status",
+      "submitted": "Submitted",
+      "actions": "Actions",
+      "view": "View",
+      "resubmit": "Resubmit",
+      "empty": "No payments found"
+    },
+    "detail": {
+      "title": "Payment Details",
+      "close": "Close",
+      "course": "Course",
+      "amount": "Amount",
+      "method": "Method",
+      "status": "Status",
+      "operationNumber": "Operation #",
+      "reason": "Reason",
+      "receiptAlt": "Receipt"
+    },
+    "instructor": {
+      "course": "Course",
+      "students": "Students",
+      "revenue": "Revenue",
+      "empty": "No earnings data"
+    },
+    "adminStats": {
+      "totalRevenue": "Total Revenue",
+      "pendingReview": "Pending Review",
+      "approved": "Approved",
+      "todayRevenue": "Today Revenue"
+    },
+    "methodForm": {
+      "methodName": "Method Name",
+      "paymentType": "Payment Type",
+      "types": {
+        "bank_transfer": "Bank Transfer",
+        "mobile_wallet": "Mobile Wallet",
+        "crypto": "Crypto",
+        "paypal": "PayPal",
+        "custom": "Custom"
+      },
+      "paymentAddress": "Payment Address",
+      "description": "Description",
+      "instructions": "Instructions",
+      "logoRequired": "Logo (required)",
+      "logoPlaceholder": "Paste logo as base64 (data:image/...)",
+      "qrOptional": "QR Code (optional)",
+      "qrPlaceholder": "Paste QR code as base64 (data:image/...)",
+      "globalMethod": "Global method (available in all countries)",
+      "countriesLabel": "Countries (ISO code, e.g. DE, SY, AE)",
+      "countryPlaceholder": "Enter country code",
+      "addCountry": "Add",
+      "removeCountryAria": "Remove",
+      "countryRequiredHint": "Add at least one country when Global method is disabled.",
+      "active": "Active",
+      "requiresOperationNumber": "Require operation number",
+      "requiresScreenshot": "Require screenshot",
+      "saveButton": "Save Payment Method"
+    },
+    "review": {
+      "title": "Review Payment",
+      "lastRejection": "Last rejection",
+      "adminNotesPlaceholder": "Admin notes (internal only)",
+      "rejectionReasonPlaceholder": "Rejection reason (shown to student)",
+      "refundReasonPlaceholder": "Refund reason (shown to student)",
+      "receiptScreenshots": "Receipt Screenshots",
+      "processing": "Processing...",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "refundButton": "Refund",
+      "cancelButton": "Cancel",
+      "approveFailed": "Approve failed",
+      "rejectFailed": "Reject failed",
+      "refundFailed": "Refund failed",
+      "unknownError": "Unknown error"
     }
   }
 }

@@ -1,8 +1,10 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import PaymentStatusBadge from './PaymentStatusBadge';
 import PaymentExpiryCountdown from './PaymentExpiryCountdown';
 import type { PaymentStatus } from '@/types/database';
+
 
 interface PaymentStatusBannerProps {
   status: PaymentStatus;
@@ -17,10 +19,14 @@ export default function PaymentStatusBanner({
   expiresAt,
   className = '',
 }: PaymentStatusBannerProps) {
+  const t = useTranslations('Payment');
+
   return (
+
     <div className={['rounded-xl border border-gray-200 p-4 dark:border-gray-700', className].join(' ')}>
       <div className="flex items-center justify-between gap-3">
-        <h4 className="text-sm font-semibold">Payment Status</h4>
+        <h4 className="text-sm font-semibold">{t('statusTitle')}</h4>
+
         <PaymentStatusBadge status={status} />
       </div>
 

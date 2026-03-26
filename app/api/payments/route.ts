@@ -12,15 +12,28 @@ function generateReferenceCode() {
 }
 
 function serializePayment(payment: any) {
+  const serializeRef = (value: any) => {
+    if (!value) return value;
+    if (typeof value === 'string') return value;
+    if (value instanceof mongoose.Types.ObjectId) return value.toString();
+    if (typeof value === 'object' && value._id) {
+      return {
+        ...value,
+        _id: value._id?.toString?.() || value._id,
+      };
+    }
+    return value?.toString?.() || value;
+  };
+
   return {
     ...payment,
     _id: payment._id?.toString?.() || payment._id,
-    enrollmentId: payment.enrollmentId?.toString?.() || payment.enrollmentId,
-    userId: payment.userId?.toString?.() || payment.userId,
-    courseId: payment.courseId?.toString?.() || payment.courseId,
-    paymentMethodId: payment.paymentMethodId?.toString?.() || payment.paymentMethodId,
-    reviewedBy: payment.reviewedBy?.toString?.() || payment.reviewedBy || null,
-    refundedBy: payment.refundedBy?.toString?.() || payment.refundedBy || null,
+    enrollmentId: serializeRef(payment.enrollmentId),
+    userId: serializeRef(payment.userId),
+    courseId: serializeRef(payment.courseId),
+    paymentMethodId: serializeRef(payment.paymentMethodId),
+    reviewedBy: serializeRef(payment.reviewedBy) || null,
+    refundedBy: serializeRef(payment.refundedBy) || null,
     createdAt: payment.createdAt?.toISOString?.() || payment.createdAt,
     updatedAt: payment.updatedAt?.toISOString?.() || payment.updatedAt,
     reviewedAt: payment.reviewedAt?.toISOString?.() || payment.reviewedAt,
@@ -30,6 +43,7 @@ function serializePayment(payment: any) {
     lastSubmittedAt: payment.lastSubmittedAt?.toISOString?.() || payment.lastSubmittedAt,
   };
 }
+
 
 // GET /api/payments - List payments (admin: all, user/instructor: own-related)
 export async function GET(request: Request) {

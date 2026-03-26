@@ -1,11 +1,16 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useSession } from 'next-auth/react';
+import { useTranslations } from 'next-intl';
 import AdminPaymentStats from '@/components/payments/AdminPaymentStats';
+
 import PaymentUrgencyIndicator from '@/components/payments/PaymentUrgencyIndicator';
 import AdminPaymentReviewModal from '@/components/payments/AdminPaymentReviewModal';
 import BulkApproveButton from '@/components/payments/BulkApproveButton';
 import PaymentStatusBadge from '@/components/payments/PaymentStatusBadge';
+import PaymentErrorNotice from '@/components/payments/PaymentErrorNotice';
+
 
 interface PaymentRow {
   _id: string;
@@ -23,8 +28,21 @@ interface PaymentRow {
 }
 
 export default function AdminPaymentsPage() {
+  const { data: session } = useSession();
+  const t = useTranslations('Payment');
+  const tt = (key: string, fallback: string) => {
+    try {
+      return t(key as never);
+    } catch {
+      return fallback;
+    }
+  };
+
   const [loading, setLoading] = useState(true);
+
   const [payments, setPayments] = useState<PaymentRow[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [activePayment, setActivePayment] = useState<PaymentRow | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
@@ -56,16 +74,23 @@ export default function AdminPaymentsPage() {
 
   const fetchPayments = async () => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch('/api/payments?limit=50', { cache: 'no-store' });
       const json = await res.json();
       if (res.ok && json?.success) {
         setPayments(json.data || []);
+      } else {
+        setError(json?.error || tt('errors.loadFailed', 'Failed to load payments'));
       }
+    } catch {
+      setError(tt('errors.loadFailed', 'Failed to load payments'));
+
     } finally {
       setLoading(false);
     }
   };
+
 
   useEffect(() => {
     fetchPayments();
@@ -92,6 +117,7 @@ export default function AdminPaymentsPage() {
 
   const handleBulkApprove = async () => {
     if (selectedPendingIds.length === 0) return;
+    setError(null);
     const res = await fetch('/api/payments/bulk-approve', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -100,8 +126,13 @@ export default function AdminPaymentsPage() {
     if (res.ok) {
       setSelectedIds([]);
       setRefreshTick((v) => v + 1);
+    } else {
+      const json = await res.json().catch(() => ({}));
+      setError(json?.error || tt('errors.bulkApproveFailed', 'Failed to bulk approve payments'));
     }
+
   };
+
 
   const handleExport = () => {
     window.open('/api/payments/export?format=csv', '_blank');
@@ -109,6 +140,7 @@ export default function AdminPaymentsPage() {
 
   const handleApprove = async (adminNotes?: string) => {
     if (!activePayment) return;
+    setError(null);
     const res = await fetch(`/api/payments/${activePayment._id}/approve`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -118,11 +150,16 @@ export default function AdminPaymentsPage() {
     if (res.ok) {
       setActivePayment(null);
       setRefreshTick((v) => v + 1);
+    } else {
+      const json = await res.json().catch(() => ({}));
+      setError(json?.error || tt('errors.approveFailed', 'Failed to approve payment'));
     }
   };
 
+
   const handleReject = async (reason: string, adminNotes?: string) => {
     if (!activePayment) return;
+    setError(null);
     const res = await fetch(`/api/payments/${activePayment._id}/reject`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -132,11 +169,17 @@ export default function AdminPaymentsPage() {
     if (res.ok) {
       setActivePayment(null);
       setRefreshTick((v) => v + 1);
+    } else {
+      const json = await res.json().catch(() => ({}));
+      setError(json?.error || tt('errors.rejectFailed', 'Failed to reject payment'));
     }
+
   };
+
 
   const handleRefund = async (reason: string) => {
     if (!activePayment) return;
+    setError(null);
     const res = await fetch(`/api/payments/${activePayment._id}/refund`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
@@ -146,8 +189,13 @@ export default function AdminPaymentsPage() {
     if (res.ok) {
       setActivePayment(null);
       setRefreshTick((v) => v + 1);
+    } else {
+      const json = await res.json().catch(() => ({}));
+      setError(json?.error || tt('errors.refundFailed', 'Failed to refund payment'));
     }
+
   };
+
 
   const reviewPayment = activePayment
     ? {
@@ -185,7 +233,13 @@ export default function AdminPaymentsPage() {
         </p>
       </div>
 
+      <PaymentErrorNotice
+        message={error}
+        role={session?.user?.role}
+      />
+
       <AdminPaymentStats
+
         totalRevenue={totalRevenue}
         pendingCount={pendingCount}
         approvedCount={approvedCount}
@@ -248,7 +302,8 @@ export default function AdminPaymentsPage() {
                 const userName =
                   typeof payment.userId === 'string'
                     ? payment.userId
-                    : payment.userId?.name || payment.userId?.email || '-';
+                    : payment.userId?.name || payment.userId?.email || 'Unknown Student';
+
 
                 return (
                   <tr key={payment._id} className="border-t border-gray-100 dark:border-gray-700">

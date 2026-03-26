@@ -1,6 +1,8 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import type { PaymentStatus } from '@/types/database';
+
 
 interface PaymentStatusBadgeProps {
   status: PaymentStatus;
@@ -22,20 +24,24 @@ const STATUS_STYLES: Record<PaymentStatus, string> = {
     'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700',
 };
 
-const STATUS_LABELS: Record<PaymentStatus, string> = {
-  pending: 'Pending',
-  approved: 'Approved',
-  rejected: 'Rejected',
-  cancelled: 'Cancelled',
-  expired: 'Expired',
-  refunded: 'Refunded',
+const STATUS_LABEL_KEYS: Record<PaymentStatus, string> = {
+  pending: 'status.pending',
+  approved: 'status.approved',
+  rejected: 'status.rejected',
+  cancelled: 'status.cancelled',
+  expired: 'status.expired',
+  refunded: 'status.refunded',
 };
+
 
 export default function PaymentStatusBadge({
   status,
   className = '',
 }: PaymentStatusBadgeProps) {
+  const t = useTranslations('Payment');
+
   return (
+
     <span
       className={[
         'inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium',
@@ -43,7 +49,8 @@ export default function PaymentStatusBadge({
         className,
       ].join(' ')}
     >
-      {STATUS_LABELS[status]}
+      {t(STATUS_LABEL_KEYS[status] as never)}
+
     </span>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import PaymentProofForm from './PaymentProofForm';
+
 
 interface PaymentProofSectionProps {
   paymentId: string;
@@ -14,9 +16,19 @@ export default function PaymentProofSection({
   requireOperationNumber = true,
 }: PaymentProofSectionProps) {
   const router = useRouter();
+  const t = useTranslations('Payment');
+  const tp = (key: string, fallback: string) => {
+    try {
+      return t(key as never);
+    } catch {
+      return fallback;
+    }
+  };
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
 
   const handleSubmit = async (payload: {
     operationNumber?: string;
@@ -41,14 +53,17 @@ export default function PaymentProofSection({
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data?.error || 'Failed to submit payment proof');
+        throw new Error(data?.error || tp('errors.submitFailed', 'Failed to submit payment proof'));
       }
 
-      setSuccess('Payment proof submitted successfully. Waiting for admin review.');
+      setSuccess(
+        tp('submittedSuccess', 'Payment proof submitted successfully. Waiting for admin review.')
+      );
       router.refresh();
     } catch (err: any) {
-      setError(err?.message || 'Failed to submit payment proof');
+      setError(err?.message || tp('errors.submitFailed', 'Failed to submit payment proof'));
     } finally {
+
       setIsSubmitting(false);
     }
   };
@@ -69,9 +84,10 @@ export default function PaymentProofSection({
 
       {isSubmitting && (
         <div className="text-sm text-gray-600 dark:text-gray-300">
-          Submitting payment proof...
+          {tp('submittingProof', 'Submitting payment proof...')}
         </div>
       )}
+
 
       <PaymentProofForm
         requireOperationNumber={requireOperationNumber}

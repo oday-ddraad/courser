@@ -17,7 +17,6 @@
     "sending": "Sending...",
     "emailWillArrive": "A verification email will arrive in your mailbox shortly. Please check your inbox and spam folder."
   },
-
   "Articles": {
     "Hero": {
       "title": "Master Languages Today",
@@ -83,7 +82,6 @@
       "phoneNumberRequired": "Phone number is required",
       "phoneOptional": "Phone Number (Optional)",
       "phoneHint": "Country code auto-filled based on your country. Edit if needed.",
-
       "streetAddress": "Street Address",
       "city": "City",
       "state": "State/Province",
@@ -106,7 +104,6 @@
       "documentName": "Document Name",
       "documentNamePlaceholder": "e.g., Driver License, Student ID",
       "documentUploaded": "Document uploaded successfully",
-
       "uploadFile": "Upload File",
       "maxFileSize": "Max 5MB. Allowed: PDF, JPG, PNG, WEBP",
       "whatsappConsent": "WhatsApp Contact Consent",
@@ -145,8 +142,6 @@
       "goToDashboard": "Go to Dashboard",
       "thankYou": "Thank you for verifying your email!"
     },
-
-
     "profile": {
       "title": "My Profile",
       "subtitle": "View and manage your profile information",
@@ -172,9 +167,7 @@
       "cannotChange": "Cannot be changed",
       "viewProfile": "View Profile"
     }
-
   },
-
   "Dashboard": {
     "admin": {
       "title": "Admin Dashboard",
@@ -235,9 +228,6 @@
         "status": "Status",
         "actions": "Actions",
         "manageLessons": "Manage Lessons",
-
-
-
         "noInstructor": "No instructor",
         "edit": "Edit",
         "manageStudents": "Manage Students",
@@ -416,12 +406,11 @@
         "emailSystemEnabled": "Email system enabled",
         "trackEmailOpens": "Track email opens",
         "trackEmailClicks": "Track email clicks",
-        "notifyAdminOnLimit": "Notify admin on limit warnings",
+        "notifyAdminOnLimit": "Notify admin when limit warning reached",
         "counterManagement": "Counter Management",
         "resetDailyCounter": "Reset Daily Counter",
         "resetMonthlyCounter": "Reset Monthly Counter",
         "notifications": "Notifications",
-
         "settingsSaved": "Settings saved successfully",
         "settingsSaveFailed": "Failed to save settings",
         "countersReset": "Counters reset successfully",
@@ -488,7 +477,6 @@
         "callToAction": "Call to Action",
         "divider": "Divider",
         "footer": "Footer",
-        "variables": "Variables",
         "addVariable": "Add Variable",
         "insertVariable": "Insert {{variable}}",
         "selectBlockFirst": "Select a block first",
@@ -503,9 +491,7 @@
         "description": "Description",
         "templateIsActive": "Template is active",
         "cancel": "Cancel",
-        "createTemplate": "Create Template",
         "updateTemplate": "Update Template",
-        "saving": "Saving...",
         "sampleValues": "Sample Values",
         "enterSampleValues": "Enter sample values for template variables:",
         "contentPreview": "Content Preview",
@@ -523,17 +509,14 @@
         "splitPercentage": "Split Percentage for Variant A",
         "variantBPercentage": "Variant B will receive {percentage}%",
         "testDuration": "Test Duration (days)",
-        "status": "Status",
         "winner": "Winner",
         "startTest": "Start Test",
         "pause": "Pause",
         "resume": "Resume",
         "endAndSelectWinner": "End & Select Winner",
         "testResults": "Test Results",
-        "sent": "Sent",
         "opens": "Opens",
         "clicks": "Clicks",
-        "openRate": "Open Rate",
         "clickRate": "Click Rate",
         "suggestedWinner": "Suggested winner based on open rate: Variant {winner}",
         "saveConfiguration": "Save Configuration",
@@ -565,13 +548,8 @@
         "limitDefault": "Default: 1000 conversations per month",
         "warningThreshold": "Warning Threshold (%)",
         "thresholdDefault": "Default: 80% - triggers warning notification",
-        "notifyAdminOnLimit": "Notify admin when limit warning reached",
-        "resetMonthlyCounter": "Reset Monthly Counter",
         "whatsappSettingsSaved": "WhatsApp settings saved successfully",
         "whatsappSettingsSaveFailed": "Failed to save WhatsApp settings",
-        "confirmReset": "Are you sure you want to reset {type} counters?",
-        "countersReset": "Counters reset successfully",
-        "countersResetFailed": "Failed to reset counters",
         "jitsi": {
           "title": "Jitsi Settings",
           "subtitle": "Configure video conferencing settings",
@@ -636,10 +614,7 @@
           "saveButton": "Save Jitsi Settings"
         }
       },
-
-
       "messages": {
-
         "title": "Title",
         "subtitle": "Send notifications and messages to users",
         "recipients": "Recipients",
@@ -736,7 +711,6 @@
         "cannotEditApproved": "Approved courses cannot be edited. Contact admin for changes.",
         "rejectionReason": "Rejection Reason"
       },
-
       "lessons": {
         "title": "Manage Lessons",
         "subtitle": "Add, edit, and organize course lessons",
@@ -760,7 +734,6 @@
         "order": "Order",
         "backToCourse": "Back to Course"
       }
-
     },
     "user": {
       "title": "My Dashboard",
@@ -854,15 +827,15 @@
     "studentReviews": "Student Reviews",
     "enrollToChat": "Enroll to join the chat"
   },
-    "notifications": {
+  "notifications": {
     "title": "Notifications",
     "notifications": "Notifications",
     "noNotifications": "No notifications yet",
     "loading": "Loading...",
     "markAsRead": "Mark as read",
     "markAllAsRead": "Mark all as read",
-    "connectingToPusher" :"connecting To Pusher",
-    "pusherConnected":"pusher Connected",
+    "connectingToPusher": "connecting To Pusher",
+    "pusherConnected": "pusher Connected",
     "view": "View",
     "viewAll": "View all notifications",
     "types": {
@@ -1078,6 +1051,133 @@
       "documents": "Documents",
       "download": "Download"
     }
-
+  },
+  "Payment": {
+    "pageTitle": "Payment",
+    "pageSubtitle": "Complete your manual payment and submit proof for admin review.",
+    "methodFallback": "Payment Method",
+    "statusTitle": "Payment Status",
+    "statusMessagePending": "Your payment is pending review. Submit proof to continue.",
+    "statusMessageRejectedFallback": "Your payment was rejected. Please resubmit.",
+    "selectMethodTitle": "Select Payment Method",
+    "detailsTitle": "Payment Details",
+    "submitProofTitle": "Submit Payment Proof",
+    "paymentAddressLabel": "Payment Address",
+    "instructionsLabel": "Instructions",
+    "notAvailable": "N/A",
+    "noMethodsAvailable": "No payment methods available for your country.",
+    "referenceCodeLabel": "Reference Code",
+    "copy": "Copy",
+    "copied": "Copied",
+    "operationNumberLabel": "Operation Number",
+    "operationNumberPlaceholder": "Enter operation/transaction number",
+    "submitProofButton": "Submit Proof",
+    "qrAlt": "Payment QR Code",
+    "noQrAvailable": "No QR code available",
+    "downloadQr": "Download QR",
+    "expiryExpired": "Payment expired",
+    "expiryIn": "Expires in {time}",
+    "receiptUploader": {
+      "upload": "Upload Receipt",
+      "processing": "Processing image..."
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "cancelled": "Cancelled",
+      "expired": "Expired",
+      "refunded": "Refunded"
+    },
+    "errors": {
+      "imageProcessFailed": "Failed to process image",
+      "adminTitle": "Payment operation failed",
+      "userTitle": "Something went wrong",
+      "userGeneric": "We could not process your request right now. Please try again.",
+      "loadFailed": "Failed to load payments",
+      "bulkApproveFailed": "Failed to bulk approve payments",
+      "approveFailed": "Failed to approve payment",
+      "rejectFailed": "Failed to reject payment",
+      "refundFailed": "Failed to refund payment"
+    },
+    "history": {
+      "course": "Course",
+      "amount": "Amount",
+      "method": "Method",
+      "status": "Status",
+      "submitted": "Submitted",
+      "actions": "Actions",
+      "view": "View",
+      "resubmit": "Resubmit",
+      "empty": "No payments found"
+    },
+    "detail": {
+      "title": "Payment Details",
+      "close": "Close",
+      "course": "Course",
+      "amount": "Amount",
+      "method": "Method",
+      "status": "Status",
+      "operationNumber": "Operation #",
+      "reason": "Reason",
+      "receiptAlt": "Receipt"
+    },
+    "instructor": {
+      "course": "Course",
+      "students": "Students",
+      "revenue": "Revenue",
+      "empty": "No earnings data"
+    },
+    "adminStats": {
+      "totalRevenue": "Total Revenue",
+      "pendingReview": "Pending Review",
+      "approved": "Approved",
+      "todayRevenue": "Today Revenue"
+    },
+    "methodForm": {
+      "methodName": "Method Name",
+      "paymentType": "Payment Type",
+      "types": {
+        "bank_transfer": "Bank Transfer",
+        "mobile_wallet": "Mobile Wallet",
+        "crypto": "Crypto",
+        "paypal": "PayPal",
+        "custom": "Custom"
+      },
+      "paymentAddress": "Payment Address",
+      "description": "Description",
+      "instructions": "Instructions",
+      "logoRequired": "Logo (required)",
+      "logoPlaceholder": "Paste logo as base64 (data:image/...)",
+      "qrOptional": "QR Code (optional)",
+      "qrPlaceholder": "Paste QR code as base64 (data:image/...)",
+      "globalMethod": "Global method (available in all countries)",
+      "countriesLabel": "Countries (ISO code, e.g. DE, SY, AE)",
+      "countryPlaceholder": "Enter country code",
+      "addCountry": "Add",
+      "removeCountryAria": "Remove",
+      "countryRequiredHint": "Add at least one country when Global method is disabled.",
+      "active": "Active",
+      "requiresOperationNumber": "Require operation number",
+      "requiresScreenshot": "Require screenshot",
+      "saveButton": "Save Payment Method"
+    },
+    "review": {
+      "title": "Review Payment",
+      "lastRejection": "Last rejection",
+      "adminNotesPlaceholder": "Admin notes (internal only)",
+      "rejectionReasonPlaceholder": "Rejection reason (shown to student)",
+      "refundReasonPlaceholder": "Refund reason (shown to student)",
+      "receiptScreenshots": "Receipt Screenshots",
+      "processing": "Processing...",
+      "approveButton": "Approve",
+      "rejectButton": "Reject",
+      "refundButton": "Refund",
+      "cancelButton": "Cancel",
+      "approveFailed": "Approve failed",
+      "rejectFailed": "Reject failed",
+      "refundFailed": "Refund failed",
+      "unknownError": "Unknown error"
+    }
   }
 }

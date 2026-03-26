@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslations } from 'next-intl';
+
 
 interface PaymentExpiryCountdownProps {
   expiresAt: string | Date;
@@ -16,7 +18,9 @@ function formatMs(ms: number) {
 }
 
 export default function PaymentExpiryCountdown({ expiresAt, className = '' }: PaymentExpiryCountdownProps) {
+  const t = useTranslations('Payment');
   const target = useMemo(() => new Date(expiresAt).getTime(), [expiresAt]);
+
   const [left, setLeft] = useState(Math.max(0, target - Date.now()));
 
   useEffect(() => {
@@ -30,7 +34,8 @@ export default function PaymentExpiryCountdown({ expiresAt, className = '' }: Pa
 
   return (
     <div className={['rounded-lg border p-3 text-sm', isExpired ? 'border-red-300 bg-red-50 text-red-700' : 'border-amber-300 bg-amber-50 text-amber-700', className].join(' ')}>
-      {isExpired ? 'Payment window expired' : `Expires in ${formatMs(left)}`}
+      {isExpired ? t('expiryExpired') : t('expiryIn', { time: formatMs(left) })}
+
     </div>
   );
 }
