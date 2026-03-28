@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Validate required secrets
         env:
-          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_BASE_URL: ${{ secrets.VERCEL_DOMAIN }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           if [ -z "$CRON_BASE_URL" ]; then
@@ -27,7 +27,7 @@ jobs:
 
       - name: Trigger expire-payments cron route
         env:
-          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_BASE_URL: ${{ secrets.VERCEL_DOMAIN }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
@@ -45,7 +45,7 @@ jobs:
 
       - name: Trigger payment-reminders cron route
         env:
-          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_BASE_URL: ${{ secrets.VERCEL_DOMAIN }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           set -euo pipefail
