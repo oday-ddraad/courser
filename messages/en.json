@@ -19,22 +19,22 @@
   },
   "Articles": {
     "Hero": {
-      "title": "Master Languages Today",
-      "subtitle": "Learn English, German, and Arabic with expert tutors.",
-      "cta": "Get Started",
-      "journeyTitle": "Your Journey to Mastery Begins Here"
+      "title": "Master German Today",
+      "subtitle": "Learn German with experts.",
+      "cta": "Start Now",
+      "journeyTitle": "Your gateway to study and work in Germany"
     },
     "courses": {
       "title": "World-Class Courses",
-      "desc": "Master over 30 languages with our immersive, AI-driven curriculum designed for all levels."
+      "desc": "Learn German (A1–C1) with specialized teachers for each level. Conversation lessons are provided by native German-speaking teachers to ensure correct pronunciation and speaking fluency."
     },
     "prices": {
-      "title": "Flexible Pricing",
-      "desc": "Choose a plan that fits your budget. From free basics to premium one-on-one coaching."
+      "title": "Flexible Pricing Plans",
+      "desc": "Choose the plan that fits your budget, from free basic courses to premium one-on-one training."
     },
     "contact": {
-      "title": "Get in Touch",
-      "desc": "Our support team is available 24/7 to help you on your linguistic journey."
+      "title": "Contact Us",
+      "desc": "Our support team is available 24/7 to assist you on your language journey."
     },
     "cta": "Start Now"
   },

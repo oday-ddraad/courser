@@ -19,22 +19,22 @@
   },
   "Articles": {
     "Hero": {
-      "title": "Beherrschen Sie Sprachen Heute",
-      "subtitle": "Lernen Sie Englisch, Deutsch und Arabisch mit Expertentutoren.",
-      "cta": "Loslegen",
-      "journeyTitle": "Ihre Reise zur Meisterschaft beginnt hier"
+      "title": "Beherrschen Sie heute Deutsch",
+      "subtitle": "Lernen Sie Deutsch mit Experten.",
+      "cta": "Jetzt starten",
+      "journeyTitle": "Ihr Tor zum Studium und zur Arbeit in Deutschland"
     },
     "courses": {
       "title": "Weltklasse-Kurse",
-      "desc": "Meistern Sie über 30 Sprachen mit unserem immersiven, KI-gesteuerten Lehrplan, der für alle Niveaus entwickelt wurde."
+      "desc": "Lernen Sie Deutsch (A1–C1) mit spezialisierten Lehrkräften für jedes Niveau. Konversationsunterricht wird von deutschsprachigen Muttersprachlern durchgeführt, um korrekte Aussprache und flüssiges Sprechen sicherzustellen."
     },
     "prices": {
-      "title": "Flexible Preisgestaltung",
-      "desc": "Wählen Sie einen Plan, der zu Ihrem Budget passt. Von kostenlosen Grundlagen bis hin zu Premium-Einzelcoaching."
+      "title": "Flexible Preispläne",
+      "desc": "Wählen Sie den Plan, der zu Ihrem Budget passt – von kostenlosen Grundkursen bis hin zu Premium-Einzeltraining."
     },
     "contact": {
       "title": "Kontaktieren Sie uns",
-      "desc": "Unser Support-Team ist rund um die Uhr verfügbar, um Ihnen auf Ihrer sprachlichen Reise zu helfen."
+      "desc": "Unser Support-Team ist rund um die Uhr verfügbar, um Sie auf Ihrer Sprachreise zu unterstützen."
     },
     "cta": "Jetzt starten"
   },
