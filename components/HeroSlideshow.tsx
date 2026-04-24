@@ -20,25 +20,29 @@ export default function HeroSlideshow() {
   }, []);
 
   return (
-    <div className="relative w-full h-[500px] overflow-hidden rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800">
+    <div className="relative w-full h-[60vh] min-h-[400px] md:h-[70vh] md:min-h-[500px] max-h-[800px] overflow-hidden rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800">
+
       {slides.map((slide, index) => (
         <div
           key={slide.id}
-          className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
+          className={`absolute inset-0 w-full h-full transition-opacity duration-1000 ease-in-out ${
             index === current ? "opacity-100" : "opacity-0"
           }`}
         >
           {/* Overlay for text readability */}
-          <div className="absolute inset-0 bg-black/30 z-10" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent z-10" />
           
           <Image
             src={slide.url}
             alt={slide.alt}
             fill
-            className="object-cover"
+            className="object-contain w-full h-full"
             priority={index === 0}
+            sizes="100vw"
           />
+
         </div>
+
       ))}
 
       {/* Navigation Dots */}

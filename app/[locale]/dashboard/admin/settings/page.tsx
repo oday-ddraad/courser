@@ -79,6 +79,13 @@ interface WhatsAppStats {
   limitReached: boolean;
 }
 
+interface SocialLinksSettings {
+  whatsappLink: string;
+  instagramLink: string;
+  facebookLink: string;
+  telegramLink: string;
+}
+
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const t = useTranslations('Dashboard.admin');
@@ -94,6 +101,12 @@ export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<'email' | 'whatsapp' | 'jitsi' | 'general'>('email');
 
   const [autoSaveStatus, setAutoSaveStatus] = useState<string>('');
+  const [socialLinks, setSocialLinks] = useState<SocialLinksSettings>({
+    whatsappLink: '',
+    instagramLink: '',
+    facebookLink: '',
+    telegramLink: '',
+  });
 
   // Auto-save WhatsApp toggle settings
   const handleWhatsappToggleChange = async (key: 'enabled' | 'otpEnabled' | 'notificationsEnabled', value: boolean) => {
@@ -154,6 +167,7 @@ export default function SettingsPage() {
       fetchEmailSettings();
       fetchEmailStats();
       fetchWhatsappSettings();
+      fetchSocialLinksSettings();
     }
   }, [status, session]);
 
@@ -308,6 +322,46 @@ export default function SettingsPage() {
       }
     } catch (error) {
       console.error('Error resetting counters:', error);
+    }
+  };
+
+  const fetchSocialLinksSettings = async () => {
+    try {
+      const response = await fetch('/api/admin/site-settings');
+      const data = await response.json();
+      if (data.success && data.data) {
+        setSocialLinks({
+          whatsappLink: data.data.whatsappLink || '',
+          instagramLink: data.data.instagramLink || '',
+          facebookLink: data.data.facebookLink || '',
+          telegramLink: data.data.telegramLink || '',
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching social links settings:', error);
+    }
+  };
+
+  const handleSaveSocialLinks = async () => {
+    setSaving(true);
+    try {
+      const response = await fetch('/api/admin/site-settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(socialLinks),
+      });
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert('Social links saved successfully!');
+      } else {
+        alert(`Failed to save social links${data?.error ? `: ${data.error}` : ''}`);
+      }
+    } catch (error) {
+      console.error('Error saving social links settings:', error);
+      alert('Error saving social links settings');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -903,12 +957,77 @@ export default function SettingsPage() {
 
       {activeTab === 'general' && (
         <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            General Settings
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            General system settings will be implemented here.
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              General Settings
+            </h2>
+            <button
+              onClick={handleSaveSocialLinks}
+              disabled={saving}
+              className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Save className="w-4 h-4 mr-2" />}
+              Save Links
+            </button>
+          </div>
+
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Configure global contact links shown in the floating contact widget across all website pages.
           </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                WhatsApp Link
+              </label>
+              <input
+                type="url"
+                placeholder="https://wa.me/..."
+                value={socialLinks.whatsappLink}
+                onChange={(e) => setSocialLinks({ ...socialLinks, whatsappLink: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Instagram Link
+              </label>
+              <input
+                type="url"
+                placeholder="https://instagram.com/..."
+                value={socialLinks.instagramLink}
+                onChange={(e) => setSocialLinks({ ...socialLinks, instagramLink: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Facebook Link
+              </label>
+              <input
+                type="url"
+                placeholder="https://facebook.com/..."
+                value={socialLinks.facebookLink}
+                onChange={(e) => setSocialLinks({ ...socialLinks, facebookLink: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Telegram Link
+              </label>
+              <input
+                type="url"
+                placeholder="https://t.me/..."
+                value={socialLinks.telegramLink}
+                onChange={(e) => setSocialLinks({ ...socialLinks, telegramLink: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-slate-700 dark:text-white"
+              />
+            </div>
+          </div>
         </div>
       )}
     </div>

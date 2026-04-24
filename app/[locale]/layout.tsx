@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import AuthProvider from "@/components/providers/AuthProvider";
 import EmailTemplateInit from "@/components/providers/EmailTemplateInit";
 import AdminLayoutWrapper from "./AdminLayoutWrapper";
+import GlobalContactWidget from "@/components/GlobalContactWidget";
 import "../globals.css";
 
 
@@ -58,6 +59,7 @@ export default async function LocaleLayout({
                   {children}
                 </main>
               </AdminLayoutWrapper>
+              <GlobalContactWidget />
             </ThemeProvider>
           </NextIntlClientProvider>
         </AuthProvider>
